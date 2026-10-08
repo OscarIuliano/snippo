@@ -168,18 +168,18 @@ Le date si fissano dopo la scelta dello stack e del perimetro definitivo dell'MV
 
 ## 9. Architettura generale
 
-Il sistema ha tre frontend statici (widget, dashboard, landing) e un'unica API. L'API scrive su PostgreSQL e delega a un worker, tramite coda, tutto ciò che può fallire o rallentare: email, Telegram, WhatsApp, webhook.
+Il sistema gira tutto su Cloudflare, nello stesso account dell'altro progetto. Tre frontend statici (widget, dashboard, landing) parlano con un'unica API su Workers. L'API scrive su D1 e passa a Cloudflare Queues tutto ciò che può fallire o rallentare: email, Telegram, WhatsApp, webhook.
 
 ```mermaid
 flowchart TB
     W["Widget (sito del cliente)<br/>Preact, Shadow DOM, da CDN"]
-    D["Dashboard<br/>React SPA, Cloudflare Pages"]
-    L["Landing e docs<br/>Astro, Cloudflare Pages"]
-    API["API (Hono, Node)<br/>pubblica: widget<br/>privata: dashboard, webhook"]
-    PG[("PostgreSQL (Neon, UE)<br/>dati, configurazioni, richieste")]
-    R[("Redis (Upstash, UE)<br/>coda job, rate limit")]
-    WK["Worker<br/>notifiche, retry, pulizie"]
-    S["Stripe<br/>abbonamenti e fatture"]
+    D["Dashboard<br/>React SPA, Workers Assets"]
+    L["Landing e docs<br/>Astro, Workers Assets"]
+    API["API (Hono su Workers)<br/>pubblica: widget<br/>privata: dashboard, webhook"]
+    DB[("Cloudflare D1 (UE)<br/>dati, configurazioni, richieste")]
+    Q[("Cloudflare Queues<br/>notifiche, webhook")]
+    WK["Worker consumer<br/>notifiche, retry, cron"]
+    P["Paddle<br/>abbonamenti e fatture"]
     RS["Resend<br/>email"]
     TG["Telegram Bot<br/>notifiche e pulsanti"]
     WA["WhatsApp Cloud API<br/>fase 2"]
@@ -188,17 +188,17 @@ flowchart TB
     L -- iscrizione --> D
     W -- "config, invii, eventi" --> API
     D -- sessione --> API
-    API --> PG
-    API --> R
-    API <-- abbonamenti --> S
-    R -- job --> WK
+    API --> DB
+    API --> Q
+    API <-- abbonamenti --> P
+    Q -- messaggi --> WK
     WK --> RS
     WK --> TG
     WK --> WA
     WK --> WH
 ```
 
-L'invio di una richiesta risponde al visitatore in pochi millisecondi, anche se Telegram o il servizio email sono lenti o fuori servizio. Il worker usa lo stesso database dell'API e lo stesso codice del monorepo.
+L'invio di una richiesta risponde al visitatore in pochi millisecondi, anche se Telegram o il servizio email sono lenti. Il consumer della coda è un Worker con lo stesso codice del monorepo e lo stesso database. Non ci sono server o container da gestire, e in sviluppo non servono Docker né database installati in locale.
 
 ## 10. Widget: architettura tecnica
 
@@ -241,14 +241,15 @@ Da JavaScript: `Snippo.open()`, `Snippo.close()`, `Snippo.on('submitted', fn)`, 
 
 ## 11. Backend API
 
-Il backend è un servizio **Node.js 22 + TypeScript** con framework **Hono**, che espone due superfici. La prima è pubblica e serve il widget; la seconda è privata e serve dashboard, API e integrazioni. Il lavoro lento (notifiche, email, webhook) va in coda e lo eseguono dei worker separati.
+Il backend è un **Cloudflare Worker** in TypeScript con framework **Hono**, che espone due superfici. La prima è pubblica e serve il widget; la seconda è privata e serve dashboard, API e integrazioni. Il lavoro lento (notifiche, email, webhook) va su **Cloudflare Queues** e lo esegue un Worker consumer.
 
 **Stack**
 
-- Hono su Node (portabile anche su Cloudflare Workers o Bun), validazione con **Zod**, specifica **OpenAPI** generata dagli schemi.
-- ORM **Drizzle** su PostgreSQL, migrazioni versionate nel repo.
-- Code: **BullMQ** su Redis, oppure pg-boss su Postgres per avere un servizio in meno all'inizio.
-- Autenticazione dashboard: **Better Auth** (sessioni su cookie httpOnly, OAuth Google, magic link).
+- Hono su Workers, validazione con **Zod**, specifica **OpenAPI** generata dagli schemi.
+- ORM **Drizzle** su **D1** (SQLite), migrazioni versionate nel repo e applicate con Wrangler.
+- Code: **Cloudflare Queues** con retry e dead letter queue; lavori programmati (pulizie, retention) con Cron Triggers.
+- Autenticazione dashboard: **Better Auth** su D1 (sessioni su cookie httpOnly, OAuth Google, magic link).
+- Configurazione in `wrangler.jsonc`, segreti in Workers Secrets.
 
 **Endpoint principali**
 
@@ -268,11 +269,11 @@ Il backend è un servizio **Node.js 22 + TypeScript** con framework **Hono**, ch
 
 **Regole trasversali**
 
-- Rate limiting per chiave e IP, es. 10 invii al minuto per IP e progetto, con un contatore su Redis.
+- Rate limiting per chiave e IP con il binding Rate Limiting dei Workers, es. 10 invii al minuto per IP e widget.
 - Quote del piano verificate all'invio; al superamento il widget mostra un messaggio di fallback e l'azienda riceve un avviso.
 - Idempotenza degli invii (`Idempotency-Key`), errori in formato RFC 9457 (problem+json).
-- Multi-tenant: ogni query è filtrata per `organization_id`, con Row Level Security di Postgres come rete di sicurezza.
-- Log strutturati (JSON) con `request_id` propagato a worker e notifiche.
+- Multi-tenant: ogni query passa da un unico livello di accesso ai dati che filtra per `organization_id`. D1 non ha Row Level Security, quindi test automatici verificano l'isolamento tra tenant.
+- Log strutturati con Workers Logs; il `request_id` viaggia anche nei messaggi in coda.
 
 ## 12. Dashboard e landing: stack tecnico
 
@@ -293,9 +294,9 @@ Un'alternativa valida è **Next.js** per la dashboard. Ha senso se si preferisce
 
 L'editor del flusso, all'MVP, è una lista ordinabile di passi con un form per ciascun passo, non un canvas a nodi. Un editor visuale stile diagramma arriva solo se servono flussi con ramificazioni.
 
-## 13. Modello dati (PostgreSQL)
+## 13. Modello dati (Cloudflare D1)
 
-Il database è PostgreSQL 16, multi-tenant con colonna `organization_id`. Usa chiavi primarie UUID v7 (ordinabili nel tempo), `created_at` e `updated_at` su ogni tabella e soft delete (`deleted_at`) dove serve. Le risposte del visitatore stanno in `jsonb`, così ogni flusso può avere campi diversi senza cambiare lo schema.
+Il database è **Cloudflare D1** (SQLite), creato con giurisdizione UE. È multi-tenant con colonna `organization_id`. Usa chiavi primarie UUID v7 salvate come testo, `created_at` e `updated_at` su ogni tabella e soft delete (`deleted_at`) dove serve. I campi indicati come `jsonb` sono colonne di testo JSON, interrogabili con `json_extract`, così ogni flusso può avere campi diversi senza cambiare lo schema. Un database può arrivare a 500 MB sul piano gratuito e a 10 GB su Workers Paid ([limiti D1](https://developers.cloudflare.com/d1/platform/limits/)).
 
 | Area | Tabella | Campi principali | Note |
 | --- | --- | --- | --- |
@@ -316,7 +317,7 @@ Il database è PostgreSQL 16, multi-tenant con colonna `organization_id`. Usa ch
 | Disponibilità | `time_slots` | id, project_id, weekday, start_time, capacity (coperti o posti) | Capienza per fascia |
 | Dati | `submissions` | id, project_id, widget_id, flow_version_id, status, answers jsonb, contact_name, contact_phone, contact_email, booking_at, party_size, locale, source_url, ip_hash, consent_at | Il cuore: la richiesta. Campi chiave estratti per filtri e calendario |
 | Dati | `submission_events` | id, submission_id, type (created, status_changed, note, notified), actor_user_id, data jsonb | Storico e audit della richiesta |
-| Analytics | `widget_events` | id, project_id, widget_id, session_id, type (loaded, opened, step, submitted, abandoned), step_key, created_at | Partizionata per mese, retention 13 mesi |
+| Analytics | `widget_events` | id, project_id, widget_id, session_id, type (loaded, opened, step, submitted, abandoned), step_key, created_at | Su Workers Analytics Engine invece che su D1, per non consumare spazio del database |
 | Notifiche | `notification_channels` | id, project_id, type (email, telegram, whatsapp, webhook), config jsonb (cifrato), is_active | |
 | Notifiche | `notification_deliveries` | id, channel_id, submission_id, status, attempts, last_error, sent_at | Retry e log |
 | Notifiche | `action_tokens` | id, submission_id, action (confirm, reject), token_hash, expires_at, used_at | Link Conferma/Rifiuta |
@@ -337,7 +338,7 @@ Il database è PostgreSQL 16, multi-tenant con colonna `organization_id`. Usa ch
 
 ## 14. Notifiche e integrazioni
 
-Ogni richiesta crea un job per ciascun canale attivo del progetto. Il worker invia con retry esponenziale (5 tentativi fino a circa 1 ora) e registra l'esito in `notification_deliveries`. Un canale che fallisce non blocca gli altri.
+Ogni richiesta pubblica un messaggio su Cloudflare Queues per ciascun canale attivo del progetto. Il Worker consumer invia con retry e backoff (fino a 5 tentativi, poi dead letter queue) e registra l'esito in `notification_deliveries`. Un canale che fallisce non blocca gli altri.
 
 | Canale | Servizio | Uso | Note | Fase |
 | --- | --- | --- | --- | --- |
@@ -357,43 +358,45 @@ Trattiamo dati personali dei visitatori (nome, telefono, email) per conto delle 
 
 **Privacy e conformità**
 
-- Hosting e database in regione UE (Francoforte o Parigi); fornitori con DPA firmato ed elenco dei sub-responsabili pubblico.
+- Database D1 creato con giurisdizione `eu`: i dati sono salvati ed elaborati solo in UE ([data location D1](https://developers.cloudflare.com/d1/configuration/data-location/)). La giurisdizione si sceglie solo alla creazione. Fornitori con DPA firmato ed elenco dei sub-responsabili pubblico.
 - DPA standard accettato all'attivazione del piano; registro dei trattamenti.
 - Consenso esplicito nel widget, con link alla privacy dell'azienda; data e ora del consenso salvate (`consent_at`).
 - Minimizzazione: IP salvato solo come hash; nessun cookie di tracciamento nel widget.
-- Retention configurabile per progetto (default 24 mesi), poi cancellazione automatica; export e cancellazione dei dati di un visitatore su richiesta.
+- Retention configurabile per progetto (default 24 mesi), poi cancellazione automatica con un Cron Trigger; export e cancellazione dei dati di un visitatore su richiesta.
 
 **Sicurezza applicativa**
 
-- TLS ovunque, HSTS; password con Argon2id; 2FA (TOTP) opzionale per la dashboard.
-- Chiavi API segrete salvate solo come hash; credenziali dei canali (token Telegram e WhatsApp) cifrate con AES-256-GCM e chiave in un secret manager.
-- Autorizzazione per ruolo e tenant su ogni endpoint; Row Level Security come seconda barriera.
-- Protezione dagli abusi: rate limit, Turnstile, controllo `Origin`, limiti di dimensione del payload, sanitizzazione dell'output (XSS) in dashboard ed email.
+- TLS ovunque, HSTS; hash delle password gestito da Better Auth; 2FA (TOTP) opzionale per la dashboard.
+- Chiavi API segrete salvate solo come hash; credenziali dei canali (token Telegram e WhatsApp) cifrate con AES-256-GCM, chiave in Workers Secrets.
+- Autorizzazione per ruolo e tenant su ogni endpoint, centralizzata nel livello di accesso ai dati, con test automatici sull'isolamento tra tenant.
+- Protezione dagli abusi: WAF e rate limiting Cloudflare, Turnstile, controllo `Origin`, limiti di dimensione del payload, sanitizzazione dell'output (XSS) in dashboard ed email.
 - Header di sicurezza: CSP sulla dashboard e sulla landing, `frame-ancestors`.
-- Backup giornalieri cifrati con point-in-time recovery (7–30 giorni); test di ripristino trimestrale.
-- Dipendenze controllate (Dependabot, `npm audit`) e scansione dei segreti nel repo.
+- Backup: D1 Time Travel ripristina il database a un minuto qualsiasi degli ultimi 30 giorni (7 sul piano gratuito); export settimanale su R2; test di ripristino trimestrale.
+- Dipendenze controllate (Dependabot, `pnpm audit`) e scansione dei segreti nel repo.
 
 ## 16. Hosting, infrastruttura e costi
 
-Per l'MVP conviene usare solo servizi gestiti in UE. Si spendono circa 30–80 € al mese e non si amministrano server. I costi indicati sono approssimativi, da memoria, e vanno verificati sui listini prima di scegliere.
+Tutto gira sull'account Cloudflare già attivo per l'altro progetto. Per lo sviluppo basta il piano gratuito; in produzione serve Workers Paid (5 $ al mese) per i limiti più alti di D1 e Queues. La spesa totale dell'MVP resta sotto i 20 € al mese. I costi dei servizi esterni a Cloudflare sono approssimativi e vanno verificati sui listini ([prezzi Queues](https://developers.cloudflare.com/queues/platform/pricing/)).
 
-| Componente | Servizio consigliato | Alternativa | Costo MVP (approssimativo) |
+| Componente | Servizio | Note | Costo MVP |
 | --- | --- | --- | --- |
-| DNS, CDN, WAF | Cloudflare | — | 0 € (piano Free) |
-| Widget (file statici) | Cloudflare R2 + CDN, o Cloudflare Pages | Bunny CDN | 0–5 € |
-| Landing + docs | Cloudflare Pages | Vercel, Netlify | 0 € |
-| Dashboard (SPA) | Cloudflare Pages | Vercel | 0 € |
-| API + worker (container) | Railway o Render, regione UE | Fly.io, Hetzner + Coolify | 10–25 € |
-| PostgreSQL | Neon (regione Francoforte) | Supabase, Railway Postgres | 0–20 € |
-| Redis (code, rate limit) | Upstash Redis (UE) | Redis su Railway | 0–10 € |
-| File (loghi, allegati) | Cloudflare R2 | AWS S3 | 0–2 € |
-| Email transazionale | Resend | Postmark, Amazon SES | 0–20 € |
-| Anti-bot | Cloudflare Turnstile | hCaptcha | 0 € |
-| Errori | Sentry | — | 0 € (piano Developer) |
-| Uptime e log | Better Stack | Grafana Cloud | 0–10 € |
-| Analytics landing | Plausible | Umami self-hosted | 9 € |
-| Pagamenti | Stripe | Paddle (gestisce anche l'IVA) | Commissione per transazione |
-| Dominio | es. `snippo.io` o `.com` | — | 15–50 €/anno |
+| DNS, CDN, WAF | Cloudflare | Dominio sullo stesso account | 0 € |
+| Widget (file statici) | Workers Static Assets | `cdn.snippo.io` | 0 € |
+| Landing + docs | Workers Static Assets (o Pages) | `snippo.io` | 0 € |
+| Dashboard (SPA) | Workers Static Assets (o Pages) | `app.snippo.io` | 0 € |
+| API | Workers | `api.snippo.io` | Incluso in Workers Paid (5 $/mese) |
+| Database | D1, giurisdizione UE | Database separati per dev, staging e prod | Incluso entro le soglie |
+| Code e job | Queues, Cron Triggers | Notifiche, webhook, pulizie | Incluso entro le soglie |
+| Rate limit e cache | Binding Rate Limiting, KV | Limiti per IP e widget, cache della configurazione | Incluso |
+| Eventi del widget | Workers Analytics Engine | Aperture, passi, abbandoni | Incluso entro le soglie |
+| File (loghi, allegati) | R2 | | 0–2 € |
+| Anti-bot | Turnstile | | 0 € |
+| Analytics landing | Cloudflare Web Analytics | Senza cookie | 0 € |
+| Email transazionale | Resend | Fuori da Cloudflare | 0–20 € |
+| Errori | Sentry | SDK per Workers | 0 € (piano Developer) |
+| Uptime | Better Stack | Pagina di stato | 0–10 € |
+| Pagamenti | Paddle | | Commissione per transazione |
+| Dominio | `snippo.io` | | 30–60 €/anno |
 
 **Domini e sottodomini**
 
@@ -403,7 +406,9 @@ Per l'MVP conviene usare solo servizi gestiti in UE. Si spendono circa 30–80 �
 - `cdn.snippo.io`: script dei widget
 - `status.snippo.io`: pagina di stato
 
-**Crescita:** oltre circa 500 clienti attivi conviene valutare il passaggio di API e database su Hetzner (Germania) o AWS eu-central-1, per ridurre i costi o avere più controllo. Il codice resta lo stesso perché è containerizzato con Docker.
+**Account condiviso:** tutte le risorse hanno il prefisso `snippo-` e la CI usa un token API dedicato con permessi limitati. Il piano gratuito ammette 10 database D1 per account, condivisi con l'altro progetto. Se Snippo diventa un'attività separata, le risorse si spostano su un account suo.
+
+**Crescita:** il limite da tenere d'occhio è la dimensione di D1 (10 GB per database). Oltre quella soglia si può dividere il database per gruppi di clienti, oppure passare a Postgres tramite Hyperdrive senza cambiare l'API.
 
 ## 17. Repository, ambienti, CI/CD e monitoraggio
 
@@ -417,19 +422,18 @@ snippo/
 │   ├── widgets/
 │   │   ├── loader/    # snippo.js: carica il widget giusto
 │   │   └── chat/      # primo widget (Preact)
-│   ├── api/           # Hono: API pubblica e privata
-│   ├── worker/        # job: notifiche, webhook, pulizie
+│   ├── api/           # Worker Hono: API pubblica e privata
+│   ├── worker/        # Worker consumer di Queues + Cron Triggers
 │   ├── dashboard/     # React SPA
 │   └── web/           # Astro: landing + docs
 ├── packages/
 │   ├── widget-core/   # Shadow DOM, tema, i18n, client API, eventi
-│   ├── db/            # schema Drizzle, migrazioni, seed
+│   ├── db/            # schema Drizzle, migrazioni D1, seed
 │   ├── shared/        # schemi Zod, tipi, costanti
 │   ├── emails/        # template React Email
 │   ├── ui/            # componenti condivisi
 │   └── config/        # tsconfig, eslint, tailwind
 ├── docs/              # questa documentazione
-├── docker-compose.yml # Postgres + Redis + Mailpit in locale
 └── .github/workflows/
 ```
 
@@ -437,18 +441,18 @@ snippo/
 
 | Ambiente | Scopo | Database | Rilascio |
 | --- | --- | --- | --- |
-| Locale | Sviluppo | Docker (Postgres, Redis, Mailpit) | — |
-| Preview | Una per ogni pull request | Branch di Neon | Automatico sulla PR |
-| Staging | Test prima del rilascio | Istanza separata con dati finti | Automatico su `main` |
-| Produzione | Clienti | Istanza produzione con PITR | Tag di release o approvazione manuale |
+| Locale | Sviluppo | `wrangler dev`: D1 simulato da Miniflare dentro `node_modules`, senza Docker; oppure `--remote` sul D1 di dev | — |
+| Dev / preview | Test di ogni pull request | D1 `snippo-dev` (UE) | Preview URL dei Workers sulla PR |
+| Staging | Test prima del rilascio | D1 `snippo-staging` (UE) | Automatico su `main` |
+| Produzione | Clienti | D1 `snippo-prod` (UE) con Time Travel | Tag di release o approvazione manuale |
 
 **Pipeline CI/CD (GitHub Actions)**
 
-1. Su ogni PR: lint, type check, test unitari (Vitest), test di integrazione dell'API su un Postgres reale, build di tutte le app.
+1. Su ogni PR: lint, type check, test unitari (Vitest), test di integrazione dell'API con `@cloudflare/vitest-pool-workers` su un D1 simulato, build di tutte le app.
 2. Test end-to-end (Playwright) del widget integrato in una pagina di prova e della dashboard.
 3. Controllo della dimensione del bundle del widget: la build fallisce sopra i 30 KB gzip.
-4. Merge su `main`: deploy in staging e migrazioni del database automatiche.
-5. Release: deploy in produzione e caricamento del widget su CDN con la nuova versione.
+4. Merge su `main`: migrazioni D1 e `wrangler deploy` in staging.
+5. Release: migrazioni e deploy in produzione, pubblicazione del widget con la nuova versione.
 6. Conventional Commits e changelog generato (Changesets) per il widget, che è un prodotto versionato pubblicamente.
 
 **Monitoraggio**
@@ -460,7 +464,7 @@ snippo/
 
 ## 18. Decisioni e consigli
 
-Nome, repository e strategia sui template sono decisi. Le altre righe sono i miei consigli; quelle "Da verificare" richiedono un controllo esterno (commercialista, registri di domini e marchi).
+Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Workers, D1, Queues, nello stesso account dell'altro progetto) sono decisi. Le altre righe sono i miei consigli; quelle "Da verificare" richiedono un controllo esterno (commercialista, registri di domini e marchi).
 
 | Tema | Scelta | Perché | Stato |
 | --- | --- | --- | --- |

@@ -61,7 +61,7 @@ Il widget è una bolla in basso a destra che si apre in una finestra di chat. Po
 
 **Template per settore**
 
-- **Ristorante:** prenotazione tavolo (data, orario, persone, nome, telefono, note e allergie).
+- **Ristorante:** prenotazione tavolo (persone, data, orario, nome, telefono, note e allergie); il widget propone solo giorni e orari aperti e con posto.
 - **Appuntamenti** (parrucchiere, estetista, studio): servizio, data, orario, contatto.
 - **Richiesta informazioni:** argomento, messaggio, contatto preferito.
 - **Lead B2B:** azienda, ruolo, esigenza, budget indicativo, contatto.
@@ -303,7 +303,7 @@ Il database è **Cloudflare D1** (SQLite), creato con giurisdizione UE. È multi
 | Organizzazione | `organizations` | id, name, slug, country, vat_number, billing_email, plan_id | Il tenant |
 | Organizzazione | `memberships` | organization_id, user_id, role (owner, admin, operator) | PK composta |
 | Organizzazione | `invitations` | id, organization_id, email, role, token_hash, expires_at, accepted_at | |
-| Progetti | `projects` | id, organization_id, name, industry, timezone, default_locale, status | Un progetto per sito |
+| Progetti | `projects` | id, organization_id, name, industry, timezone, default_locale, slot_capacity (persone o prenotazioni per orario, vuoto = nessun limite), status | Un progetto per sito |
 | Progetti | `project_domains` | id, project_id, domain, verified_at | Whitelist per `Origin` |
 | Progetti | `api_keys` | id, project_id, type (secret), prefix, key_hash, last_used_at, revoked_at | Salvato solo l'hash delle chiavi segrete |
 | Configurazione | `widgets` | id, project_id, type (chat, poi booking, reviews…), name, public_key (pk_…), theme jsonb (colori, logo, posizione), texts jsonb per lingua, show_branding, is_active | |
@@ -311,7 +311,6 @@ Il database è **Cloudflare D1** (SQLite), creato con giurisdizione UE. È multi
 | Configurazione | `flow_versions` | id, flow_id, version, definition jsonb (passi, validazioni, rami), published_at | Ogni richiesta punta alla versione usata |
 | Disponibilità | `business_hours` | id, project_id, weekday, opens_at, closes_at | |
 | Disponibilità | `closures` | id, project_id, date_from, date_to, reason | Ferie, chiusure |
-| Disponibilità | `time_slots` | id, project_id, weekday, start_time, capacity (coperti o posti) | Capienza per fascia |
 | Dati | `submissions` | id, project_id, widget_id, flow_version_id, status, answers jsonb, contact_name, contact_phone, contact_email, booking_at, party_size, locale, source_url, ip_hash, consent_at | Il cuore: la richiesta. Campi chiave estratti per filtri e calendario |
 | Dati | `submission_events` | id, submission_id, type (created, status_changed, note, notified), actor_user_id, data jsonb | Storico e audit della richiesta |
 | Analytics | `widget_events` | id, project_id, widget_id, session_id, type (loaded, opened, step, submitted, abandoned), step_key, created_at | Su Workers Analytics Engine invece che su D1, per non consumare spazio del database |
@@ -476,7 +475,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 9 attività fatte, 6 in attesa di un tuo passaggio e 11 da fare. Le "Da fare" sono nell'ordine consigliato: si parte da orari e disponibilità, che oggi mancano al widget dei ristoranti.
+L'MVP ha 10 attività fatte, 6 in attesa di un tuo passaggio e 10 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima è lo staging online.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -495,7 +494,7 @@ L'MVP ha 9 attività fatte, 6 in attesa di un tuo passaggio e 11 da fare. Le "Da
 | 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet |
 | 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
 | 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Prima dei clienti paganti |
-| 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Da fare | Prossima consigliata |
+| 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
 | 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Da fare | Serve un token API Cloudflare |
 | 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Da fare | Prima di andare online |
 | 19 | Area privata | Verifica email e reset password | Da fare | Dopo Resend |

@@ -9,8 +9,7 @@
     {
       "binding": "DB",
       "database_name": "snippo-dev",
-      // Sostituire con l'id restituito da: wrangler d1 create snippo-dev --jurisdiction=eu
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "3abe3332-c5e0-4f90-8556-5571b9ab82ef",
       "migrations_dir": "../../packages/db/migrations"
     }
   ]

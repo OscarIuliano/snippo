@@ -1,37 +1,11 @@
 import { exports } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import type { MeResponse, ProjectDetail, SubmissionsPage } from "@snippo/shared";
-
-const BASE = "http://localhost:5174";
-const ORIGIN = { Origin: BASE };
-
-async function signUp(email: string) {
-  const res = await exports.default.fetch(`${BASE}/api/auth/sign-up/email`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...ORIGIN },
-    body: JSON.stringify({ name: "Mario Rossi", email, password: "una-password-sicura" }),
-  });
-  expect(res.status).toBe(200);
-  const cookie = res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
-  return (path: string, init: RequestInit = {}) =>
-    exports.default.fetch(`${BASE}/api/v1${path}`, {
-      ...init,
-      headers: { "Content-Type": "application/json", Cookie: cookie, ...ORIGIN, ...init.headers },
-    });
-}
-
-async function createProject(api: Awaited<ReturnType<typeof signUp>>) {
-  const res = await api("/projects", {
-    method: "POST",
-    body: JSON.stringify({ name: "Trattoria da Mario", template: "restaurant", domain: "https://www.trattoria-mario.it/menu" }),
-  });
-  expect(res.status).toBe(201);
-  return (await res.json<{ id: string }>()).id;
-}
+import { DASHBOARD, createProject, signUp, submitBooking } from "./helpers";
 
 describe("dashboard API", () => {
   it("requires a session", async () => {
-    const res = await exports.default.fetch(`${BASE}/api/v1/me`);
+    const res = await exports.default.fetch(`${DASHBOARD}/api/v1/me`);
     expect(res.status).toBe(401);
   });
 
@@ -71,19 +45,7 @@ describe("dashboard API", () => {
   it("lists submissions with counts and updates their status", async () => {
     const api = await signUp("inbox@example.com");
     const projectId = await createProject(api);
-    const project = await (await api(`/projects/${projectId}`)).json<ProjectDetail>();
-
-    const submitted = await exports.default.fetch(`https://api.snippo.test/v1/widget/submissions?key=${project.widget.publicKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Origin: "https://trattoria-mario.it" },
-      body: JSON.stringify({
-        flowVersionId: (await (await exports.default.fetch(`https://api.snippo.test/v1/widget/config?key=${project.widget.publicKey}`, { headers: { Origin: "https://trattoria-mario.it" } })).json<{ flowVersionId: string }>()).flowVersionId,
-        answers: { date: "2026-12-12", time: "20:30", party_size: "2", name: "Anna", phone: "+39 333 1112223" },
-        consent: true,
-      }),
-    });
-    expect(submitted.status).toBe(201);
-    const { id } = await submitted.json<{ id: string }>();
+    const id = await submitBooking(api, projectId);
 
     let page = await (await api(`/projects/${projectId}/submissions`)).json<SubmissionsPage>();
     expect(page.items.map((s) => s.contactName)).toEqual(["Anna"]);

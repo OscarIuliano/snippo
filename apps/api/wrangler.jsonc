@@ -7,7 +7,20 @@
   "observability": { "enabled": true },
   "vars": {
     "AUTH_BASE_URL": "http://localhost:5174",
-    "DASHBOARD_ORIGIN": "http://localhost:5174"
+    "DASHBOARD_ORIGIN": "http://localhost:5174",
+    "PUBLIC_API_URL": "http://localhost:8787"
+  },
+  "queues": {
+    "producers": [{ "binding": "NOTIFICATIONS", "queue": "snippo-notifications-dev" }],
+    "consumers": [
+      {
+        "queue": "snippo-notifications-dev",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5,
+        "dead_letter_queue": "snippo-notifications-dlq-dev"
+      }
+    ]
   },
   "d1_databases": [
     {

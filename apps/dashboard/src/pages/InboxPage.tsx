@@ -1,21 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { submissionStatuses, type FlowDefinition, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
+import { formatBooking, submissionStatuses, type FlowDefinition, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
 import { Alert, Button, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
 import { projectQuery, submissionsQuery } from "../lib/queries";
 import { statusInfo } from "../lib/templates";
 
-const dateFormat = new Intl.DateTimeFormat("it-IT", { weekday: "short", day: "numeric", month: "short" });
 const receivedFormat = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-
-/** "2026-12-12T20:30" (business local time) -> "sab 12 dic, 20:30" */
-function formatBooking(bookingAt: string) {
-  const [date, time] = bookingAt.split("T");
-  const day = dateFormat.format(new Date(`${date}T12:00:00`));
-  return time && time !== "00:00" ? `${day}, ${time}` : day;
-}
 
 // Answers already shown in the card header.
 const HEADER_KEYS = new Set(["name", "phone", "email", "date", "time", "party_size"]);

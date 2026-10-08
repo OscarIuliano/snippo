@@ -9,6 +9,8 @@ import {
   flowVersions,
   lt,
   memberships,
+  notificationChannels,
+  notificationDeliveries,
   organizations,
   projectDomains,
   projects,
@@ -19,12 +21,15 @@ import {
 import {
   addDomainSchema,
   changeTemplateSchema,
+  createChannelSchema,
   createProjectSchema,
   flowDefinitionSchema,
   submissionStatuses,
   templates,
   updateSubmissionSchema,
   updateWidgetSchema,
+  type ChannelRow,
+  type DeliveryRow,
   type MeResponse,
   type ProjectDetail,
   type SubmissionRow,
@@ -135,12 +140,14 @@ dashboardRoutes.post("/projects", async (c) => {
   const input = await parseBody(c, createProjectSchema);
   if (!input) return problem(c, 422, "Dati del progetto non validi");
 
-  const { db, organizationId } = c.var;
+  const { db, organizationId, user } = c.var;
   const projectId = uuidv7();
   const widgetId = uuidv7();
   await db.batch([
     db.insert(projects).values({ id: projectId, organizationId, name: input.name, industry: input.template }),
     db.insert(projectDomains).values({ id: uuidv7(), projectId, domain: input.domain }),
+    // New requests reach whoever created the project from day one.
+    db.insert(notificationChannels).values({ id: uuidv7(), projectId, type: "email", target: user.email.toLowerCase() }),
     db.insert(widgets).values({
       id: widgetId,
       projectId,
@@ -295,4 +302,102 @@ dashboardRoutes.patch("/submissions/:id", async (c) => {
     .set({ status: input.status, updatedAt: new Date().toISOString() })
     .where(eq(submissions.id, submission.id));
   return c.body(null, 204);
+});
+
+const toChannelRow = (ch: typeof notificationChannels.$inferSelect): ChannelRow => ({
+  id: ch.id,
+  type: ch.type,
+  target: ch.target,
+  isActive: ch.isActive,
+});
+
+/** Loads a channel only if it belongs to a project of the caller's organization. */
+async function ownedChannel(c: DashboardContext, projectId: string, channelId: string) {
+  const project = await ownedProject(c, projectId);
+  if (!project) return null;
+  const channel = await c.var.db.query.notificationChannels.findFirst({
+    where: and(eq(notificationChannels.id, channelId), eq(notificationChannels.projectId, project.id)),
+  });
+  return channel ? { project, channel } : null;
+}
+
+dashboardRoutes.get("/projects/:id/channels", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const channels = await c.var.db.query.notificationChannels.findMany({
+    where: eq(notificationChannels.projectId, project.id),
+    orderBy: notificationChannels.createdAt,
+  });
+  return c.json(channels.map(toChannelRow));
+});
+
+dashboardRoutes.post("/projects/:id/channels", async (c) => {
+  const input = await parseBody(c, createChannelSchema);
+  if (!input) return problem(c, 422, "Indirizzo o numero non valido");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const channel = { id: uuidv7(), projectId: project.id, type: input.type, target: input.target };
+  const inserted = await c.var.db.insert(notificationChannels).values(channel).onConflictDoNothing().returning();
+  if (inserted.length === 0) return problem(c, 409, "Questo destinatario c'è già");
+  return c.json(toChannelRow(inserted[0]!), 201);
+});
+
+dashboardRoutes.patch("/projects/:id/channels/:channelId", async (c) => {
+  const input = (await c.req.json().catch(() => null)) as { isActive?: unknown } | null;
+  if (typeof input?.isActive !== "boolean") return problem(c, 422, "Valore non valido");
+  const owned = await ownedChannel(c, c.req.param("id"), c.req.param("channelId"));
+  if (!owned) return problem(c, 404, "Canale non trovato");
+
+  await c.var.db
+    .update(notificationChannels)
+    .set({ isActive: input.isActive, updatedAt: new Date().toISOString() })
+    .where(eq(notificationChannels.id, owned.channel.id));
+  return c.body(null, 204);
+});
+
+dashboardRoutes.delete("/projects/:id/channels/:channelId", async (c) => {
+  const owned = await ownedChannel(c, c.req.param("id"), c.req.param("channelId"));
+  if (!owned) return problem(c, 404, "Canale non trovato");
+
+  await c.var.db.delete(notificationChannels).where(eq(notificationChannels.id, owned.channel.id));
+  return c.body(null, 204);
+});
+
+dashboardRoutes.post("/projects/:id/channels/:channelId/test", async (c) => {
+  const owned = await ownedChannel(c, c.req.param("id"), c.req.param("channelId"));
+  if (!owned) return problem(c, 404, "Canale non trovato");
+
+  const deliveryId = uuidv7();
+  await c.var.db.insert(notificationDeliveries).values({ id: deliveryId, channelId: owned.channel.id });
+  await c.env.NOTIFICATIONS.send({ kind: "test", deliveryId });
+  return c.json({ deliveryId }, 202);
+});
+
+dashboardRoutes.get("/projects/:id/deliveries", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const rows = await c.var.db
+    .select({ delivery: notificationDeliveries, channel: notificationChannels, contactName: submissions.contactName })
+    .from(notificationDeliveries)
+    .innerJoin(notificationChannels, eq(notificationChannels.id, notificationDeliveries.channelId))
+    .leftJoin(submissions, eq(submissions.id, notificationDeliveries.submissionId))
+    .where(eq(notificationChannels.projectId, project.id))
+    .orderBy(desc(notificationDeliveries.id))
+    .limit(20);
+
+  const body: DeliveryRow[] = rows.map(({ delivery, channel, contactName }) => ({
+    id: delivery.id,
+    channelType: channel.type,
+    target: channel.target,
+    submissionId: delivery.submissionId,
+    contactName,
+    status: delivery.status,
+    attempts: delivery.attempts,
+    lastError: delivery.lastError,
+    createdAt: delivery.createdAt,
+  }));
+  return c.json(body);
 });

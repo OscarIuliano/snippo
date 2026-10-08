@@ -170,3 +170,40 @@ export const memberships = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.organizationId, t.userId] }), index("memberships_user_idx").on(t.userId)],
 );
+
+// --- Notifications ---
+
+export const notificationChannels = sqliteTable(
+  "notification_channels",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id").notNull().references(() => projects.id),
+    type: text("type", { enum: ["email", "whatsapp"] }).notNull(),
+    /** Email address, or phone number in E.164 format (+393331234567). */
+    target: text("target").notNull(),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("notification_channels_project_target_uq").on(t.projectId, t.type, t.target)],
+);
+
+export const notificationDeliveries = sqliteTable(
+  "notification_deliveries",
+  {
+    id: text("id").primaryKey(),
+    channelId: text("channel_id").notNull().references(() => notificationChannels.id, { onDelete: "cascade" }),
+    /** Null for test notifications sent from the dashboard. */
+    submissionId: text("submission_id").references(() => submissions.id),
+    status: text("status", { enum: ["pending", "sent", "failed"] }).notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    lastError: text("last_error"),
+    providerMessageId: text("provider_message_id"),
+    sentAt: text("sent_at"),
+    ...timestamps,
+  },
+  (t) => [
+    // One delivery per channel and submission: a retried queue message never notifies twice.
+    uniqueIndex("notification_deliveries_channel_submission_uq").on(t.channelId, t.submissionId),
+    index("notification_deliveries_submission_idx").on(t.submissionId),
+  ],
+);

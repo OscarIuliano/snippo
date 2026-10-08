@@ -7,6 +7,7 @@ import { LoginPage, SignupPage } from "./pages/AuthPages";
 import { InboxPage } from "./pages/InboxPage";
 import { InstallPage } from "./pages/InstallPage";
 import { NewProjectPage } from "./pages/NewProjectPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 import { WidgetPage } from "./pages/WidgetPage";
 
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({ component: Outlet });
@@ -58,6 +59,13 @@ const widgetRoute = createRoute({
     return <WidgetPage projectId={widgetRoute.useParams().projectId} />;
   },
 });
+const notificationsRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "/notifiche",
+  component: function Notifications() {
+    return <NotificationsPage projectId={notificationsRoute.useParams().projectId} />;
+  },
+});
 const installRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "/installazione",
@@ -69,7 +77,7 @@ const installRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   loginRoute,
   signupRoute,
-  appRoute.addChildren([homeRoute, newProjectRoute, projectRoute.addChildren([inboxRoute, widgetRoute, installRoute])]),
+  appRoute.addChildren([homeRoute, newProjectRoute, projectRoute.addChildren([inboxRoute, widgetRoute, notificationsRoute, installRoute])]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {

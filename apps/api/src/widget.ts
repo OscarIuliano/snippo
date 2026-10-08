@@ -116,6 +116,13 @@ widgetRoutes.post("/submissions", async (c) => {
     idempotencyKey,
   });
 
+  // The request is saved: a queue hiccup must not fail it for the visitor.
+  try {
+    await c.env.NOTIFICATIONS.send({ kind: "submission", submissionId: id });
+  } catch (error) {
+    console.error("[notifiche] accodamento non riuscito", id, error);
+  }
+
   return c.json({ id }, 201);
 });
 

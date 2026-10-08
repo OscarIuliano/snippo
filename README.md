@@ -1,6 +1,6 @@
 # Snippo
 
-Piattaforma di widget embeddabili: lo sviluppatore incolla una riga di codice, l'azienda riceve richieste strutturate (prenotazioni, contatti, domande) e viene avvisata su email e Telegram.
+Piattaforma di widget embeddabili: lo sviluppatore incolla una riga di codice, l'azienda riceve richieste strutturate (prenotazioni, contatti, domande) e viene avvisata via email.
 
 Il primo widget è una chat guidata con template per settore (ristorante, appuntamenti, richiesta informazioni). Tutto gira su Cloudflare: API su Workers, database D1, code con Queues.
 

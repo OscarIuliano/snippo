@@ -366,7 +366,7 @@ Trattiamo dati personali dei visitatori (nome, telefono, email) per conto delle 
 
 **Sicurezza applicativa**
 
-- TLS ovunque, HSTS; hash delle password gestito da Better Auth; 2FA (TOTP) opzionale per la dashboard.
+- TLS ovunque, HSTS; password con PBKDF2-SHA256 via WebCrypto (100.000 iterazioni, il massimo ammesso dai Workers); 2FA (TOTP) opzionale per la dashboard.
 - Chiavi API segrete salvate solo come hash; credenziali dei canali (token Telegram e WhatsApp) cifrate con AES-256-GCM, chiave in Workers Secrets.
 - Autorizzazione per ruolo e tenant su ogni endpoint, centralizzata nel livello di accesso ai dati, con test automatici sull'isolamento tra tenant.
 - Protezione dagli abusi: WAF e rate limiting Cloudflare, Turnstile, controllo `Origin`, limiti di dimensione del payload, sanitizzazione dell'output (XSS) in dashboard ed email.

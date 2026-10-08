@@ -13,7 +13,7 @@ INSERT OR IGNORE INTO project_domains (id, project_id, domain) VALUES
 
 INSERT OR IGNORE INTO widgets (id, project_id, type, name, public_key, theme)
 VALUES ('wgt_dev', 'prj_dev', 'chat', 'Prenotazioni', 'pk_dev_snippo',
-  '{"primaryColor":"#c2410c","position":"right","title":"Trattoria Demo"}');
+  '{"primaryColor":"#4f46e5","position":"right","title":"Trattoria Demo"}');
 
 INSERT OR IGNORE INTO flow_versions (id, widget_id, version, template, definition, published_at)
 VALUES ('fv_dev_1', 'wgt_dev', 1, 'restaurant', '{

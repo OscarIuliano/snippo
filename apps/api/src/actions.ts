@@ -10,7 +10,7 @@ import { escapeHtml, submissionHeadline } from "./notifications/content";
 export const actionRoutes = new Hono<AppEnv>();
 
 const verbs: Record<SubmissionAction, { button: string; done: string; color: string }> = {
-  confirmed: { button: "Conferma la richiesta", done: "confermata", color: "#c2410c" },
+  confirmed: { button: "Conferma la richiesta", done: "confermata", color: "#4f46e5" },
   rejected: { button: "Rifiuta la richiesta", done: "rifiutata", color: "#57534e" },
 };
 
@@ -20,7 +20,7 @@ function page(title: string, body: string, status = 200) {
   const html = `<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${escapeHtml(title)} · Snippo</title></head>
 <body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#f5f5f4;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#1c1917">
 <main style="width:min(420px,calc(100% - 32px));background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:28px">
-<p style="margin:0 0 16px;font-weight:700;color:#c2410c">snippo</p>${body}</main></body></html>`;
+<p style="margin:0 0 16px;font-weight:700;color:#4f46e5">snippo</p>${body}</main></body></html>`;
   return new Response(html, { status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 }
 
@@ -45,7 +45,7 @@ function alreadyHandled(env: AppEnv["Bindings"], projectId: string, status: stri
     "Richiesta già gestita",
     `<h1 style="margin:0;font-size:20px">Questa richiesta è già ${escapeHtml(statusWords[status] ?? status)}</h1>
 <p style="color:#57534e">Nessuna modifica fatta.</p>
-<p><a href="${escapeHtml(`${env.DASHBOARD_ORIGIN}/progetti/${projectId}/richieste`)}" style="color:#c2410c">Apri nella dashboard</a></p>`,
+<p><a href="${escapeHtml(`${env.DASHBOARD_ORIGIN}/progetti/${projectId}/richieste`)}" style="color:#4f46e5">Apri nella dashboard</a></p>`,
   );
 }
 
@@ -84,6 +84,6 @@ actionRoutes.post("/:token", async (c) => {
     "Fatto",
     `<h1 style="margin:0;font-size:20px">Richiesta ${verbs[action].done} ✓</h1>
 <p style="color:#57534e">${escapeHtml(submissionHeadline(submission))}</p>
-<p><a href="${escapeHtml(`${c.env.DASHBOARD_ORIGIN}/progetti/${projectId}/richieste`)}" style="color:#c2410c">Apri nella dashboard</a></p>`,
+<p><a href="${escapeHtml(`${c.env.DASHBOARD_ORIGIN}/progetti/${projectId}/richieste`)}" style="color:#4f46e5">Apri nella dashboard</a></p>`,
   );
 });

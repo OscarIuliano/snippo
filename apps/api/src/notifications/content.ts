@@ -67,7 +67,7 @@ export function buildSubmissionNotification(
 
   const button = (href: string, label: string, primary: boolean) =>
     `<a href="${escapeHtml(href)}" style="display:inline-block;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;${
-      primary ? "background:#c2410c;color:#ffffff" : "background:#ffffff;color:#44403c;border:1px solid #d6d3d1"
+      primary ? "background:#4f46e5;color:#ffffff" : "background:#ffffff;color:#44403c;border:1px solid #d6d3d1"
     }">${label}</a>`;
 
   const html = `<!doctype html><html lang="it"><body style="margin:0;padding:24px;background:#f5f5f4;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#1c1917">
@@ -78,7 +78,7 @@ export function buildSubmissionNotification(
     .map(([label, value]) => `<tr><td style="padding:4px 12px 4px 0;color:#78716c;vertical-align:top">${escapeHtml(label)}</td><td style="padding:4px 0">${escapeHtml(value)}</td></tr>`)
     .join("")}</table>
 <p style="margin:24px 0 0">${button(links.confirm, "Conferma", true)} ${button(links.reject, "Rifiuta", false)}</p>
-<p style="margin:24px 0 0;font-size:13px"><a href="${escapeHtml(links.dashboard)}" style="color:#c2410c">Apri nella dashboard</a></p>
+<p style="margin:24px 0 0;font-size:13px"><a href="${escapeHtml(links.dashboard)}" style="color:#4f46e5">Apri nella dashboard</a></p>
 </div></body></html>`;
 
   return {

@@ -5,8 +5,8 @@ import { Alert, Card, PageHeader, cx } from "../components/ui";
 import { statsQuery } from "../lib/queries";
 
 // Emphasis form: the requests (the point) in the brand colour, the opens (context) in gray.
-// Both validated: contrast >= 3:1 on white, deutan ΔE 10.9.
-const COLOR_REQUESTS = "#c2410c";
+// Both validated: contrast >= 3:1 on white, worst colour-blind ΔE 11.7 (tritan).
+const COLOR_REQUESTS = "#4f46e5";
 const COLOR_OPENS = "#78716c";
 const PERIODS = [7, 30, 90] as const;
 

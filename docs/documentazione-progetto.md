@@ -473,3 +473,38 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 | Fatturazione elettronica | Con Paddle si fattura solo a Paddle; con Stripe serve un collegamento SDI (es. Fatture in Cloud) | In Italia le fatture B2B passano dallo SDI | Da verificare |
 | Forma giuridica | Partita IVA in regime forfettario per partire, SRL quando i ricavi crescono | Costi fissi bassi durante la validazione | Da verificare |
 | Dominio e marchio | snippo.io o snippo.app, più ricerca marchio su EUIPO | Nome breve: probabili omonimie da escludere prima del lancio | Da verificare |
+
+## 19. Backlog
+
+L'MVP ha 9 attività fatte, 6 in attesa di un tuo passaggio e 11 da fare. Le "Da fare" sono nell'ordine consigliato: si parte da orari e disponibilità, che oggi mancano al widget dei ristoranti.
+
+| # | Area | Attività | Stato | Note |
+| --- | --- | --- | --- | --- |
+| 1 | Base | Monorepo e CI (type check, test, build, peso del widget) | Fatto | |
+| 2 | Widget | Chat guidata con 3 template: ristorante, appuntamenti, info | Fatto | 9 KB compresso |
+| 3 | API | Configurazione del widget e invio richieste: domini autorizzati, validazione, idempotenza | Fatto | |
+| 4 | Infrastruttura | D1 `snippo-dev` (UE) e code delle notifiche su Cloudflare | Fatto | |
+| 5 | Area privata | Registrazione e login con email e password | Fatto | |
+| 6 | Area privata | Progetti, inbox, impostazioni del widget, domini, installazione | Fatto | |
+| 7 | Landing | Home con demo, settori, prezzi, FAQ | Fatto | |
+| 8 | Notifiche | Destinatari email e WhatsApp, coda, link Conferma/Rifiuta | Fatto | In sviluppo finiscono nel log |
+| 9 | Area privata | Calendario con mattina (fino alle 13:00) e sera | Fatto | |
+| 10 | Repository | Merge dei branch su `main` | In attesa di te | In ordine: scaffold, portal, notifications, calendar |
+| 11 | Notifiche | Email reali con Resend | In attesa di te | Serve la chiave API; per inviare a tutti, anche il dominio |
+| 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Servono portfolio e app Meta con numero di test, poi il template approvato |
+| 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet |
+| 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
+| 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Prima dei clienti paganti |
+| 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Da fare | Prossima consigliata |
+| 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Da fare | Serve un token API Cloudflare |
+| 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Da fare | Prima di andare online |
+| 19 | Area privata | Verifica email e reset password | Da fare | Dopo Resend |
+| 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo Resend |
+| 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Da fare | |
+| 22 | Area privata | Export CSV delle richieste | Da fare | |
+| 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Da fare | |
+| 24 | Pagamenti | Piani e quote con Paddle | Da fare | |
+| 25 | Privacy | Retention dei dati e cancellazione automatica | Da fare | |
+| 26 | Infrastruttura | Monitoraggio errori (Sentry) e uptime | Da fare | |
+
+Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

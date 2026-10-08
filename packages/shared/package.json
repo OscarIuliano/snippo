@@ -7,7 +7,8 @@
     "./rules": "./src/rules.ts",
     "./widget-api": "./src/widget-api.ts",
     "./format": "./src/format.ts",
-    "./availability": "./src/availability.ts"
+    "./availability": "./src/availability.ts",
+    "./stats": "./src/stats.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

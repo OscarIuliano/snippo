@@ -313,7 +313,7 @@ Il database è **Cloudflare D1** (SQLite), creato con giurisdizione UE. È multi
 | Disponibilità | `closures` | id, project_id, date_from, date_to, reason | Ferie, chiusure |
 | Dati | `submissions` | id, project_id, widget_id, flow_version_id, status, answers jsonb, contact_name, contact_phone, contact_email, booking_at, party_size, locale, source_url, ip_hash, consent_at | Il cuore: la richiesta. Campi chiave estratti per filtri e calendario |
 | Dati | `submission_events` | id, submission_id, type (created, status_changed, note, notified), actor_user_id, data jsonb | Storico e audit della richiesta |
-| Analytics | `widget_events` | id, project_id, widget_id, session_id, type (loaded, opened, step, submitted, abandoned), step_key, created_at | Su Workers Analytics Engine invece che su D1, per non consumare spazio del database |
+| Analytics | `widget_daily_stats`, `widget_step_stats` | widget_id, date, opens, starts; widget_id, date, step_key, reached | Contatori giornalieri, una sessione conta una volta: poche righe, query normali (Analytics Engine richiederebbe un'API HTTP a parte e non funziona in locale) |
 | Notifiche | `notification_channels` | id, project_id, type (email, whatsapp), target (email o numero E.164), is_active | |
 | Notifiche | `notification_deliveries` | id, channel_id, submission_id, status, attempts, last_error, sent_at | Retry e log |
 | Billing | `plans` | id, code, name, price_cents, limits jsonb (progetti, richieste, canali) | |
@@ -382,7 +382,7 @@ Tutto gira sull'account Cloudflare già attivo per l'altro progetto. Per lo svil
 | Database | D1, giurisdizione UE | Database separati per dev, staging e prod | Incluso entro le soglie |
 | Code e job | Queues, Cron Triggers | Notifiche, webhook, pulizie | Incluso entro le soglie |
 | Rate limit e cache | Binding Rate Limiting, KV | Limiti per IP e widget, cache della configurazione | Incluso |
-| Eventi del widget | Workers Analytics Engine | Aperture, passi, abbandoni | Incluso entro le soglie |
+| Eventi del widget | D1, contatori giornalieri | Aperture, passi, abbandoni | Incluso entro le soglie |
 | File (loghi, allegati) | R2 | | 0–2 € |
 | Anti-bot | Turnstile | | 0 € |
 | Analytics landing | Cloudflare Web Analytics | Senza cookie | 0 € |
@@ -475,7 +475,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 13 attività fatte, 5 in attesa di un tuo passaggio e 8 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 21, le statistiche.
+L'MVP ha 14 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -499,7 +499,7 @@ L'MVP ha 13 attività fatte, 5 in attesa di un tuo passaggio e 8 da fare. Le "Da
 | 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; per la produzione serve un widget Turnstile su `cdn.snippo.io` |
 | 19 | Area privata | Verifica email e reset password | Da fare | Dopo Resend |
 | 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo Resend |
-| 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Da fare | |
+| 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Fatto | Pagina Statistiche: aperture, conversione, dove ci si ferma |
 | 22 | Area privata | Export CSV delle richieste | Da fare | |
 | 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Da fare | |
 | 24 | Pagamenti | Piani e quote con Paddle | Da fare | |

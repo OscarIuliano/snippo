@@ -1,6 +1,18 @@
 import { Hono } from "hono";
 import { v7 as uuidv7 } from "uuid";
-import { and, createDb, eq, flowVersions, projectDomains, projects, submissions, widgets } from "@snippo/db";
+import {
+  and,
+  createDb,
+  eq,
+  flowVersions,
+  projectDomains,
+  projects,
+  sql,
+  submissions,
+  widgetDailyStats,
+  widgetStepStats,
+  widgets,
+} from "@snippo/db";
 import {
   addDays,
   daysBetween,
@@ -8,6 +20,7 @@ import {
   isIsoDate,
   submissionInputSchema,
   validateAnswer,
+  widgetEventsSchema,
   type FlowDefinition,
   type WidgetAvailability,
   type WidgetConfig,
@@ -74,6 +87,59 @@ widgetRoutes.get("/config", async (c) => {
   c.header("Cache-Control", "public, max-age=60");
   c.header("Vary", "Origin");
   return c.json(config);
+});
+
+/**
+ * Usage events for the statistics: chat opened, first answer, question reached.
+ * Sent as text/plain (a "simple" CORS request, no preflight) with fetch keepalive.
+ */
+widgetRoutes.post("/events", async (c) => {
+  const key = c.req.query("key");
+  if (!key) return problem(c, 400, "Parametro key mancante");
+
+  const { db, widget, allowed } = await loadWidgetForOrigin(c, key);
+  if (!widget) return problem(c, 404, "Widget non trovato");
+  if (!allowed) return problem(c, 403, "Dominio non autorizzato per questo widget");
+
+  const ip = c.req.header("CF-Connecting-IP");
+  if (ip && c.env.EVENTS_LIMITER && !(await c.env.EVENTS_LIMITER.limit({ key: `${widget.id}:${ip}` })).success) {
+    return problem(c, 429, "Troppi eventi");
+  }
+
+  let body: unknown = null;
+  try {
+    body = JSON.parse(await c.req.text());
+  } catch {
+    // handled below
+  }
+  const parsed = widgetEventsSchema.safeParse(body);
+  if (!parsed.success) return problem(c, 422, "Eventi non validi");
+
+  const project = await db.query.projects.findFirst({ where: eq(projects.id, widget.projectId), columns: { timezone: true } });
+  const date = nowIn(project?.timezone ?? "Europe/Rome").date;
+  const opens = parsed.data.events.filter((e) => e.type === "opened").length;
+  const starts = parsed.data.events.filter((e) => e.type === "started").length;
+  const steps = [...new Set(parsed.data.events.flatMap((e) => (e.type === "step" ? [e.stepKey] : [])))];
+
+  await db.batch([
+    db
+      .insert(widgetDailyStats)
+      .values({ widgetId: widget.id, date, opens, starts })
+      .onConflictDoUpdate({
+        target: [widgetDailyStats.widgetId, widgetDailyStats.date],
+        set: { opens: sql`${widgetDailyStats.opens} + excluded.opens`, starts: sql`${widgetDailyStats.starts} + excluded.starts` },
+      }),
+    ...steps.map((stepKey) =>
+      db
+        .insert(widgetStepStats)
+        .values({ widgetId: widget.id, date, stepKey, reached: 1 })
+        .onConflictDoUpdate({
+          target: [widgetStepStats.widgetId, widgetStepStats.date, widgetStepStats.stepKey],
+          set: { reached: sql`${widgetStepStats.reached} + 1` },
+        }),
+    ),
+  ]);
+  return c.body(null, 204);
 });
 
 /** Bookable times per day, from `from` (default: today) for up to 62 days (default: 31). */

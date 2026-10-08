@@ -10,6 +10,7 @@ import { InboxPage } from "./pages/InboxPage";
 import { InstallPage } from "./pages/InstallPage";
 import { NewProjectPage } from "./pages/NewProjectPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import { StatsPage } from "./pages/StatsPage";
 import { WidgetPage } from "./pages/WidgetPage";
 
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({ component: Outlet });
@@ -68,6 +69,13 @@ const availabilityRoute = createRoute({
     return <AvailabilityPage projectId={availabilityRoute.useParams().projectId} />;
   },
 });
+const statsRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "/statistiche",
+  component: function Stats() {
+    return <StatsPage projectId={statsRoute.useParams().projectId} />;
+  },
+});
 const widgetRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "/widget",
@@ -93,7 +101,7 @@ const installRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   loginRoute,
   signupRoute,
-  appRoute.addChildren([homeRoute, newProjectRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, widgetRoute, notificationsRoute, installRoute])]),
+  appRoute.addChildren([homeRoute, newProjectRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, statsRoute, widgetRoute, notificationsRoute, installRoute])]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {

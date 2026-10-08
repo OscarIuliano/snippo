@@ -13,7 +13,10 @@
     "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
     "CHALLENGE_URL": "http://localhost:5173/challenge.html"
   },
-  "ratelimits": [{ "name": "SUBMIT_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }],
+  "ratelimits": [
+    { "name": "SUBMIT_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
+    { "name": "EVENTS_LIMITER", "namespace_id": "1003", "simple": { "limit": 60, "period": 60 } }
+  ],
   "queues": {
     "producers": [{ "binding": "NOTIFICATIONS", "queue": "snippo-notifications-dev" }],
     "consumers": [
@@ -46,7 +49,10 @@
         "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
         "CHALLENGE_URL": "https://snippo-cdn-staging.oiuliano90.workers.dev/v1/challenge.html"
       },
-      "ratelimits": [{ "name": "SUBMIT_LIMITER", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } }],
+      "ratelimits": [
+        { "name": "SUBMIT_LIMITER", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
+        { "name": "EVENTS_LIMITER", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } }
+      ],
       "d1_databases": [
         {
           "binding": "DB",

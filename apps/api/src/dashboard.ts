@@ -18,7 +18,10 @@ import {
   organizations,
   projectDomains,
   projects,
+  sql,
   submissions,
+  widgetDailyStats,
+  widgetStepStats,
   widgets,
   type Db,
 } from "@snippo/db";
@@ -41,6 +44,7 @@ import {
   type ChannelRow,
   type DeliveryRow,
   type MeResponse,
+  type ProjectStats,
   type ProjectDetail,
   type SubmissionRow,
   type SubmissionStatus,
@@ -48,7 +52,7 @@ import {
   type TemplateId,
 } from "@snippo/shared";
 import type { z } from "zod";
-import { slotSteps } from "./availability";
+import { nowIn, slotSteps } from "./availability";
 import { createAuth } from "./auth";
 import type { AppEnv } from "./env";
 import { problem } from "./problem";
@@ -497,4 +501,65 @@ dashboardRoutes.delete("/projects/:id/closures/:closureId", async (c) => {
 
   await c.var.db.delete(closures).where(and(eq(closures.id, c.req.param("closureId")), eq(closures.projectId, project.id)));
   return c.body(null, 204);
+});
+
+/** Usage over the last `days` days (7 to 90, default 30), in the project's timezone. */
+dashboardRoutes.get("/projects/:id/stats", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+  const days = Math.min(Math.max(Number(c.req.query("days")) || 30, 7), 90);
+
+  const { db } = c.var;
+  const to = nowIn(project.timezone).date;
+  const from = addDays(to, -(days - 1));
+  const widget = await projectWidget(db, project.id);
+  if (!widget) return problem(c, 404, "Widget non trovato");
+
+  const [dailyRows, stepRows, submissionRows, flowVersion] = await Promise.all([
+    db.query.widgetDailyStats.findMany({
+      where: and(eq(widgetDailyStats.widgetId, widget.id), gte(widgetDailyStats.date, from)),
+    }),
+    db
+      .select({ stepKey: widgetStepStats.stepKey, reached: sql<number>`sum(${widgetStepStats.reached})` })
+      .from(widgetStepStats)
+      .where(and(eq(widgetStepStats.widgetId, widget.id), gte(widgetStepStats.date, from)))
+      .groupBy(widgetStepStats.stepKey),
+    // created_at is UTC: one extra day covers the timezone offset, the bucketing below is exact.
+    db
+      .select({ createdAt: submissions.createdAt, status: submissions.status })
+      .from(submissions)
+      .where(and(eq(submissions.projectId, project.id), gte(submissions.createdAt, addDays(from, -1)))),
+    widget.activeFlowVersionId
+      ? db.query.flowVersions.findFirst({ where: eq(flowVersions.id, widget.activeFlowVersionId) })
+      : undefined,
+  ]);
+
+  const daily = new Map<string, { opens: number; starts: number; submissions: number }>();
+  for (let d = from; d <= to; d = addDays(d, 1)) daily.set(d, { opens: 0, starts: 0, submissions: 0 });
+  for (const row of dailyRows) {
+    const day = daily.get(row.date);
+    if (day) Object.assign(day, { opens: row.opens, starts: row.starts });
+  }
+  let confirmed = 0;
+  for (const row of submissionRows) {
+    const day = daily.get(nowIn(project.timezone, new Date(row.createdAt)).date);
+    if (!day) continue;
+    day.submissions++;
+    if (row.status === "confirmed" || row.status === "completed") confirmed++;
+  }
+
+  const series = [...daily.entries()].map(([date, values]) => ({ date, ...values }));
+  const sum = (key: "opens" | "starts" | "submissions") => series.reduce((total, d) => total + d[key], 0);
+  const flow = flowVersion ? flowDefinitionSchema.parse(flowVersion.definition) : null;
+
+  const body: ProjectStats = {
+    from,
+    to,
+    totals: { opens: sum("opens"), starts: sum("starts"), submissions: sum("submissions"), confirmed },
+    daily: series,
+    steps: (flow?.steps ?? [])
+      .filter((step) => step.type !== "message")
+      .map((step) => ({ key: step.key, prompt: step.prompt, reached: Number(stepRows.find((r) => r.stepKey === step.key)?.reached ?? 0) })),
+  };
+  return c.json(body);
 });

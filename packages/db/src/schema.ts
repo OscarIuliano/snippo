@@ -241,3 +241,33 @@ export const closures = sqliteTable(
   },
   (t) => [index("closures_project_idx").on(t.projectId, t.dateTo)],
 );
+
+// --- Widget statistics ---
+// Daily counters, one row per widget and day (project timezone): a few rows, cheap to read.
+// Each visitor session counts once per counter (the widget dedupes with sessionStorage).
+
+export const widgetDailyStats = sqliteTable(
+  "widget_daily_stats",
+  {
+    widgetId: text("widget_id").notNull().references(() => widgets.id, { onDelete: "cascade" }),
+    /** "YYYY-MM-DD" */
+    date: text("date").notNull(),
+    /** Sessions that opened the chat. */
+    opens: integer("opens").notNull().default(0),
+    /** Sessions that answered at least one question. */
+    starts: integer("starts").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.widgetId, t.date] })],
+);
+
+export const widgetStepStats = sqliteTable(
+  "widget_step_stats",
+  {
+    widgetId: text("widget_id").notNull().references(() => widgets.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    stepKey: text("step_key").notNull(),
+    /** Sessions that reached this question. */
+    reached: integer("reached").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.widgetId, t.date, t.stepKey] })],
+);

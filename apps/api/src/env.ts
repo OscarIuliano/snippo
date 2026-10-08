@@ -18,6 +18,8 @@ export interface Bindings {
   TURNSTILE_SECRET?: string;
   /** Submissions per widget and IP (Workers rate limiting binding). */
   SUBMIT_LIMITER?: RateLimit;
+  /** Usage events per widget and IP. */
+  EVENTS_LIMITER?: RateLimit;
 }
 
 export interface AppEnv {

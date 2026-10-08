@@ -6,12 +6,14 @@ import { validateAnswer } from "@snippo/shared/rules";
 import type { WidgetConfig } from "@snippo/shared/widget-api";
 import { ApiError, type Api } from "./api";
 import { Challenge } from "./Challenge";
+import type { Track } from "./track";
 
 interface Props {
   api: Api;
   config: WidgetConfig;
   onClose: () => void;
   onSubmitted: (id: string) => void;
+  track: Track;
 }
 
 type Phase = "steps" | "review" | "sending" | "done";
@@ -31,7 +33,7 @@ function dayLabel(date: string): string {
   return formatBooking(date);
 }
 
-export function Chat({ api, config, onClose, onSubmitted }: Props) {
+export function Chat({ api, config, onClose, onSubmitted, track }: Props) {
   const steps = config.flow.steps;
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -55,6 +57,11 @@ export function Chat({ api, config, onClose, onSubmitted }: Props) {
   useEffect(() => {
     if (phase === "steps" && current?.type === "message") next(index, answers);
   }, [index, phase]);
+
+  // Statistics: which questions visitors reach, to see where they drop off.
+  useEffect(() => {
+    if (phase === "steps" && current && current.type !== "message") track({ type: "step", stepKey: current.key });
+  }, [current, phase]);
 
   // Availability is loaded when the date is asked, for the party size given so far.
   useEffect(() => {
@@ -89,6 +96,7 @@ export function Chat({ api, config, onClose, onSubmitted }: Props) {
     const problem = validateAnswer(step, value);
     if (problem) return setError(problem);
     setError(null);
+    track({ type: "started" });
     const given = { ...answers, [step.key]: value.trim() };
     setAnswers(given);
     next(index, given);

@@ -5,7 +5,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./rules": "./src/rules.ts",
-    "./widget-api": "./src/widget-api.ts"
+    "./widget-api": "./src/widget-api.ts",
+    "./format": "./src/format.ts",
+    "./availability": "./src/availability.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

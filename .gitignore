@@ -14,3 +14,5 @@ coverage/
 !.vscode/extensions.json
 .wrangler/
 .dev.vars
+!apps/web/.env.development
+!apps/*/.env.staging

@@ -1,0 +1,211 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const appUrl = import.meta.env.PUBLIC_APP_URL ?? "https://app.snippo.io";
+const signupUrl = `${appUrl}/registrati`;
+const loginUrl = `${appUrl}/accedi`;
+
+// Demo widget: in development the widget dev server and the local API, in production the CDN.
+const demo = {
+  src: import.meta.env.PUBLIC_DEMO_WIDGET_SRC ?? "https://cdn.snippo.io/v1/snippo.js",
+  key: import.meta.env.PUBLIC_DEMO_WIDGET_KEY ?? "pk_dev_snippo",
+  api: import.meta.env.PUBLIC_DEMO_API_URL,
+};
+
+const steps = [
+  { title: "Scegli il template", text: "Ristorante, appuntamenti o richiesta informazioni: le domande giuste sono già pronte." },
+  { title: "Incolla una riga di codice", text: "Funziona su WordPress, Wix, Shopify o sul tuo sito su misura. Oppure lo mandi al tuo sviluppatore." },
+  { title: "Ricevi richieste complete", text: "Nome, telefono, giorno, orario, persone: tutto in ordine, con un avviso appena arriva." },
+];
+
+const sectors = [
+  { icon: "🍝", title: "Ristoranti", text: "Prenotazioni con giorno, orario e numero di persone. Allergie e richieste già nelle note." },
+  { icon: "💇", title: "Saloni e studi", text: "Appuntamenti per servizio e fascia oraria, senza telefonate avanti e indietro." },
+  { icon: "💬", title: "Attività e PMI", text: "Domande e preventivi con l'email per rispondere, invece di messaggi a metà." },
+];
+
+const plans = [
+  { name: "Free", price: "0 €", note: "per sempre", features: ["1 sito", "50 richieste al mese", "Avvisi via email", "Logo Snippo visibile"] },
+  { name: "Starter", price: "9 €", note: "al mese", features: ["1 sito", "500 richieste al mese", "Avvisi email a più destinatari", "Senza logo, export CSV"], featured: true },
+  { name: "Pro", price: "29 €", note: "al mese", features: ["5 siti", "3.000 richieste al mese", "WhatsApp e webhook (in arrivo)", "Team fino a 5 persone"] },
+  { name: "Agency", price: "79 €", note: "al mese", features: ["25 siti", "15.000 richieste al mese", "Gestione multi-cliente", "White label"] },
+];
+
+const faqs = [
+  { q: "Serve uno sviluppatore?", a: "No. Copi una riga di codice nelle impostazioni del sito (su WordPress, Wix o Shopify c'è un campo apposito). Se preferisci, dalla dashboard la mandi al tuo sviluppatore con un clic." },
+  { q: "Dove finiscono i dati dei miei clienti?", a: "In un database in Unione Europea. Il widget chiede il consenso privacy prima dell'invio e non usa cookie di tracciamento." },
+  { q: "Posso cambiare le domande?", a: "Sì: scegli il template più vicino alla tua attività e lo cambi quando vuoi. Le richieste già ricevute restano com'erano." },
+  { q: "Rallenta il mio sito?", a: "No. Il widget pesa circa 9 KB e si carica dopo la pagina, in modo isolato dal resto del sito." },
+  { q: "E WhatsApp?", a: "È in arrivo: riceverai le notifiche anche lì. Per ora gli avvisi arrivano via email." },
+];
+---
+
+<Layout title="Snippo · Prenotazioni e richieste dal tuo sito" description="Una chat guidata per il tuo sito che raccoglie prenotazioni e richieste complete. Si installa con una riga di codice. Dati in UE.">
+  <header class="sticky top-0 z-10 border-b border-stone-200/70 bg-white/85 backdrop-blur">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <a href="/" class="text-xl font-bold tracking-tight text-brand-700">snippo</a>
+      <nav class="hidden gap-6 text-sm text-stone-600 md:flex" aria-label="Sezioni">
+        <a href="#come-funziona" class="hover:text-stone-900">Come funziona</a>
+        <a href="#settori" class="hover:text-stone-900">Settori</a>
+        <a href="#prezzi" class="hover:text-stone-900">Prezzi</a>
+        <a href="#faq" class="hover:text-stone-900">FAQ</a>
+      </nav>
+      <div class="flex items-center gap-2 text-sm">
+        <a href={loginUrl} class="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Accedi</a>
+        <a href={signupUrl} class="rounded-lg bg-brand-700 px-3 py-2 font-medium text-white hover:bg-brand-800">Prova gratis</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-24">
+      <div>
+        <p class="inline-block rounded-full bg-brand-50 px-3 py-1 text-sm font-medium text-brand-800 ring-1 ring-brand-100">Per ristoranti, saloni, studi e PMI</p>
+        <h1 class="mt-5 text-4xl font-bold tracking-tight text-balance sm:text-5xl">Prenotazioni e richieste dal tuo sito, già complete.</h1>
+        <p class="mt-5 max-w-xl text-lg text-stone-600">
+          Snippo è una chat guidata che chiede al cliente tutto quello che ti serve: giorno, orario, persone, telefono. Tu ricevi la richiesta in ordine e confermi con un tocco.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={signupUrl} class="rounded-lg bg-brand-700 px-5 py-3 font-medium text-white hover:bg-brand-800">Crea il tuo widget gratis</a>
+          <button type="button" data-open-demo class="rounded-lg px-5 py-3 font-medium text-stone-800 ring-1 ring-stone-300 hover:bg-stone-50">Prova la demo</button>
+        </div>
+        <p class="mt-4 text-sm text-stone-500">Senza carta di credito · Online in 5 minuti · Dati in UE</p>
+      </div>
+
+      <div class="relative mx-auto w-full max-w-sm" aria-hidden="true">
+        <div class="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-stone-200">
+          <div class="bg-brand-700 px-4 py-3 text-sm font-semibold text-white">Trattoria da Mario</div>
+          <div class="space-y-2 bg-stone-50 p-4 text-sm">
+            <p class="w-fit rounded-2xl bg-white px-3 py-2 ring-1 ring-stone-200">Ciao! Vuoi prenotare un tavolo?</p>
+            <p class="w-fit rounded-2xl bg-white px-3 py-2 ring-1 ring-stone-200">Per che giorno?</p>
+            <p class="ml-auto w-fit rounded-2xl bg-brand-700 px-3 py-2 text-white">Sabato 12</p>
+            <p class="w-fit rounded-2xl bg-white px-3 py-2 ring-1 ring-stone-200">A che ora?</p>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <span class="rounded-full px-3 py-1 text-brand-700 ring-1 ring-brand-700">19:30</span>
+              <span class="rounded-full bg-brand-700 px-3 py-1 text-white">20:30</span>
+              <span class="rounded-full px-3 py-1 text-brand-700 ring-1 ring-brand-700">21:30</span>
+            </div>
+          </div>
+        </div>
+        <div class="absolute -bottom-6 -left-6 hidden w-60 rounded-xl bg-white p-4 text-sm shadow-xl ring-1 ring-stone-200 sm:block">
+          <p class="font-semibold">Nuova prenotazione</p>
+          <p class="mt-1 text-stone-600">Anna · 4 persone · sab 12, 20:30</p>
+          <div class="mt-3 flex gap-2">
+            <span class="rounded-md bg-brand-700 px-2.5 py-1 text-xs font-medium text-white">Conferma</span>
+            <span class="rounded-md px-2.5 py-1 text-xs font-medium text-stone-600 ring-1 ring-stone-300">Rifiuta</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="come-funziona" class="bg-stone-50 py-16 sm:py-24">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <h2 class="text-3xl font-bold tracking-tight">Online in tre passi</h2>
+        <ol class="mt-10 grid gap-6 md:grid-cols-3">
+          {steps.map((step, i) => (
+            <li class="rounded-xl bg-white p-6 ring-1 ring-stone-200">
+              <span class="grid size-8 place-items-center rounded-full bg-brand-50 text-sm font-semibold text-brand-800">{i + 1}</span>
+              <h3 class="mt-4 font-semibold">{step.title}</h3>
+              <p class="mt-2 text-sm text-stone-600">{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section id="settori" class="py-16 sm:py-24">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <h2 class="text-3xl font-bold tracking-tight">Le domande giuste per la tua attività</h2>
+        <p class="mt-3 max-w-2xl text-stone-600">Ogni template nasce per un settore. Niente messaggi a metà da richiamare: arrivano solo richieste che puoi confermare subito.</p>
+        <div class="mt-10 grid gap-6 md:grid-cols-3">
+          {sectors.map((s) => (
+            <div class="rounded-xl p-6 ring-1 ring-stone-200">
+              <span class="text-3xl">{s.icon}</span>
+              <h3 class="mt-4 font-semibold">{s.title}</h3>
+              <p class="mt-2 text-sm text-stone-600">{s.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-stone-900 py-16 text-white sm:py-24">
+      <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
+        <div>
+          <h2 class="text-3xl font-bold tracking-tight">Per gli sviluppatori: una riga</h2>
+          <p class="mt-4 text-stone-300">
+            Niente backend, database o notifiche da costruire. Il widget gira isolato in uno Shadow DOM, pesa circa 9 KB e non tocca il CSS del sito.
+            Un account gestisce più clienti.
+          </p>
+        </div>
+        <pre class="overflow-x-auto rounded-xl bg-stone-800 p-5 text-sm leading-relaxed text-stone-100 ring-1 ring-stone-700"><code>{`<script src="https://cdn.snippo.io/v1/snippo.js"
+        data-key="pk_live_…" async></script>`}</code></pre>
+      </div>
+    </section>
+
+    <section id="prezzi" class="py-16 sm:py-24">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <h2 class="text-3xl font-bold tracking-tight">Prezzi semplici</h2>
+        <p class="mt-3 text-stone-600">Parti gratis, passa a un piano quando le richieste crescono. Disdici quando vuoi.</p>
+        <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {plans.map((plan) => (
+            <div class:list={["flex flex-col rounded-xl p-6", plan.featured ? "bg-brand-50 ring-2 ring-brand-600" : "ring-1 ring-stone-200"]}>
+              <h3 class="font-semibold">{plan.name}</h3>
+              <p class="mt-3"><span class="text-3xl font-bold">{plan.price}</span> <span class="text-sm text-stone-500">{plan.note}</span></p>
+              <ul class="mt-5 flex-1 space-y-2 text-sm text-stone-700">
+                {plan.features.map((f) => <li class="flex gap-2"><span class="text-brand-700">✓</span>{f}</li>)}
+              </ul>
+              <a href={signupUrl} class:list={["mt-6 rounded-lg px-4 py-2 text-center text-sm font-medium", plan.featured ? "bg-brand-700 text-white hover:bg-brand-800" : "ring-1 ring-stone-300 hover:bg-stone-50"]}>
+                Inizia
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="bg-stone-50 py-16 sm:py-24">
+      <div class="mx-auto max-w-3xl px-4 sm:px-6">
+        <h2 class="text-3xl font-bold tracking-tight">Domande frequenti</h2>
+        <div class="mt-8 divide-y divide-stone-200 rounded-xl bg-white ring-1 ring-stone-200">
+          {faqs.map((f) => (
+            <details class="group p-5">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
+                {f.q}<span class="text-stone-400 transition group-open:rotate-45">+</span>
+              </summary>
+              <p class="mt-3 text-sm text-stone-600">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="py-16 sm:py-24">
+      <div class="mx-auto max-w-3xl px-4 text-center sm:px-6">
+        <h2 class="text-3xl font-bold tracking-tight">Il tuo widget è a cinque minuti da qui</h2>
+        <p class="mt-3 text-stone-600">Crea l'account, scegli il template, incolla il codice.</p>
+        <a href={signupUrl} class="mt-8 inline-block rounded-lg bg-brand-700 px-6 py-3 font-medium text-white hover:bg-brand-800">Crea il tuo widget gratis</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-stone-200">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-stone-500 sm:px-6">
+      <p>© {new Date().getFullYear()} Snippo · Dati ospitati in Unione Europea</p>
+      <a href={loginUrl} class="hover:text-stone-800">Area clienti</a>
+    </div>
+  </footer>
+
+  <script is:inline type="module" src={demo.src} data-key={demo.key} data-api={demo.api}></script>
+  <script>
+    document.querySelectorAll("[data-open-demo]").forEach((button) =>
+      button.addEventListener("click", () => window.Snippo?.open()),
+    );
+
+    declare global {
+      interface Window {
+        Snippo?: { open(): void };
+      }
+    }
+  </script>
+</Layout>

@@ -1,0 +1,500 @@
+import { Hono, type Context } from "hono";
+import { v7 as uuidv7 } from "uuid";
+import {
+  and,
+  businessHours,
+  closures,
+  count,
+  gte,
+  createDb,
+  desc,
+  eq,
+  flowVersions,
+  lt,
+  memberships,
+  ne,
+  notificationChannels,
+  notificationDeliveries,
+  organizations,
+  projectDomains,
+  projects,
+  submissions,
+  widgets,
+  type Db,
+} from "@snippo/db";
+import {
+  addClosureSchema,
+  addDays,
+  addDomainSchema,
+  availabilitySettingsSchema,
+  changeTemplateSchema,
+  createChannelSchema,
+  createProjectSchema,
+  daysBetween,
+  flowDefinitionSchema,
+  isIsoDate,
+  submissionStatuses,
+  templates,
+  updateSubmissionSchema,
+  updateWidgetSchema,
+  type AvailabilitySettings,
+  type ChannelRow,
+  type DeliveryRow,
+  type MeResponse,
+  type ProjectDetail,
+  type SubmissionRow,
+  type SubmissionStatus,
+  type SubmissionsPage,
+  type TemplateId,
+} from "@snippo/shared";
+import type { z } from "zod";
+import { slotSteps } from "./availability";
+import { createAuth } from "./auth";
+import type { AppEnv } from "./env";
+import { problem } from "./problem";
+
+interface DashboardEnv extends AppEnv {
+  Variables: {
+    db: Db;
+    user: { id: string; name: string; email: string };
+    organizationId: string;
+  };
+}
+
+type DashboardContext = Context<DashboardEnv>;
+
+export const dashboardRoutes = new Hono<DashboardEnv>();
+
+// Every route below needs a session. Tenant isolation: all queries are scoped to
+// c.var.organizationId, never to an id coming from the client alone.
+dashboardRoutes.use("*", async (c, next) => {
+  const session = await createAuth(c.env).api.getSession({ headers: c.req.raw.headers });
+  if (!session) return problem(c, 401, "Accesso richiesto");
+
+  const db = createDb(c.env.DB);
+  const membership = await db.query.memberships.findFirst({ where: eq(memberships.userId, session.user.id) });
+  if (!membership) return problem(c, 403, "Nessuna organizzazione associata");
+
+  c.set("db", db);
+  c.set("user", { id: session.user.id, name: session.user.name, email: session.user.email });
+  c.set("organizationId", membership.organizationId);
+  await next();
+});
+
+async function parseBody<T extends z.ZodTypeAny>(c: DashboardContext, schema: T): Promise<z.infer<T> | null> {
+  const parsed = schema.safeParse(await c.req.json().catch(() => null));
+  return parsed.success ? parsed.data : null;
+}
+
+/** Loads a project only if it belongs to the caller's organization. */
+async function ownedProject(c: DashboardContext, projectId: string) {
+  return c.var.db.query.projects.findFirst({
+    where: and(eq(projects.id, projectId), eq(projects.organizationId, c.var.organizationId)),
+  });
+}
+
+async function projectWidget(db: Db, projectId: string) {
+  return db.query.widgets.findFirst({ where: eq(widgets.projectId, projectId) });
+}
+
+function newPublicKey() {
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return `pk_live_${[...bytes].map((b) => b.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** Publishes the template as a new flow version and makes it the widget's active flow. */
+async function publishTemplate(db: Db, widgetId: string, template: TemplateId) {
+  const last = await db.query.flowVersions.findFirst({
+    where: eq(flowVersions.widgetId, widgetId),
+    orderBy: desc(flowVersions.version),
+  });
+  const id = uuidv7();
+  await db.batch([
+    db.insert(flowVersions).values({
+      id,
+      widgetId,
+      version: (last?.version ?? 0) + 1,
+      template,
+      definition: flowDefinitionSchema.parse(templates[template]),
+      publishedAt: new Date().toISOString(),
+    }),
+    db.update(widgets).set({ activeFlowVersionId: id, updatedAt: new Date().toISOString() }).where(eq(widgets.id, widgetId)),
+  ]);
+}
+
+dashboardRoutes.get("/me", async (c) => {
+  const { db, user, organizationId } = c.var;
+  const [organization, projectRows, newCounts] = await Promise.all([
+    db.query.organizations.findFirst({ where: eq(organizations.id, organizationId) }),
+    db.query.projects.findMany({ where: eq(projects.organizationId, organizationId), orderBy: projects.createdAt }),
+    db
+      .select({ projectId: submissions.projectId, n: count() })
+      .from(submissions)
+      .innerJoin(projects, eq(projects.id, submissions.projectId))
+      .where(and(eq(projects.organizationId, organizationId), eq(submissions.status, "new")))
+      .groupBy(submissions.projectId),
+  ]);
+  const body: MeResponse = {
+    user,
+    organization: { id: organizationId, name: organization?.name ?? "" },
+    projects: projectRows.map((p) => ({
+      id: p.id,
+      name: p.name,
+      industry: p.industry,
+      newSubmissions: newCounts.find((n) => n.projectId === p.id)?.n ?? 0,
+    })),
+  };
+  return c.json(body);
+});
+
+dashboardRoutes.post("/projects", async (c) => {
+  const input = await parseBody(c, createProjectSchema);
+  if (!input) return problem(c, 422, "Dati del progetto non validi");
+
+  const { db, organizationId, user } = c.var;
+  const projectId = uuidv7();
+  const widgetId = uuidv7();
+  await db.batch([
+    db.insert(projects).values({ id: projectId, organizationId, name: input.name, industry: input.template }),
+    db.insert(projectDomains).values({ id: uuidv7(), projectId, domain: input.domain }),
+    // New requests reach whoever created the project from day one.
+    db.insert(notificationChannels).values({ id: uuidv7(), projectId, type: "email", target: user.email.toLowerCase() }),
+    db.insert(widgets).values({
+      id: widgetId,
+      projectId,
+      type: "chat",
+      name: "Chat",
+      publicKey: newPublicKey(),
+      theme: { title: input.name, primaryColor: "#c2410c", position: "right" },
+    }),
+  ]);
+  await publishTemplate(db, widgetId, input.template);
+  return c.json({ id: projectId }, 201);
+});
+
+dashboardRoutes.get("/projects/:id", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const { db } = c.var;
+  const widget = await projectWidget(db, project.id);
+  if (!widget) return problem(c, 404, "Widget non trovato");
+  const [flow, domains] = await Promise.all([
+    widget.activeFlowVersionId
+      ? db.query.flowVersions.findFirst({ where: eq(flowVersions.id, widget.activeFlowVersionId) })
+      : undefined,
+    db.query.projectDomains.findMany({ where: eq(projectDomains.projectId, project.id), orderBy: projectDomains.createdAt }),
+  ]);
+
+  const body: ProjectDetail = {
+    id: project.id,
+    name: project.name,
+    industry: project.industry,
+    widget: {
+      id: widget.id,
+      publicKey: widget.publicKey,
+      theme: updateWidgetSchema.parse(widget.theme),
+      template: (flow?.template as TemplateId | null) ?? null,
+      flow: flow ? flowDefinitionSchema.parse(flow.definition) : null,
+    },
+    domains: domains.map((d) => ({ id: d.id, domain: d.domain })),
+  };
+  return c.json(body);
+});
+
+dashboardRoutes.patch("/projects/:id/widget", async (c) => {
+  const input = await parseBody(c, updateWidgetSchema);
+  if (!input) return problem(c, 422, "Impostazioni non valide");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  await c.var.db
+    .update(widgets)
+    .set({ theme: input, updatedAt: new Date().toISOString() })
+    .where(eq(widgets.projectId, project.id));
+  return c.body(null, 204);
+});
+
+dashboardRoutes.put("/projects/:id/template", async (c) => {
+  const input = await parseBody(c, changeTemplateSchema);
+  if (!input) return problem(c, 422, "Template non valido");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+  const widget = await projectWidget(c.var.db, project.id);
+  if (!widget) return problem(c, 404, "Widget non trovato");
+
+  await publishTemplate(c.var.db, widget.id, input.template);
+  return c.body(null, 204);
+});
+
+dashboardRoutes.post("/projects/:id/domains", async (c) => {
+  const input = await parseBody(c, addDomainSchema);
+  if (!input) return problem(c, 422, "Dominio non valido");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const id = uuidv7();
+  await c.var.db.insert(projectDomains).values({ id, projectId: project.id, domain: input.domain }).onConflictDoNothing();
+  return c.json({ id, domain: input.domain }, 201);
+});
+
+dashboardRoutes.delete("/projects/:id/domains/:domainId", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  await c.var.db
+    .delete(projectDomains)
+    .where(and(eq(projectDomains.id, c.req.param("domainId")), eq(projectDomains.projectId, project.id)));
+  return c.body(null, 204);
+});
+
+const toSubmissionRow = (s: typeof submissions.$inferSelect): SubmissionRow => ({
+  id: s.id,
+  status: s.status,
+  answers: s.answers as Record<string, string>,
+  contactName: s.contactName,
+  contactPhone: s.contactPhone,
+  contactEmail: s.contactEmail,
+  bookingAt: s.bookingAt,
+  partySize: s.partySize,
+  createdAt: s.createdAt,
+});
+
+dashboardRoutes.get("/projects/:id/submissions", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const { db } = c.var;
+  const status = c.req.query("status") as SubmissionStatus | undefined;
+  if (status && !submissionStatuses.includes(status)) return problem(c, 422, "Stato non valido");
+  const cursor = c.req.query("cursor");
+  const limit = 50;
+
+  const [rows, countRows] = await Promise.all([
+    db.query.submissions.findMany({
+      where: and(
+        eq(submissions.projectId, project.id),
+        status ? eq(submissions.status, status) : undefined,
+        // UUID v7 ids are time-ordered: the id doubles as the pagination cursor.
+        cursor ? lt(submissions.id, cursor) : undefined,
+      ),
+      orderBy: desc(submissions.id),
+      limit: limit + 1,
+    }),
+    db
+      .select({ status: submissions.status, n: count() })
+      .from(submissions)
+      .where(eq(submissions.projectId, project.id))
+      .groupBy(submissions.status),
+  ]);
+
+  const items = rows.slice(0, limit).map(toSubmissionRow);
+  const body: SubmissionsPage = {
+    items,
+    counts: Object.fromEntries(submissionStatuses.map((st) => [st, countRows.find((r) => r.status === st)?.n ?? 0])) as SubmissionsPage["counts"],
+    nextCursor: rows.length > limit ? items.at(-1)!.id : null,
+  };
+  return c.json(body);
+});
+
+/** Requests with a booking date in [from, to], both "YYYY-MM-DD" inclusive. Rejected ones are left out. */
+dashboardRoutes.get("/projects/:id/calendar", async (c) => {
+  const from = c.req.query("from") ?? "";
+  const to = c.req.query("to") ?? "";
+  if (!isIsoDate(from) || !isIsoDate(to) || daysBetween(from, to) < 0 || daysBetween(from, to) > 62) {
+    return problem(c, 422, "Intervallo di date non valido (massimo 62 giorni)");
+  }
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  // booking_at is "YYYY-MM-DDTHH:MM" local time: string comparison orders it correctly.
+  const rows = await c.var.db.query.submissions.findMany({
+    where: and(
+      eq(submissions.projectId, project.id),
+      gte(submissions.bookingAt, from),
+      lt(submissions.bookingAt, addDays(to, 1)),
+      ne(submissions.status, "rejected"),
+    ),
+    orderBy: submissions.bookingAt,
+    limit: 2000,
+  });
+  return c.json(rows.map(toSubmissionRow));
+});
+
+dashboardRoutes.patch("/submissions/:id", async (c) => {
+  const input = await parseBody(c, updateSubmissionSchema);
+  if (!input) return problem(c, 422, "Stato non valido");
+
+  const { db, organizationId } = c.var;
+  const submission = await db
+    .select({ id: submissions.id })
+    .from(submissions)
+    .innerJoin(projects, eq(projects.id, submissions.projectId))
+    .where(and(eq(submissions.id, c.req.param("id")), eq(projects.organizationId, organizationId)))
+    .get();
+  if (!submission) return problem(c, 404, "Richiesta non trovata");
+
+  await db
+    .update(submissions)
+    .set({ status: input.status, updatedAt: new Date().toISOString() })
+    .where(eq(submissions.id, submission.id));
+  return c.body(null, 204);
+});
+
+const toChannelRow = (ch: typeof notificationChannels.$inferSelect): ChannelRow => ({
+  id: ch.id,
+  type: ch.type,
+  target: ch.target,
+  isActive: ch.isActive,
+});
+
+/** Loads a channel only if it belongs to a project of the caller's organization. */
+async function ownedChannel(c: DashboardContext, projectId: string, channelId: string) {
+  const project = await ownedProject(c, projectId);
+  if (!project) return null;
+  const channel = await c.var.db.query.notificationChannels.findFirst({
+    where: and(eq(notificationChannels.id, channelId), eq(notificationChannels.projectId, project.id)),
+  });
+  return channel ? { project, channel } : null;
+}
+
+dashboardRoutes.get("/projects/:id/channels", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const channels = await c.var.db.query.notificationChannels.findMany({
+    where: eq(notificationChannels.projectId, project.id),
+    orderBy: notificationChannels.createdAt,
+  });
+  return c.json(channels.map(toChannelRow));
+});
+
+dashboardRoutes.post("/projects/:id/channels", async (c) => {
+  const input = await parseBody(c, createChannelSchema);
+  if (!input) return problem(c, 422, "Indirizzo o numero non valido");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const channel = { id: uuidv7(), projectId: project.id, type: input.type, target: input.target };
+  const inserted = await c.var.db.insert(notificationChannels).values(channel).onConflictDoNothing().returning();
+  if (inserted.length === 0) return problem(c, 409, "Questo destinatario c'è già");
+  return c.json(toChannelRow(inserted[0]!), 201);
+});
+
+dashboardRoutes.patch("/projects/:id/channels/:channelId", async (c) => {
+  const input = (await c.req.json().catch(() => null)) as { isActive?: unknown } | null;
+  if (typeof input?.isActive !== "boolean") return problem(c, 422, "Valore non valido");
+  const owned = await ownedChannel(c, c.req.param("id"), c.req.param("channelId"));
+  if (!owned) return problem(c, 404, "Canale non trovato");
+
+  await c.var.db
+    .update(notificationChannels)
+    .set({ isActive: input.isActive, updatedAt: new Date().toISOString() })
+    .where(eq(notificationChannels.id, owned.channel.id));
+  return c.body(null, 204);
+});
+
+dashboardRoutes.delete("/projects/:id/channels/:channelId", async (c) => {
+  const owned = await ownedChannel(c, c.req.param("id"), c.req.param("channelId"));
+  if (!owned) return problem(c, 404, "Canale non trovato");
+
+  await c.var.db.delete(notificationChannels).where(eq(notificationChannels.id, owned.channel.id));
+  return c.body(null, 204);
+});
+
+dashboardRoutes.post("/projects/:id/channels/:channelId/test", async (c) => {
+  const owned = await ownedChannel(c, c.req.param("id"), c.req.param("channelId"));
+  if (!owned) return problem(c, 404, "Canale non trovato");
+
+  const deliveryId = uuidv7();
+  await c.var.db.insert(notificationDeliveries).values({ id: deliveryId, channelId: owned.channel.id });
+  await c.env.NOTIFICATIONS.send({ kind: "test", deliveryId });
+  return c.json({ deliveryId }, 202);
+});
+
+dashboardRoutes.get("/projects/:id/deliveries", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const rows = await c.var.db
+    .select({ delivery: notificationDeliveries, channel: notificationChannels, contactName: submissions.contactName })
+    .from(notificationDeliveries)
+    .innerJoin(notificationChannels, eq(notificationChannels.id, notificationDeliveries.channelId))
+    .leftJoin(submissions, eq(submissions.id, notificationDeliveries.submissionId))
+    .where(eq(notificationChannels.projectId, project.id))
+    .orderBy(desc(notificationDeliveries.id))
+    .limit(20);
+
+  const body: DeliveryRow[] = rows.map(({ delivery, channel, contactName }) => ({
+    id: delivery.id,
+    channelType: channel.type,
+    target: channel.target,
+    submissionId: delivery.submissionId,
+    contactName,
+    status: delivery.status,
+    attempts: delivery.attempts,
+    lastError: delivery.lastError,
+    createdAt: delivery.createdAt,
+  }));
+  return c.json(body);
+});
+
+dashboardRoutes.get("/projects/:id/availability", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const { db } = c.var;
+  const widget = await projectWidget(db, project.id);
+  const flowVersion = widget?.activeFlowVersionId
+    ? await db.query.flowVersions.findFirst({ where: eq(flowVersions.id, widget.activeFlowVersionId) })
+    : undefined;
+  const flow = flowVersion ? flowDefinitionSchema.parse(flowVersion.definition) : null;
+  const [hours, closed] = await Promise.all([
+    db.query.businessHours.findMany({ where: eq(businessHours.projectId, project.id), orderBy: [businessHours.weekday, businessHours.opensAt] }),
+    db.query.closures.findMany({ where: eq(closures.projectId, project.id), orderBy: closures.dateFrom }),
+  ]);
+
+  const body: AvailabilitySettings = {
+    hours: hours.map(({ weekday, opensAt, closesAt }) => ({ weekday, opensAt, closesAt })),
+    slotCapacity: project.slotCapacity,
+    closures: closed.map(({ id, dateFrom, dateTo, reason }) => ({ id, dateFrom, dateTo, reason })),
+    capacityUnit: flow?.steps.some((s) => s.key === "party_size") ? "people" : "bookings",
+    timeOptions: (flow && slotSteps(flow)?.timeOptions) ?? [],
+  };
+  return c.json(body);
+});
+
+/** Replaces the weekly opening hours and the slot capacity. */
+dashboardRoutes.put("/projects/:id/availability", async (c) => {
+  const input = await parseBody(c, availabilitySettingsSchema);
+  if (!input) return problem(c, 422, "Orari non validi: controlla che ogni apertura preceda la chiusura");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const { db } = c.var;
+  await db.batch([
+    db.delete(businessHours).where(eq(businessHours.projectId, project.id)),
+    ...input.hours.map((h) => db.insert(businessHours).values({ id: uuidv7(), projectId: project.id, ...h })),
+    db.update(projects).set({ slotCapacity: input.slotCapacity, updatedAt: new Date().toISOString() }).where(eq(projects.id, project.id)),
+  ]);
+  return c.body(null, 204);
+});
+
+dashboardRoutes.post("/projects/:id/closures", async (c) => {
+  const input = await parseBody(c, addClosureSchema);
+  if (!input) return problem(c, 422, "Date di chiusura non valide");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const id = uuidv7();
+  await c.var.db.insert(closures).values({ id, projectId: project.id, dateFrom: input.dateFrom, dateTo: input.dateTo, reason: input.reason || null });
+  return c.json({ id }, 201);
+});
+
+dashboardRoutes.delete("/projects/:id/closures/:closureId", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  await c.var.db.delete(closures).where(and(eq(closures.id, c.req.param("closureId")), eq(closures.projectId, project.id)));
+  return c.body(null, 204);
+});

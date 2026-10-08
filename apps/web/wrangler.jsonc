@@ -1,0 +1,10 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  // Static site only: the Astro build.
+  "name": "snippo-web",
+  "compatibility_date": "2025-09-01",
+  "assets": { "directory": "./dist" },
+  "env": {
+    "staging": { "name": "snippo-web-staging" }
+  }
+}

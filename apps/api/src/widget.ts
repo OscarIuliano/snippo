@@ -1,14 +1,19 @@
-import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { v7 as uuidv7 } from "uuid";
-import { createDb, flowVersions, projectDomains, projects, submissions, widgets } from "@snippo/db";
+import { and, createDb, eq, flowVersions, projectDomains, projects, submissions, widgets } from "@snippo/db";
 import {
+  addDays,
+  daysBetween,
   flowDefinitionSchema,
+  isIsoDate,
   submissionInputSchema,
   validateAnswer,
   type FlowDefinition,
+  type WidgetAvailability,
   type WidgetConfig,
 } from "@snippo/shared";
+import { availableTimes, loadRules, loadUsage, nowIn, slotSteps } from "./availability";
+import { verifyTurnstile } from "./turnstile";
 import type { AppEnv } from "./env";
 import { problem } from "./problem";
 
@@ -62,10 +67,44 @@ widgetRoutes.get("/config", async (c) => {
     theme: widget.theme as WidgetConfig["theme"],
     flowVersionId: flowVersion.id,
     flow: flowDefinitionSchema.parse(flowVersion.definition),
+    ...(c.env.TURNSTILE_SITE_KEY && c.env.CHALLENGE_URL
+      ? { challenge: { url: c.env.CHALLENGE_URL, siteKey: c.env.TURNSTILE_SITE_KEY } }
+      : {}),
   };
   c.header("Cache-Control", "public, max-age=60");
   c.header("Vary", "Origin");
   return c.json(config);
+});
+
+/** Bookable times per day, from `from` (default: today) for up to 62 days (default: 31). */
+widgetRoutes.get("/availability", async (c) => {
+  const key = c.req.query("key");
+  if (!key) return problem(c, 400, "Parametro key mancante");
+
+  const { db, widget, allowed } = await loadWidgetForOrigin(c, key);
+  if (!widget || !widget.activeFlowVersionId) return problem(c, 404, "Widget non trovato");
+  if (!allowed) return problem(c, 403, "Dominio non autorizzato per questo widget");
+
+  const flowVersion = await db.query.flowVersions.findFirst({ where: eq(flowVersions.id, widget.activeFlowVersionId) });
+  const slots = flowVersion && slotSteps(flowDefinitionSchema.parse(flowVersion.definition));
+  if (!slots) return problem(c, 422, "Questo widget non prenota date e orari");
+
+  const rules = await loadRules(db, widget.projectId);
+  const now = nowIn(rules.timezone);
+  const from = c.req.query("from") ?? now.date;
+  const to = c.req.query("to") ?? addDays(from, 30);
+  if (!isIsoDate(from) || !isIsoDate(to) || daysBetween(from, to) < 0 || daysBetween(from, to) > 62) {
+    return problem(c, 422, "Intervallo di date non valido (massimo 62 giorni)");
+  }
+  const partySize = Math.min(Math.max(Number(c.req.query("partySize")) || 1, 1), 1000);
+
+  const usage = await loadUsage(db, widget.projectId, from, to);
+  const body: WidgetAvailability = { days: {} };
+  for (let date = from; date <= to; date = addDays(date, 1)) {
+    body.days[date] = availableTimes(rules, date, slots.timeOptions, usage.get(date) ?? new Map(), partySize, now);
+  }
+  c.header("Cache-Control", "no-store");
+  return c.json(body);
 });
 
 widgetRoutes.post("/submissions", async (c) => {
@@ -75,6 +114,12 @@ widgetRoutes.post("/submissions", async (c) => {
   const { db, widget, allowed } = await loadWidgetForOrigin(c, key);
   if (!widget) return problem(c, 404, "Widget non trovato");
   if (!allowed) return problem(c, 403, "Dominio non autorizzato per questo widget");
+
+  // Per widget and visitor IP: one visitor cannot flood one business.
+  const ip = c.req.header("CF-Connecting-IP");
+  if (ip && c.env.SUBMIT_LIMITER && !(await c.env.SUBMIT_LIMITER.limit({ key: `${widget.id}:${ip}` })).success) {
+    return problem(c, 429, "Troppe richieste in poco tempo, riprova tra un minuto");
+  }
 
   const parsed = submissionInputSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return problem(c, 422, "Richiesta non valida");
@@ -101,6 +146,25 @@ widgetRoutes.post("/submissions", async (c) => {
     if (existing) return c.json(existing, 200);
   }
 
+  // After the idempotency check: a Turnstile token works once, a retry must not need a new one.
+  if (c.env.TURNSTILE_SECRET && !(input.turnstileToken && (await verifyTurnstile(c.env.TURNSTILE_SECRET, input.turnstileToken, ip)))) {
+    return problem(c, 403, "Verifica anti-spam non riuscita, riprova");
+  }
+
+  // After the idempotency check: a retried request must not find its own slot taken.
+  const slots = slotSteps(flow);
+  const date = slots && input.answers[slots.dateKey]?.trim();
+  const time = slots && input.answers[slots.timeKey]?.trim();
+  if (slots && date && time) {
+    const partySize = Number(input.answers.party_size) || 1;
+    const rules = await loadRules(db, widget.projectId);
+    const usage = await loadUsage(db, widget.projectId, date, date);
+    const open = availableTimes(rules, date, slots.timeOptions, usage.get(date) ?? new Map(), partySize, nowIn(rules.timezone));
+    if (!open.includes(time)) {
+      return problem(c, 422, "Orario non disponibile", { errors: { [slots.timeKey]: "Questo orario non è più disponibile, scegline un altro" } });
+    }
+  }
+
   const answers = pickFlowAnswers(flow, input.answers);
   const id = uuidv7();
   await db.insert(submissions).values({
@@ -116,6 +180,13 @@ widgetRoutes.post("/submissions", async (c) => {
     consentAt: new Date().toISOString(),
     idempotencyKey,
   });
+
+  // The request is saved: a queue hiccup must not fail it for the visitor.
+  try {
+    await c.env.NOTIFICATIONS.send({ kind: "submission", submissionId: id });
+  } catch (error) {
+    console.error("[notifiche] accodamento non riuscito", id, error);
+  }
 
   return c.json({ id }, 201);
 });

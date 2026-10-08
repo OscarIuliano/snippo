@@ -1,11 +1,12 @@
 import { env, exports } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
+import { BOOKING_DATE } from "./helpers";
 import { ALLOWED_ORIGIN, FLOW_VERSION_ID, PUBLIC_KEY, seed } from "./seed";
 
 const API = "https://api.snippo.test/v1/widget";
 
 const validAnswers = {
-  date: "2026-12-12",
+  date: BOOKING_DATE,
   time: "20:30",
   party_size: "4",
   name: "Mario Rossi",
@@ -60,7 +61,7 @@ describe("POST /v1/widget/submissions", () => {
       contact_name: "Mario Rossi",
       contact_phone: "+39 333 1234567",
       party_size: 4,
-      booking_at: "2026-12-12T20:30",
+      booking_at: `${BOOKING_DATE}T20:30`,
     });
   });
 

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>Verifica anti-spam</title>
+    <style>html, body { margin: 0; background: transparent; overflow: hidden; }</style>
+    <!--
+      Snippo anti-spam check. Turnstile only accepts a short list of hostnames, while the widget
+      runs on any customer site: so the check runs here, on our domain, inside an iframe, and the
+      token goes back to the widget with postMessage, only to the origin that opened this page.
+    -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=snippoChallenge" async defer></script>
+  </head>
+  <body>
+    <div id="challenge"></div>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const parentOrigin = params.get("origin");
+      const send = (message) => parentOrigin && parent.postMessage({ source: "snippo-challenge", ...message }, parentOrigin);
+      let widgetId;
+
+      window.snippoChallenge = () => {
+        widgetId = turnstile.render("#challenge", {
+          sitekey: params.get("sitekey"),
+          appearance: "interaction-only",
+          language: "it",
+          callback: (token) => send({ type: "token", token }),
+          "expired-callback": () => send({ type: "expired" }),
+          "error-callback": () => send({ type: "error" }),
+          "before-interactive-callback": () => send({ type: "interactive" }),
+        });
+      };
+
+      addEventListener("message", (event) => {
+        if (event.origin === parentOrigin && event.data?.type === "reset" && widgetId !== undefined) turnstile.reset(widgetId);
+      });
+    </script>
+  </body>
+</html>

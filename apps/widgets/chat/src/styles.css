@@ -39,3 +39,7 @@ header {
   .root { right: 12px; bottom: 12px; }
   .panel { position: fixed; inset: 0; width: auto; height: auto; max-height: none; border-radius: 0; }
 }
+.hint { margin: 0; padding: 12px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; }
+.choices .hint { padding: 6px 0; border: 0; flex-basis: 100%; }
+.challenge { display: block; width: 100%; height: 0; border: 0; }
+.challenge.show { height: 72px; }

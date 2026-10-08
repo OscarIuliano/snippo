@@ -13,7 +13,7 @@ Snippo è una piattaforma di widget che uno sviluppatore integra con una riga di
 **Proposta di valore.**
 
 - **Per lo sviluppatore:** un `<script>` con una chiave pubblica e il widget funziona. Niente backend, database o notifiche da costruire.
-- **Per l'azienda:** una conversazione guidata che raccoglie dati completi (data, ora, persone, telefono). La notifica arriva su email, Telegram e, in seguito, WhatsApp, con azioni rapide come Conferma e Rifiuta.
+- **Per l'azienda:** una conversazione guidata che raccoglie dati completi (data, ora, persone, telefono). La notifica arriva via email o su WhatsApp, a scelta dell'azienda, con azioni rapide come Conferma e Rifiuta.
 - **Per il visitatore:** un'esperienza familiare da chat, veloce da mobile, senza registrarsi.
 
 **Posizionamento.** Non è un live chat generico come Tawk.to, Crisp, Intercom o Chatwoot. È un form conversazionale con template per settore e notifiche push all'azienda. L'MVP esce con tre template (ristorante, appuntamenti, richiesta informazioni) per capire quale mercato risponde prima. Il settore che converte meglio riceverà poi funzioni dedicate.
@@ -25,7 +25,7 @@ Il prodotto serve quattro tipi di utenti. Chi paga è l'azienda, direttamente o 
 | Persona | Chi è | Cosa vuole | Dove interagisce |
 | --- | --- | --- | --- |
 | Sviluppatore / agenzia | Freelance o web agency che realizza siti per clienti | Integrare in 2 minuti, gestire più clienti da un account, rivendere il servizio | Landing, documentazione, dashboard |
-| Titolare azienda | Ristoratore, parrucchiere, studio, PMI | Ricevere richieste complete e rispondere dal telefono | Notifiche (email, Telegram, WhatsApp), dashboard mobile |
+| Titolare azienda | Ristoratore, parrucchiere, studio, PMI | Ricevere richieste complete e rispondere dal telefono | Notifiche via email o WhatsApp, dashboard mobile |
 | Operatore / staff | Cameriere, receptionist, segreteria | Vedere e gestire le richieste del giorno | Dashboard, notifiche |
 | Visitatore | Cliente finale sul sito dell'azienda | Prenotare o chiedere info in pochi tocchi | Widget |
 
@@ -61,7 +61,7 @@ Il widget è una bolla in basso a destra che si apre in una finestra di chat. Po
 
 **Template per settore**
 
-- **Ristorante:** prenotazione tavolo (data, orario, persone, nome, telefono, note e allergie).
+- **Ristorante:** prenotazione tavolo (persone, data, orario, nome, telefono, note e allergie); il widget propone solo giorni e orari aperti e con posto.
 - **Appuntamenti** (parrucchiere, estetista, studio): servizio, data, orario, contatto.
 - **Richiesta informazioni:** argomento, messaggio, contatto preferito.
 - **Lead B2B:** azienda, ruolo, esigenza, budget indicativo, contatto.
@@ -81,12 +81,12 @@ La dashboard è il pannello in cui l'azienda configura il widget e gestisce le r
 | Orari e disponibilità | Orari di apertura, giorni di chiusura, fasce orarie, capienza massima per fascia | MVP |
 | Inbox richieste | Elenco con filtri (stato, data, flusso), dettaglio, cambio stato (Nuova, Confermata, Rifiutata, Completata), note interne | MVP |
 | Vista calendario | Prenotazioni per giorno e fascia oraria, coperti totali | MVP |
-| Notifiche | Canali per progetto (email, Telegram), destinatari, test di invio | MVP |
+| Notifiche | Destinatari email e WhatsApp per progetto, attivazione, invio di prova, storico degli invii | MVP |
 | Statistiche | Aperture del widget, conversazioni avviate e completate, tasso di conversione, richieste per giorno | MVP (base) |
 | Esportazione | CSV delle richieste | MVP |
 | Webhook e API | URL webhook, firma HMAC, log consegne, API key private | Fase 2 |
 | Fatturazione | Piano attivo, utilizzo del mese, upgrade, fatture (Stripe Customer Portal) | MVP |
-| Integrazione WhatsApp | Collegamento numero WhatsApp Business, template | Fase 2 |
+| Integrazione WhatsApp | Numero WhatsApp proprio dell'azienda come mittente (Embedded Signup) | Fase 2 |
 | Assistente AI | Base di conoscenza (FAQ, menu, orari) e risposte automatiche | Fase 3 |
 
 ## 5. Sito marketing (landing page)
@@ -117,7 +117,7 @@ Sono tre i flussi da far funzionare per l'MVP: l'onboarding dell'azienda, la ric
 1. Registrazione dalla landing e verifica dell'email.
 2. Creazione dell'organizzazione e del primo progetto (nome, sito, settore).
 3. Scelta del template, personalizzazione dei colori e anteprima live.
-4. Configurazione delle notifiche, es. collegamento del bot Telegram con un codice.
+4. Configurazione delle notifiche: l'email di chi crea il progetto è già attiva, si aggiungono altri indirizzi o numeri WhatsApp.
 5. Copia dello snippet `<script>` da incollare nel sito (o invio allo sviluppatore via email).
 6. Il primo caricamento del widget sul dominio autorizzato marca il progetto come "attivo".
 
@@ -131,8 +131,8 @@ Sono tre i flussi da far funzionare per l'MVP: l'onboarding dell'azienda, la ric
 
 **C. Gestione della richiesta**
 
-1. Il titolare riceve la notifica su Telegram o email con i dati e i pulsanti **Conferma** / **Rifiuta**.
-2. Il clic aggiorna lo stato tramite un link firmato o un callback del bot, senza login.
+1. Il titolare riceve la notifica via email o WhatsApp con i dati e i pulsanti **Conferma** / **Rifiuta**.
+2. Il link firmato apre una pagina di conferma; il clic sul pulsante aggiorna lo stato, senza login. Un secondo clic non cambia nulla.
 3. Il visitatore riceve l'esito via email (SMS o WhatsApp in fase 2).
 4. La richiesta compare in inbox e calendario con lo storico dei cambi di stato.
 
@@ -143,7 +143,7 @@ Il modello è freemium con abbonamento mensile. I prezzi sono un'ipotesi inizial
 | Piano | Prezzo/mese | Progetti | Richieste/mese | Canali notifica | Extra |
 | --- | --- | --- | --- | --- | --- |
 | Free | 0 € | 1 | 50 | Email | Logo "Powered by" visibile |
-| Starter | 9 € | 1 | 500 | Email, Telegram | Niente logo, statistiche, export CSV |
+| Starter | 9 € | 1 | 500 | Email a più destinatari | Niente logo, statistiche, export CSV |
 | Pro | 29 € | 5 | 3.000 | + WhatsApp, webhook | Team fino a 5, AI FAQ (fase 3) |
 | Agency | 79 € | 25 | 15.000 | Tutti | White label, multi-cliente, API |
 
@@ -155,8 +155,8 @@ L'MVP deve già essere vendibile a un ristorante, a un salone o a uno studio: ch
 
 ```mermaid
 flowchart LR
-    MVP["<b>MVP</b><br/>3 template: il mercato decide<br/>• Chat: ristorante, saloni, info<br/>• API, database, auth, progetti<br/>• Dashboard: inbox, calendario<br/>• Notifiche email e Telegram<br/>• Stripe, landing, docs"]
-    F2["<b>Fase 2</b><br/>Più canali, più settori<br/>• WhatsApp Cloud API<br/>• Webhook e API pubbliche<br/>• Template B2B, nuovi widget<br/>• Chat live bidirezionale<br/>• Blog e contenuti SEO"]
+    MVP["<b>MVP</b><br/>3 template: il mercato decide<br/>• Chat: ristorante, saloni, info<br/>• API, database, auth, progetti<br/>• Dashboard: inbox, calendario<br/>• Notifiche email e WhatsApp<br/>• Stripe, landing, docs"]
+    F2["<b>Fase 2</b><br/>Più canali, più settori<br/>• WhatsApp con numero proprio<br/>• Webhook e API pubbliche<br/>• Template B2B, nuovi widget<br/>• Chat live bidirezionale<br/>• Blog e contenuti SEO"]
     F3["<b>Fase 3</b><br/>Automazione e agenzie<br/>• Assistente AI per le FAQ<br/>• SMS e Google Calendar<br/>• White label per agenzie<br/>• Editor flussi visuale"]
     MVP -- "gate: MVP stabile, primi clienti" --> F2
     F2 -- "gate: clienti paganti ricorrenti" --> F3
@@ -168,7 +168,7 @@ Le date si fissano dopo la scelta dello stack e del perimetro definitivo dell'MV
 
 ## 9. Architettura generale
 
-Il sistema gira tutto su Cloudflare, nello stesso account dell'altro progetto. Tre frontend statici (widget, dashboard, landing) parlano con un'unica API su Workers. L'API scrive su D1 e passa a Cloudflare Queues tutto ciò che può fallire o rallentare: email, Telegram, WhatsApp, webhook.
+Il sistema gira tutto su Cloudflare, nello stesso account dell'altro progetto. Tre frontend statici (widget, dashboard, landing) parlano con un'unica API su Workers. L'API scrive su D1 e passa a Cloudflare Queues tutto ciò che può fallire o rallentare: email, WhatsApp, webhook.
 
 ```mermaid
 flowchart TB
@@ -178,11 +178,10 @@ flowchart TB
     API["API (Hono su Workers)<br/>pubblica: widget<br/>privata: dashboard, webhook"]
     DB[("Cloudflare D1 (UE)<br/>dati, configurazioni, richieste")]
     Q[("Cloudflare Queues<br/>notifiche, webhook")]
-    WK["Worker consumer<br/>notifiche, retry, cron"]
+    WK["Consumer della coda<br/>stesso Worker dell'API"]
     P["Paddle<br/>abbonamenti e fatture"]
     RS["Resend<br/>email"]
-    TG["Telegram Bot<br/>notifiche e pulsanti"]
-    WA["WhatsApp Cloud API<br/>fase 2"]
+    WA["WhatsApp Cloud API<br/>notifiche"]
     WH["Webhook clienti<br/>fase 2"]
 
     L -- iscrizione --> D
@@ -193,12 +192,11 @@ flowchart TB
     API <-- abbonamenti --> P
     Q -- messaggi --> WK
     WK --> RS
-    WK --> TG
     WK --> WA
     WK --> WH
 ```
 
-L'invio di una richiesta risponde al visitatore in pochi millisecondi, anche se Telegram o il servizio email sono lenti. Il consumer della coda è un Worker con lo stesso codice del monorepo e lo stesso database. Non ci sono server o container da gestire, e in sviluppo non servono Docker né database installati in locale.
+L'invio di una richiesta risponde al visitatore in pochi millisecondi, anche se il servizio email è lento. Il consumer della coda è lo stesso Worker dell'API: stesso codice, stesso database, un solo deploy. Non ci sono server o container da gestire, e in sviluppo non servono Docker né database installati in locale.
 
 ## 10. Widget: architettura tecnica
 
@@ -236,12 +234,12 @@ Da JavaScript: `Snippo.open()`, `Snippo.close()`, `Snippo.on('submitted', fn)`, 
 **Sicurezza lato widget**
 
 - La chiave pubblica (`pk_`) identifica il progetto ma non dà accesso ai dati. L'API accetta richieste solo dai domini autorizzati (controllo `Origin`).
-- Anti-spam: Cloudflare Turnstile invisibile, campo honeypot e tempo minimo di compilazione.
+- Anti-spam: Cloudflare Turnstile eseguito in un iframe sul dominio della CDN (`/v1/challenge.html`), perché Turnstile accetta al massimo 10 domini per widget e i siti dei clienti sono infiniti; il token torna al widget con `postMessage`. In più, al massimo 10 invii al minuto per widget e IP.
 - Nessun cookie di terze parti; un ID sessione anonimo in `sessionStorage` per collegare gli eventi.
 
 ## 11. Backend API
 
-Il backend è un **Cloudflare Worker** in TypeScript con framework **Hono**, che espone due superfici. La prima è pubblica e serve il widget; la seconda è privata e serve dashboard, API e integrazioni. Il lavoro lento (notifiche, email, webhook) va su **Cloudflare Queues** e lo esegue un Worker consumer.
+Il backend è un **Cloudflare Worker** in TypeScript con framework **Hono**, che espone due superfici. La prima è pubblica e serve il widget; la seconda è privata e serve dashboard, API e integrazioni. Il lavoro lento (notifiche, email, webhook) va su **Cloudflare Queues** e lo esegue lo stesso Worker come consumer della coda.
 
 **Stack**
 
@@ -263,8 +261,7 @@ Il backend è un **Cloudflare Worker** in TypeScript con framework **Hono**, che
 | `GET/PATCH /v1/projects/:id/flows` | Sessione | Editor del flusso |
 | `GET /v1/submissions` | Sessione o chiave segreta | Elenco richieste con filtri e paginazione a cursore |
 | `PATCH /v1/submissions/:id` | Sessione o chiave segreta | Cambio stato, note |
-| `GET /v1/actions/:token` | Token firmato monouso | Conferma/Rifiuta da email |
-| `POST /v1/integrations/telegram/webhook` | Secret token di Telegram | Callback dei pulsanti del bot |
+| `GET/POST /v1/actions/:token` | Token firmato HMAC, scade in 14 giorni | GET mostra la pagina, POST applica Conferma/Rifiuta (solo se la richiesta è ancora nuova) |
 | `POST /v1/billing/stripe/webhook` | Firma Stripe | Eventi di abbonamento |
 
 **Regole trasversali**
@@ -306,7 +303,7 @@ Il database è **Cloudflare D1** (SQLite), creato con giurisdizione UE. È multi
 | Organizzazione | `organizations` | id, name, slug, country, vat_number, billing_email, plan_id | Il tenant |
 | Organizzazione | `memberships` | organization_id, user_id, role (owner, admin, operator) | PK composta |
 | Organizzazione | `invitations` | id, organization_id, email, role, token_hash, expires_at, accepted_at | |
-| Progetti | `projects` | id, organization_id, name, industry, timezone, default_locale, status | Un progetto per sito |
+| Progetti | `projects` | id, organization_id, name, industry, timezone, default_locale, slot_capacity (persone o prenotazioni per orario, vuoto = nessun limite), status | Un progetto per sito |
 | Progetti | `project_domains` | id, project_id, domain, verified_at | Whitelist per `Origin` |
 | Progetti | `api_keys` | id, project_id, type (secret), prefix, key_hash, last_used_at, revoked_at | Salvato solo l'hash delle chiavi segrete |
 | Configurazione | `widgets` | id, project_id, type (chat, poi booking, reviews…), name, public_key (pk_…), theme jsonb (colori, logo, posizione), texts jsonb per lingua, show_branding, is_active | |
@@ -314,13 +311,11 @@ Il database è **Cloudflare D1** (SQLite), creato con giurisdizione UE. È multi
 | Configurazione | `flow_versions` | id, flow_id, version, definition jsonb (passi, validazioni, rami), published_at | Ogni richiesta punta alla versione usata |
 | Disponibilità | `business_hours` | id, project_id, weekday, opens_at, closes_at | |
 | Disponibilità | `closures` | id, project_id, date_from, date_to, reason | Ferie, chiusure |
-| Disponibilità | `time_slots` | id, project_id, weekday, start_time, capacity (coperti o posti) | Capienza per fascia |
 | Dati | `submissions` | id, project_id, widget_id, flow_version_id, status, answers jsonb, contact_name, contact_phone, contact_email, booking_at, party_size, locale, source_url, ip_hash, consent_at | Il cuore: la richiesta. Campi chiave estratti per filtri e calendario |
 | Dati | `submission_events` | id, submission_id, type (created, status_changed, note, notified), actor_user_id, data jsonb | Storico e audit della richiesta |
 | Analytics | `widget_events` | id, project_id, widget_id, session_id, type (loaded, opened, step, submitted, abandoned), step_key, created_at | Su Workers Analytics Engine invece che su D1, per non consumare spazio del database |
-| Notifiche | `notification_channels` | id, project_id, type (email, telegram, whatsapp, webhook), config jsonb (cifrato), is_active | |
+| Notifiche | `notification_channels` | id, project_id, type (email, whatsapp), target (email o numero E.164), is_active | |
 | Notifiche | `notification_deliveries` | id, channel_id, submission_id, status, attempts, last_error, sent_at | Retry e log |
-| Notifiche | `action_tokens` | id, submission_id, action (confirm, reject), token_hash, expires_at, used_at | Link Conferma/Rifiuta |
 | Billing | `plans` | id, code, name, price_cents, limits jsonb (progetti, richieste, canali) | |
 | Billing | `subscriptions` | id, organization_id, plan_id, stripe_customer_id, stripe_subscription_id, status, current_period_end | Sincronizzata dai webhook Stripe |
 | Billing | `usage_counters` | organization_id, period (YYYY-MM), submissions_count, whatsapp_count | Controllo delle quote |
@@ -343,9 +338,8 @@ Ogni richiesta pubblica un messaggio su Cloudflare Queues per ciascun canale att
 | Canale | Servizio | Uso | Note | Fase |
 | --- | --- | --- | --- | --- |
 | Email transazionale | **Resend** (alternative: Postmark, Amazon SES) | Notifica all'azienda, conferma al visitatore, email di sistema | Template con React Email; dominio di invio con SPF, DKIM, DMARC | MVP |
-| Telegram | Telegram Bot API | Notifica istantanea con pulsanti inline Conferma/Rifiuta | Gratuito; collegamento con `/start <codice>` dal bot | MVP |
 | Webhook | Proprio | Integrazione con gestionali, Zapier, Make | Firma HMAC-SHA256 nell'header, retry, log consultabile | Fase 2 |
-| WhatsApp | WhatsApp Business Cloud API (Meta) | Notifica all'azienda e conferma al visitatore | Verifica azienda su Meta, template approvati, finestra di 24 h, costo per conversazione | Fase 2 |
+| WhatsApp | WhatsApp Business Cloud API (Meta) | Notifica all'azienda e conferma al visitatore | Verifica azienda su Meta, template approvati, finestra di 24 h, costo per conversazione | MVP |
 | SMS | Twilio o Vonage | Conferma al visitatore senza email | A consumo | Fase 3 |
 | Calendario | Google Calendar, file .ics | Prenotazioni confermate nel calendario | OAuth Google | Fase 3 |
 | Pagamenti | Stripe Billing + Customer Portal | Abbonamenti dei clienti | Webhook sincronizza `subscriptions` | MVP |
@@ -366,8 +360,8 @@ Trattiamo dati personali dei visitatori (nome, telefono, email) per conto delle 
 
 **Sicurezza applicativa**
 
-- TLS ovunque, HSTS; hash delle password gestito da Better Auth; 2FA (TOTP) opzionale per la dashboard.
-- Chiavi API segrete salvate solo come hash; credenziali dei canali (token Telegram e WhatsApp) cifrate con AES-256-GCM, chiave in Workers Secrets.
+- TLS ovunque, HSTS; password con PBKDF2-SHA256 via WebCrypto (100.000 iterazioni, il massimo ammesso dai Workers); 2FA (TOTP) opzionale per la dashboard.
+- Chiavi API segrete salvate solo come hash; credenziali dei canali (token WhatsApp, segreti dei webhook) cifrate con AES-256-GCM, chiave in Workers Secrets.
 - Autorizzazione per ruolo e tenant su ogni endpoint, centralizzata nel livello di accesso ai dati, con test automatici sull'isolamento tra tenant.
 - Protezione dagli abusi: WAF e rate limiting Cloudflare, Turnstile, controllo `Origin`, limiti di dimensione del payload, sanitizzazione dell'output (XSS) in dashboard ed email.
 - Header di sicurezza: CSP sulla dashboard e sulla landing, `frame-ancestors`.
@@ -422,8 +416,7 @@ snippo/
 │   ├── widgets/
 │   │   ├── loader/    # snippo.js: carica il widget giusto
 │   │   └── chat/      # primo widget (Preact)
-│   ├── api/           # Worker Hono: API pubblica e privata
-│   ├── worker/        # Worker consumer di Queues + Cron Triggers
+│   ├── api/           # Worker Hono: API, link Conferma/Rifiuta, consumer delle notifiche
 │   ├── dashboard/     # React SPA
 │   └── web/           # Astro: landing + docs
 ├── packages/
@@ -443,7 +436,7 @@ snippo/
 | --- | --- | --- | --- |
 | Locale | Sviluppo | `wrangler dev`: D1 simulato da Miniflare dentro `node_modules`, senza Docker; oppure `--remote` sul D1 di dev | — |
 | Dev / preview | Test di ogni pull request | D1 `snippo-dev` (UE) | Preview URL dei Workers sulla PR |
-| Staging | Test prima del rilascio | D1 `snippo-staging` (UE) | Automatico su `main` |
+| Staging | Test prima del rilascio, su `*.oiuliano90.workers.dev` | D1 `snippo-staging` (UE) | Automatico su `main` (job `deploy-staging` della CI) |
 | Produzione | Clienti | D1 `snippo-prod` (UE) con Time Travel | Tag di release o approvazione manuale |
 
 **Pipeline CI/CD (GitHub Actions)**
@@ -473,9 +466,44 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 | Template MVP | Ristorante, appuntamenti, richiesta informazioni; B2B in fase 2 | Scopriamo quale mercato risponde; il codice è lo stesso, cambia solo il flusso | Deciso |
 | Widget | Preact + `widget-core` condiviso | 3 KB, componenti riusabili tra widget; con Web Components puri l'interfaccia richiede più codice | Consigliato |
 | Dashboard | React + Vite (SPA) | Statica e gratuita su Cloudflare Pages; l'API è già separata, Next.js aggiungerebbe un server | Consigliato |
-| WhatsApp | Fase 2, numero condiviso del servizio | Evita la verifica Meta per ogni cliente durante l'MVP | Consigliato |
+| WhatsApp | Nell'MVP accanto all'email, da un numero condiviso di Snippo | Evita la verifica Meta per ogni cliente durante l'MVP | Consigliato |
 | Prezzi | Ipotesi della sezione 7, poi 10 interviste prima del lancio (4 ristoranti, 4 saloni o studi, 2 agenzie) | Si validano insieme prezzo e settore di partenza | Consigliato |
 | Pagamenti | Paddle all'inizio, Stripe più avanti | Paddle è Merchant of Record: incassa e gestisce IVA UE e fatture al posto nostro. Stripe conviene quando i volumi giustificano commissioni più basse | Da verificare |
 | Fatturazione elettronica | Con Paddle si fattura solo a Paddle; con Stripe serve un collegamento SDI (es. Fatture in Cloud) | In Italia le fatture B2B passano dallo SDI | Da verificare |
 | Forma giuridica | Partita IVA in regime forfettario per partire, SRL quando i ricavi crescono | Costi fissi bassi durante la validazione | Da verificare |
 | Dominio e marchio | snippo.io o snippo.app, più ricerca marchio su EUIPO | Nome breve: probabili omonimie da escludere prima del lancio | Da verificare |
+
+## 19. Backlog
+
+L'MVP ha 12 attività fatte, 6 in attesa di un tuo passaggio e 8 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 21, le statistiche.
+
+| # | Area | Attività | Stato | Note |
+| --- | --- | --- | --- | --- |
+| 1 | Base | Monorepo e CI (type check, test, build, peso del widget) | Fatto | |
+| 2 | Widget | Chat guidata con 3 template: ristorante, appuntamenti, info | Fatto | 9 KB compresso |
+| 3 | API | Configurazione del widget e invio richieste: domini autorizzati, validazione, idempotenza | Fatto | |
+| 4 | Infrastruttura | D1 `snippo-dev` (UE) e code delle notifiche su Cloudflare | Fatto | |
+| 5 | Area privata | Registrazione e login con email e password | Fatto | |
+| 6 | Area privata | Progetti, inbox, impostazioni del widget, domini, installazione | Fatto | |
+| 7 | Landing | Home con demo, settori, prezzi, FAQ | Fatto | |
+| 8 | Notifiche | Destinatari email e WhatsApp, coda, link Conferma/Rifiuta | Fatto | In sviluppo finiscono nel log |
+| 9 | Area privata | Calendario con mattina (fino alle 13:00) e sera | Fatto | |
+| 10 | Repository | Merge dei branch su `main` | In attesa di te | In ordine: scaffold, portal, notifications, calendar |
+| 11 | Notifiche | Email reali con Resend | In attesa di te | Serve la chiave API; per inviare a tutti, anche il dominio |
+| 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Servono portfolio e app Meta con numero di test, poi il template approvato |
+| 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet |
+| 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
+| 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Prima dei clienti paganti |
+| 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
+| 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Fatto | Il deploy automatico parte quando aggiungi i secret Cloudflare su GitHub |
+| 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; per la produzione serve un widget Turnstile su `cdn.snippo.io` |
+| 19 | Area privata | Verifica email e reset password | Da fare | Dopo Resend |
+| 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo Resend |
+| 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Da fare | |
+| 22 | Area privata | Export CSV delle richieste | Da fare | |
+| 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Da fare | |
+| 24 | Pagamenti | Piani e quote con Paddle | Da fare | |
+| 25 | Privacy | Retention dei dati e cancellazione automatica | Da fare | |
+| 26 | Infrastruttura | Monitoraggio errori (Sentry) e uptime | Da fare | |
+
+Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

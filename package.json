@@ -1,0 +1,20 @@
+{
+  "name": "snippo",
+  "private": true,
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:setup": "pnpm --filter @snippo/api db:migrate:local && pnpm --filter @snippo/api db:seed:local",
+    "db:generate": "pnpm --filter @snippo/db generate"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261008.1",
+    "pnpm": "10.18.3",
+    "turbo": "^2.11.7",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.148.0"
+  }
+}

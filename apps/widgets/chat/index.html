@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snippo · pagina di prova</title>
+  </head>
+  <body style="font-family: system-ui; max-width: 640px; margin: 40px auto; padding: 0 16px">
+    <h1>Trattoria Demo</h1>
+    <p>Pagina di prova: il widget usa l'API locale (<code>wrangler dev</code> su :8787) e il widget demo del seed.</p>
+    <button onclick="window.Snippo && Snippo.open()">Prenota un tavolo</button>
+    <script type="module" src="/src/main.tsx" data-key="pk_dev_snippo" data-api="http://localhost:8787"></script>
+  </body>
+</html>

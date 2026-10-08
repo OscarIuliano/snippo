@@ -12,3 +12,5 @@ coverage/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+.wrangler/
+.dev.vars

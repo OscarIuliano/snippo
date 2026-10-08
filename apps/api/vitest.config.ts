@@ -9,6 +9,8 @@ export default defineConfig({
       miniflare: {
         bindings: {
           BETTER_AUTH_SECRET: "test-secret-at-least-32-characters-long",
+          // Turnstile off by default (it comes from .dev.vars locally): its tests turn it on per request.
+          TURNSTILE_SECRET: "",
           TEST_MIGRATIONS: await readD1Migrations(path.join(import.meta.dirname, "../../packages/db/migrations")),
         },
       },

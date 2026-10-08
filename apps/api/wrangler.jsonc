@@ -8,8 +8,12 @@
   "vars": {
     "AUTH_BASE_URL": "http://localhost:5174",
     "DASHBOARD_ORIGIN": "http://localhost:5174",
-    "PUBLIC_API_URL": "http://localhost:8787"
+    "PUBLIC_API_URL": "http://localhost:8787",
+    // Cloudflare's test site key: always passes. TURNSTILE_SECRET (test value) is in .dev.vars.
+    "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
+    "CHALLENGE_URL": "http://localhost:5173/challenge.html"
   },
+  "ratelimits": [{ "name": "SUBMIT_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }],
   "queues": {
     "producers": [{ "binding": "NOTIFICATIONS", "queue": "snippo-notifications-dev" }],
     "consumers": [
@@ -37,8 +41,12 @@
       "vars": {
         "AUTH_BASE_URL": "https://snippo-dashboard-staging.oiuliano90.workers.dev",
         "DASHBOARD_ORIGIN": "https://snippo-dashboard-staging.oiuliano90.workers.dev",
-        "PUBLIC_API_URL": "https://snippo-api-staging.oiuliano90.workers.dev"
+        "PUBLIC_API_URL": "https://snippo-api-staging.oiuliano90.workers.dev",
+        // Test site key until a real Turnstile widget exists for the CDN hostname.
+        "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
+        "CHALLENGE_URL": "https://snippo-cdn-staging.oiuliano90.workers.dev/v1/challenge.html"
       },
+      "ratelimits": [{ "name": "SUBMIT_LIMITER", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } }],
       "d1_databases": [
         {
           "binding": "DB",

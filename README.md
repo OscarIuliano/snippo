@@ -80,3 +80,7 @@ Le notifiche in staging non vengono spedite: finiscono nei log del Worker (`npx 
 Deploy manuale (serve `npx wrangler login`): `corepack pnpm deploy:staging`.
 
 Deploy automatico: ogni push su `main` con la CI verde va in staging, se nel repository GitHub ci sono i secret `CLOUDFLARE_API_TOKEN` (token con permessi Workers Scripts, D1 e Queues in modifica) e `CLOUDFLARE_ACCOUNT_ID`.
+
+### Anti-spam
+
+Il widget chiede un token Cloudflare Turnstile, generato da `/v1/challenge.html` sulla CDN (Turnstile accetta pochi domini, i siti dei clienti sono tanti). In sviluppo e in staging si usano le chiavi di test di Cloudflare, che passano sempre. Per la produzione: crea un widget Turnstile con dominio `cdn.snippo.io`, metti la site key in `TURNSTILE_SITE_KEY` (wrangler.jsonc) e la secret con `npx wrangler secret put TURNSTILE_SECRET`.

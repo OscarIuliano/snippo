@@ -234,7 +234,7 @@ Da JavaScript: `Snippo.open()`, `Snippo.close()`, `Snippo.on('submitted', fn)`, 
 **Sicurezza lato widget**
 
 - La chiave pubblica (`pk_`) identifica il progetto ma non dà accesso ai dati. L'API accetta richieste solo dai domini autorizzati (controllo `Origin`).
-- Anti-spam: Cloudflare Turnstile invisibile, campo honeypot e tempo minimo di compilazione.
+- Anti-spam: Cloudflare Turnstile eseguito in un iframe sul dominio della CDN (`/v1/challenge.html`), perché Turnstile accetta al massimo 10 domini per widget e i siti dei clienti sono infiniti; il token torna al widget con `postMessage`. In più, al massimo 10 invii al minuto per widget e IP.
 - Nessun cookie di terze parti; un ID sessione anonimo in `sessionStorage` per collegare gli eventi.
 
 ## 11. Backend API
@@ -475,7 +475,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 11 attività fatte, 6 in attesa di un tuo passaggio e 9 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima è l'anti-spam nel widget.
+L'MVP ha 12 attività fatte, 6 in attesa di un tuo passaggio e 8 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 21, le statistiche.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -496,7 +496,7 @@ L'MVP ha 11 attività fatte, 6 in attesa di un tuo passaggio e 9 da fare. Le "Da
 | 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Prima dei clienti paganti |
 | 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
 | 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Fatto | Il deploy automatico parte quando aggiungi i secret Cloudflare su GitHub |
-| 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Da fare | Prima di andare online |
+| 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; per la produzione serve un widget Turnstile su `cdn.snippo.io` |
 | 19 | Area privata | Verifica email e reset password | Da fare | Dopo Resend |
 | 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo Resend |
 | 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Da fare | |

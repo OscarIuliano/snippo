@@ -13,6 +13,7 @@ import {
   type WidgetConfig,
 } from "@snippo/shared";
 import { availableTimes, loadRules, loadUsage, nowIn, slotSteps } from "./availability";
+import { verifyTurnstile } from "./turnstile";
 import type { AppEnv } from "./env";
 import { problem } from "./problem";
 
@@ -66,6 +67,9 @@ widgetRoutes.get("/config", async (c) => {
     theme: widget.theme as WidgetConfig["theme"],
     flowVersionId: flowVersion.id,
     flow: flowDefinitionSchema.parse(flowVersion.definition),
+    ...(c.env.TURNSTILE_SITE_KEY && c.env.CHALLENGE_URL
+      ? { challenge: { url: c.env.CHALLENGE_URL, siteKey: c.env.TURNSTILE_SITE_KEY } }
+      : {}),
   };
   c.header("Cache-Control", "public, max-age=60");
   c.header("Vary", "Origin");
@@ -111,6 +115,12 @@ widgetRoutes.post("/submissions", async (c) => {
   if (!widget) return problem(c, 404, "Widget non trovato");
   if (!allowed) return problem(c, 403, "Dominio non autorizzato per questo widget");
 
+  // Per widget and visitor IP: one visitor cannot flood one business.
+  const ip = c.req.header("CF-Connecting-IP");
+  if (ip && c.env.SUBMIT_LIMITER && !(await c.env.SUBMIT_LIMITER.limit({ key: `${widget.id}:${ip}` })).success) {
+    return problem(c, 429, "Troppe richieste in poco tempo, riprova tra un minuto");
+  }
+
   const parsed = submissionInputSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return problem(c, 422, "Richiesta non valida");
   const input = parsed.data;
@@ -134,6 +144,11 @@ widgetRoutes.post("/submissions", async (c) => {
       columns: { id: true },
     });
     if (existing) return c.json(existing, 200);
+  }
+
+  // After the idempotency check: a Turnstile token works once, a retry must not need a new one.
+  if (c.env.TURNSTILE_SECRET && !(input.turnstileToken && (await verifyTurnstile(c.env.TURNSTILE_SECRET, input.turnstileToken, ip)))) {
+    return problem(c, 403, "Verifica anti-spam non riuscita, riprova");
   }
 
   // After the idempotency check: a retried request must not find its own slot taken.

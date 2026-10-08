@@ -5,6 +5,7 @@ import { formatBooking } from "@snippo/shared/format";
 import { validateAnswer } from "@snippo/shared/rules";
 import type { WidgetConfig } from "@snippo/shared/widget-api";
 import { ApiError, type Api } from "./api";
+import { Challenge } from "./Challenge";
 
 interface Props {
   api: Api;
@@ -38,6 +39,10 @@ export function Chat({ api, config, onClose, onSubmitted }: Props) {
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availability, setAvailability] = useState<Availability>(null);
+  // Anti-spam token: one per submission attempt. A new key remounts the check for a new token.
+  const [token, setToken] = useState<string | null>(null);
+  const [challengeKey, setChallengeKey] = useState(0);
+  const needsToken = Boolean(config.challenge);
   const idempotencyKey = useRef(crypto.randomUUID());
   const bottom = useRef<HTMLDivElement>(null);
 
@@ -94,12 +99,22 @@ export function Chat({ api, config, onClose, onSubmitted }: Props) {
     setError(null);
     try {
       const { id } = await api.submit(
-        { flowVersionId: config.flowVersionId, answers, consent: true, sourceUrl: location.href, locale: navigator.language },
+        {
+          flowVersionId: config.flowVersionId,
+          answers,
+          consent: true,
+          sourceUrl: location.href,
+          locale: navigator.language,
+          ...(token ? { turnstileToken: token } : {}),
+        },
         idempotencyKey.current,
       );
       setPhase("done");
       onSubmitted(id);
     } catch (e) {
+      // The token is spent once checked: ask for a new one before the next attempt.
+      setToken(null);
+      setChallengeKey((k) => k + 1);
       const fieldErrors = e instanceof ApiError ? e.fieldErrors : {};
       const [key, message] = Object.entries(fieldErrors)[0] ?? [];
       const failed = steps.find((s) => s.key === key);
@@ -136,13 +151,16 @@ export function Chat({ api, config, onClose, onSubmitted }: Props) {
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.currentTarget.checked)} />
               Acconsento al trattamento dei dati per gestire la richiesta.
             </label>
-            <button class="primary" disabled={!consent || phase === "sending"} onClick={send}>
-              {phase === "sending" ? "Invio…" : "Invia richiesta"}
+            <button class="primary" disabled={!consent || phase === "sending" || (needsToken && !token)} onClick={send}>
+              {phase === "sending" ? "Invio…" : needsToken && !token ? "Verifica anti-spam…" : "Invia richiesta"}
             </button>
           </div>
         ) : null}
         {phase === "done" && <p class="bot">{config.flow.successMessage}</p>}
         {error && <p class="error" role="alert">{error}</p>}
+        {config.challenge && phase !== "done" && (
+          <Challenge key={challengeKey} url={config.challenge.url} siteKey={config.challenge.siteKey} onToken={setToken} />
+        )}
         <div ref={bottom} />
       </div>
       {current?.type === "date" && days ? (

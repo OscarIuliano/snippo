@@ -1,1 +1,3 @@
 BETTER_AUTH_SECRET=genera-con-openssl-rand-hex-32
+# Chiave segreta di test di Cloudflare Turnstile: passa sempre.
+TURNSTILE_SECRET=1x0000000000000000000000000000000AA

@@ -11,6 +11,13 @@ export interface Bindings {
   DASHBOARD_ORIGIN: string;
   /** Public URL of this API, used in the Conferma / Rifiuta links. */
   PUBLIC_API_URL: string;
+  /** Turnstile site key and the page on our domain that runs the check. Both unset = no check. */
+  TURNSTILE_SITE_KEY?: string;
+  CHALLENGE_URL?: string;
+  /** Secret: Turnstile secret key. When set, every submission needs a valid token. */
+  TURNSTILE_SECRET?: string;
+  /** Submissions per widget and IP (Workers rate limiting binding). */
+  SUBMIT_LIMITER?: RateLimit;
 }
 
 export interface AppEnv {

@@ -46,14 +46,14 @@ function RetentionCard({ projectId }: { projectId: string }) {
             setSaved(false);
           }}
           aria-label="Periodo di conservazione"
-          className="rounded-lg border-0 bg-white px-2 py-2 text-sm ring-1 ring-stone-300 focus:ring-2 focus:ring-brand-600"
+          className="rounded-lg border-0 bg-white px-2 py-2 text-sm ring-1 ring-slate-300 focus:ring-2 focus:ring-brand-600"
         >
           {options.map((m) => <option key={m} value={m}>{m} mesi</option>)}
         </select>
         <Button onClick={() => save.mutate()} disabled={save.isPending || months === current.data?.retentionMonths}>Salva</Button>
         {saved && <span className="text-sm text-emerald-700">Salvato: vale dalla prossima notte.</span>}
       </div>
-      <p className="mt-3 text-xs text-stone-500">
+      <p className="mt-3 text-xs text-slate-500">
         Tieni le richieste solo per il tempo che ti serve davvero (principio di limitazione della conservazione del GDPR). Indica lo stesso periodo nella tua informativa privacy.
       </p>
       {(current.error || save.error) && <div className="mt-3"><Alert>{(current.error ?? save.error)!.message}</Alert></div>}
@@ -115,19 +115,19 @@ function PersonCard({ projectId }: { projectId: string }) {
       </form>
 
       {results.error && <div className="mt-3"><Alert>{results.error.message}</Alert></div>}
-      {results.data?.length === 0 && <p className="mt-4 text-sm text-stone-500">Nessuna richiesta trovata per "{searched}".</p>}
+      {results.data?.length === 0 && <p className="mt-4 text-sm text-slate-500">Nessuna richiesta trovata per "{searched}".</p>}
       {results.data && results.data.length > 0 && (
         <>
-          <ul className="mt-4 divide-y divide-stone-100 rounded-lg ring-1 ring-stone-200">
+          <ul className="mt-4 divide-y divide-slate-100 rounded-lg ring-1 ring-slate-200">
             {results.data.map((r) => (
               <li key={r.id}>
                 <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm">
                   <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggle(r.id)} className="accent-brand-700" />
                   <span className="min-w-0 flex-1 truncate">
                     <span className="font-medium">{r.contactName ?? "Senza nome"}</span>
-                    <span className="text-stone-500"> · {[r.contactPhone, r.contactEmail].filter(Boolean).join(" · ")}</span>
+                    <span className="text-slate-500"> · {[r.contactPhone, r.contactEmail].filter(Boolean).join(" · ")}</span>
                   </span>
-                  <span className="shrink-0 text-xs text-stone-500">{dateFormat.format(new Date(r.createdAt))}</span>
+                  <span className="shrink-0 text-xs text-slate-500">{dateFormat.format(new Date(r.createdAt))}</span>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ring-1 ${statusInfo[r.status as SubmissionStatus]?.className ?? ""}`}>
                     {statusInfo[r.status as SubmissionStatus]?.label ?? r.status}
                   </span>

@@ -16,13 +16,13 @@ const RESTAURANT_HOURS: OpeningRange[] = [1, 2, 3, 4, 5, 6].flatMap((weekday) =>
 export function AvailabilityPage({ projectId }: { projectId: string }) {
   const settings = useQuery(availabilityQuery(projectId));
   if (settings.error) return <Alert>{settings.error.message}</Alert>;
-  if (!settings.data) return <p className="py-12 text-center text-sm text-stone-500">Caricamento…</p>;
+  if (!settings.data) return <p className="py-12 text-center text-sm text-slate-500">Caricamento…</p>;
 
   if (settings.data.timeOptions.length === 0) {
     return (
       <div>
         <PageHeader title="Orari e disponibilità" />
-        <p className="rounded-xl border border-dashed border-stone-300 px-6 py-12 text-center text-sm text-stone-500">
+        <p className="rounded-xl border border-dashed border-slate-300 px-6 py-12 text-center text-sm text-slate-500">
           Il template di questo widget non chiede giorno e orario: usa Ristorante o Appuntamenti per gestire la disponibilità.
         </p>
       </div>
@@ -82,18 +82,18 @@ function HoursCard({ projectId, settings }: { projectId: string; settings: Avail
           </div>
         )}
 
-        <ul className="divide-y divide-stone-100 rounded-lg ring-1 ring-stone-200">
+        <ul className="divide-y divide-slate-100 rounded-lg ring-1 ring-slate-200">
           {WEEKDAYS.map((name, weekday) => {
             const ranges = hours.map((h, i) => ({ h, i })).filter(({ h }) => h.weekday === weekday);
             return (
               <li key={name} className="flex flex-wrap items-start gap-x-4 gap-y-2 px-3 py-3">
                 <span className="w-24 pt-1.5 text-sm font-medium">{name}</span>
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
-                  {ranges.length === 0 && <span className="pt-1.5 text-sm text-stone-400">Chiuso</span>}
+                  {ranges.length === 0 && <span className="pt-1.5 text-sm text-slate-400">Chiuso</span>}
                   {ranges.map(({ h, i }) => (
                     <div key={i} className="flex items-center gap-2 text-sm">
                       <Input type="time" value={h.opensAt} onChange={(e) => update(i, { opensAt: e.target.value })} className="w-28" aria-label={`${name}, apertura`} required />
-                      <span className="text-stone-400">–</span>
+                      <span className="text-slate-400">–</span>
                       <Input type="time" value={h.closesAt} onChange={(e) => update(i, { closesAt: e.target.value })} className="w-28" aria-label={`${name}, chiusura`} required />
                       <Button type="button" variant="ghost" className="px-2 py-1 text-xs" aria-label={`Rimuovi fascia di ${name}`} onClick={() => setHours(hours.filter((_, j) => j !== i))}>
                         ×
@@ -145,16 +145,16 @@ function ClosuresCard({ projectId, settings }: { projectId: string; settings: Av
 
   return (
     <Card title="Chiusure" description="Ferie, festivi, eventi privati: in questi giorni il widget non accetta prenotazioni.">
-      {settings.closures.length === 0 && <p className="text-sm text-stone-500">Nessuna chiusura programmata.</p>}
+      {settings.closures.length === 0 && <p className="text-sm text-slate-500">Nessuna chiusura programmata.</p>}
       {settings.closures.length > 0 && (
-        <ul className="divide-y divide-stone-100 rounded-lg ring-1 ring-stone-200">
+        <ul className="divide-y divide-slate-100 rounded-lg ring-1 ring-slate-200">
           {settings.closures.map((c) => (
             <li key={c.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
               <span>
                 <span className="font-medium">
                   {c.dateFrom === c.dateTo ? formatBooking(c.dateFrom) : `${formatBooking(c.dateFrom)} → ${formatBooking(c.dateTo)}`}
                 </span>
-                {c.reason && <span className="text-stone-500"> · {c.reason}</span>}
+                {c.reason && <span className="text-slate-500"> · {c.reason}</span>}
               </span>
               <Button variant="ghost" className="px-2 py-1 text-xs" disabled={remove.isPending} onClick={() => remove.mutate(c.id)}>Rimuovi</Button>
             </li>

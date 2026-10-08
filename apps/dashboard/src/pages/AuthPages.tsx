@@ -1,20 +1,25 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, type FormEvent, type ReactNode } from "react";
+import { Logo } from "../components/Icon";
 import { Alert, Button, Field, Input } from "../components/ui";
 import { authClient } from "../lib/auth";
 
 function AuthLayout({ title, subtitle, children, footer }: { title: string; subtitle: string; children: ReactNode; footer: ReactNode }) {
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4 py-12">
+    <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-32 -right-24 size-[30rem] rounded-full bg-brand-200/50 blur-3xl" />
+        <div className="absolute -bottom-40 -left-32 size-[26rem] rounded-full bg-fuchsia-200/40 blur-3xl" />
+      </div>
       <div className="w-full max-w-sm">
-        <p className="mb-8 text-center text-2xl font-bold tracking-tight text-brand-700">snippo</p>
-        <div className="rounded-xl bg-white p-6 ring-1 ring-stone-200 sm:p-8">
+        <div className="mb-8 flex justify-center"><Logo className="text-xl" /></div>
+        <div className="rounded-2xl bg-white/90 p-6 shadow-xl shadow-brand-900/5 ring-1 ring-slate-200 backdrop-blur sm:p-8">
           <h1 className="text-lg font-semibold">{title}</h1>
-          <p className="mt-1 text-sm text-stone-500">{subtitle}</p>
+          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
           <div className="mt-6">{children}</div>
         </div>
-        <p className="mt-6 text-center text-sm text-stone-600">{footer}</p>
+        <p className="mt-6 text-center text-sm text-slate-600">{footer}</p>
       </div>
     </main>
   );

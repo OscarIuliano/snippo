@@ -26,7 +26,7 @@ const typeLabel = (step: Step) =>
 export function FlowEditorPage({ projectId }: { projectId: string }) {
   const project = useQuery(projectQuery(projectId));
   if (project.error) return <Alert>{project.error.message}</Alert>;
-  if (!project.data?.widget.flow) return <p className="py-12 text-center text-sm text-stone-500">Caricamento…</p>;
+  if (!project.data?.widget.flow) return <p className="py-12 text-center text-sm text-slate-500">Caricamento…</p>;
   // Remount on every published version: the draft restarts from what is live.
   return <Editor key={JSON.stringify(project.data.widget.flow)} project={project.data} />;
 }
@@ -85,13 +85,13 @@ function Editor({ project }: { project: ProjectDetail }) {
             Basate sul template <strong>{project.widget.template ? templateInfo[project.widget.template].label : "—"}</strong>
             {project.widget.customized && <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800 ring-1 ring-brand-100">personalizzate</span>}
           </p>
-          <label className="flex items-center gap-2 text-stone-600">
+          <label className="flex items-center gap-2 text-slate-600">
             Ripristina
             <select
               value=""
               disabled={restore.isPending}
               onChange={(e) => e.target.value && restoreTemplate(e.target.value as TemplateId)}
-              className="rounded-lg border-0 bg-white px-2 py-1.5 text-sm ring-1 ring-stone-300 focus:ring-2 focus:ring-brand-600"
+              className="rounded-lg border-0 bg-white px-2 py-1.5 text-sm ring-1 ring-slate-300 focus:ring-2 focus:ring-brand-600"
             >
               <option value="">un template…</option>
               {(Object.keys(templateInfo) as TemplateId[]).map((t) => <option key={t} value={t}>{templateInfo[t].label}</option>)}
@@ -119,8 +119,8 @@ function Editor({ project }: { project: ProjectDetail }) {
       <Card title="Aggiungi una domanda">
         {missingSpecial.length > 0 && (
           <>
-            <p className="text-xs font-medium tracking-wide text-stone-500 uppercase">Con un significato per Snippo</p>
-            <p className="mt-1 text-xs text-stone-500">Finiscono nei campi della richiesta, nel calendario e nelle notifiche.</p>
+            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">Con un significato per Snippo</p>
+            <p className="mt-1 text-xs text-slate-500">Finiscono nei campi della richiesta, nel calendario e nelle notifiche.</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {missingSpecial.map((k) => (
                 <Button key={k} variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => setSteps([...steps, structuredClone(specialSteps[k].step) as Step])}>
@@ -130,7 +130,7 @@ function Editor({ project }: { project: ProjectDetail }) {
             </div>
           </>
         )}
-        <p className={cx("text-xs font-medium tracking-wide text-stone-500 uppercase", missingSpecial.length > 0 && "mt-4")}>Personalizzate</p>
+        <p className={cx("text-xs font-medium tracking-wide text-slate-500 uppercase", missingSpecial.length > 0 && "mt-4")}>Personalizzate</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {(Object.keys(genericSteps) as GenericType[]).map((t) => (
             <Button
@@ -151,12 +151,12 @@ function Editor({ project }: { project: ProjectDetail }) {
           onChange={(e) => setDraft({ ...draft, successMessage: e.target.value })}
           rows={2}
           maxLength={300}
-          className="block w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-stone-300 focus:ring-2 focus:ring-brand-600 focus:outline-none"
+          className="block w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-slate-300 focus:ring-2 focus:ring-brand-600 focus:outline-none"
         />
       </Card>
 
       {(dirty || saved || save.error) && (
-        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur lg:left-60">
+        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:left-60">
           <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3">
             {save.error ? (
               <span className="text-sm text-red-700">{save.error.message}</span>
@@ -165,7 +165,7 @@ function Editor({ project }: { project: ProjectDetail }) {
             ) : saved && !dirty ? (
               <span className="text-sm text-emerald-700">Salvato. Il widget usa le nuove domande entro un minuto.</span>
             ) : (
-              <span className="text-sm text-stone-600">Modifiche non salvate</span>
+              <span className="text-sm text-slate-600">Modifiche non salvate</span>
             )}
             <div className="ml-auto flex gap-2">
               {dirty && <Button variant="ghost" onClick={() => setDraft(structuredClone(live))}>Annulla</Button>}
@@ -190,10 +190,10 @@ function StepCard(props: {
   const { index, step, last, problems, onChange, onMove, onRemove } = props;
 
   return (
-    <li className={cx("rounded-xl bg-white p-4 ring-1", problems.length > 0 ? "ring-red-300" : "ring-stone-200")}>
+    <li className={cx("rounded-xl bg-white p-4 ring-1", problems.length > 0 ? "ring-red-300" : "ring-slate-200")}>
       <div className="flex items-center gap-2">
-        <span className="w-6 text-sm text-stone-400">{index + 1}.</span>
-        <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-700">{typeLabel(step)}</span>
+        <span className="w-6 text-sm text-slate-400">{index + 1}.</span>
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{typeLabel(step)}</span>
         <div className="ml-auto flex gap-1">
           <Button variant="ghost" className="px-2 py-1 text-xs" disabled={index === 0} aria-label="Sposta su" onClick={() => onMove(-1)}>↑</Button>
           <Button variant="ghost" className="px-2 py-1 text-xs" disabled={last} aria-label="Sposta giù" onClick={() => onMove(1)}>↓</Button>
@@ -207,12 +207,12 @@ function StepCard(props: {
         rows={2}
         maxLength={300}
         aria-label={`Testo della domanda ${index + 1}`}
-        className="mt-3 block w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-stone-300 focus:ring-2 focus:ring-brand-600 focus:outline-none"
+        className="mt-3 block w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-slate-300 focus:ring-2 focus:ring-brand-600 focus:outline-none"
       />
 
       <div className="mt-3 space-y-3 text-sm">
         {step.type !== "message" && (
-          <label className="flex items-center gap-2 text-stone-700">
+          <label className="flex items-center gap-2 text-slate-700">
             <input type="checkbox" checked={step.required !== false} onChange={(e) => onChange({ ...step, required: e.target.checked } as Step)} className="accent-brand-700" />
             Obbligatoria
           </label>
@@ -221,14 +221,14 @@ function StepCard(props: {
         {step.type === "time" && (
           <>
             <OptionsEditor options={step.options} type="time" onChange={(options) => onChange({ ...step, options: [...options].sort() })} />
-            <p className="text-xs text-stone-500">Il widget propone solo quelli dentro gli orari di apertura e con posto libero (pagina Orari).</p>
+            <p className="text-xs text-slate-500">Il widget propone solo quelli dentro gli orari di apertura e con posto libero (pagina Orari).</p>
           </>
         )}
         {step.type === "number" && (
           <div className="flex items-center gap-2">
-            <span className="text-stone-600">Da</span>
+            <span className="text-slate-600">Da</span>
             <Input type="number" value={step.min} onChange={(e) => onChange({ ...step, min: Number(e.target.value) })} className="w-24" aria-label="Minimo" />
-            <span className="text-stone-600">a</span>
+            <span className="text-slate-600">a</span>
             <Input type="number" value={step.max} onChange={(e) => onChange({ ...step, max: Number(e.target.value) })} className="w-24" aria-label="Massimo" />
           </div>
         )}

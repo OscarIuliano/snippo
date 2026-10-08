@@ -10,7 +10,7 @@ import { templateInfo } from "../lib/templates";
 export function WidgetPage({ projectId }: { projectId: string }) {
   const project = useQuery(projectQuery(projectId));
   if (project.error) return <Alert>{project.error.message}</Alert>;
-  if (!project.data) return <p className="py-12 text-center text-sm text-stone-500">Caricamento…</p>;
+  if (!project.data) return <p className="py-12 text-center text-sm text-slate-500">Caricamento…</p>;
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -59,11 +59,11 @@ function AppearanceCard({ project }: { project: ProjectDetail }) {
                 className="h-9 w-14 cursor-pointer rounded-lg border-0 bg-transparent"
                 aria-label="Colore del widget"
               />
-              <span className="font-mono text-sm text-stone-600">{theme.primaryColor}</span>
+              <span className="font-mono text-sm text-slate-600">{theme.primaryColor}</span>
             </div>
           </Field>
           <fieldset>
-            <legend className="text-sm font-medium text-stone-800">Posizione</legend>
+            <legend className="text-sm font-medium text-slate-800">Posizione</legend>
             <div className="mt-2 flex gap-4 text-sm">
               {(["right", "left"] as const).map((position) => (
                 <label key={position} className="flex items-center gap-2">
@@ -87,11 +87,11 @@ function AppearanceCard({ project }: { project: ProjectDetail }) {
 
 function Preview({ theme }: { theme: UpdateWidgetInput }) {
   return (
-    <div aria-hidden className="relative h-56 w-full overflow-hidden rounded-xl bg-stone-100 ring-1 ring-stone-200 sm:w-48">
+    <div aria-hidden className="relative h-56 w-full overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200 sm:w-48">
       <div className={cx("absolute bottom-16 w-40 overflow-hidden rounded-lg bg-white shadow-lg", theme.position === "right" ? "right-3" : "left-3")}>
         <div className="truncate px-3 py-2 text-xs font-semibold text-white" style={{ backgroundColor: theme.primaryColor }}>{theme.title || " "}</div>
         <div className="space-y-1.5 p-2">
-          <div className="h-3 w-24 rounded bg-stone-200" />
+          <div className="h-3 w-24 rounded bg-slate-200" />
           <div className="ml-auto h-3 w-16 rounded" style={{ backgroundColor: theme.primaryColor }} />
         </div>
       </div>
@@ -112,7 +112,7 @@ function QuestionsCard({ project }: { project: ProjectDetail }) {
       <Link
         to="/progetti/$projectId/domande"
         params={{ projectId: project.id }}
-        className="inline-flex items-center rounded-lg px-3.5 py-2 text-sm font-medium text-stone-800 ring-1 ring-stone-300 hover:bg-stone-50"
+        className="inline-flex items-center rounded-lg px-3.5 py-2 text-sm font-medium text-slate-800 ring-1 ring-slate-300 hover:bg-slate-50"
       >
         Modifica le domande
       </Link>
@@ -135,7 +135,7 @@ function DomainsCard({ project }: { project: ProjectDetail }) {
 
   return (
     <Card title="Siti autorizzati" description="Il widget risponde solo su questi domini e sui loro sottodomini (www compreso).">
-      <ul className="divide-y divide-stone-100 rounded-lg ring-1 ring-stone-200">
+      <ul className="divide-y divide-slate-100 rounded-lg ring-1 ring-slate-200">
         {project.domains.map((d) => (
           <li key={d.id} className="flex items-center justify-between px-3 py-2 text-sm">
             <span className="font-mono">{d.domain}</span>

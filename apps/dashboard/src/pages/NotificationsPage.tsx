@@ -1,13 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { normalizePhone, type ChannelRow, type ChannelType, type DeliveryRow } from "@snippo/shared";
+import { Icon, type IconName } from "../components/Icon";
 import { Alert, Button, Card, Input, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
 import { channelsQuery, deliveriesQuery } from "../lib/queries";
 
-const channelLabel: Record<ChannelType, { name: string; icon: string; placeholder: string }> = {
-  email: { name: "Email", icon: "✉️", placeholder: "prenotazioni@trattoria.it" },
-  whatsapp: { name: "WhatsApp", icon: "📱", placeholder: "333 123 4567" },
+const channelLabel: Record<ChannelType, { name: string; icon: IconName; placeholder: string }> = {
+  email: { name: "Email", icon: "mail", placeholder: "prenotazioni@trattoria.it" },
+  whatsapp: { name: "WhatsApp", icon: "phone", placeholder: "333 123 4567" },
+};
+
+/** "+393331234567" -> "+39 333 123 4567" (Italian numbers; others stay as they are). */
+const formatTarget = (target: string) => {
+  const it = target.match(/^\+39(\d{3})(\d{3})(\d{3,4})$/);
+  return it ? `+39 ${it[1]} ${it[2]} ${it[3]}` : target;
 };
 
 const deliveryStatus: Record<DeliveryRow["status"], { label: string; className: string }> = {
@@ -65,16 +72,16 @@ function ChannelsCard({ projectId }: { projectId: string }) {
 
   return (
     <Card title="Destinatari" description="Ogni destinatario attivo riceve tutte le nuove richieste del progetto, con i pulsanti Conferma e Rifiuta.">
-      {channels.data?.length === 0 && <p className="text-sm text-stone-500">Nessun destinatario: le richieste arrivano solo in dashboard.</p>}
-      <ul className="divide-y divide-stone-100 rounded-lg ring-1 ring-stone-200 empty:hidden">
+      {channels.data?.length === 0 && <p className="text-sm text-slate-500">Nessun destinatario: le richieste arrivano solo in dashboard.</p>}
+      <ul className="divide-y divide-slate-100 rounded-lg ring-1 ring-slate-200 empty:hidden">
         {channels.data?.map((ch) => (
           <li key={ch.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5 text-sm">
-            <span aria-hidden>{channelLabel[ch.type].icon}</span>
-            <span className={cx("min-w-0 flex-1 truncate", !ch.isActive && "text-stone-400 line-through")}>
+            <Icon name={channelLabel[ch.type].icon} className="size-4.5 shrink-0 text-slate-400" />
+            <span className={cx("min-w-0 flex-1 truncate", !ch.isActive && "text-slate-400 line-through")}>
               <span className="sr-only">{channelLabel[ch.type].name}: </span>
-              {ch.target}
+              {formatTarget(ch.target)}
             </span>
-            <label className="flex items-center gap-1.5 text-xs text-stone-600">
+            <label className="flex items-center gap-1.5 text-xs text-slate-600">
               <input type="checkbox" checked={ch.isActive} onChange={() => toggle.mutate(ch)} className="accent-brand-700" />
               Attivo
             </label>
@@ -93,7 +100,7 @@ function ChannelsCard({ projectId }: { projectId: string }) {
           value={type}
           onChange={(e) => setType(e.target.value as ChannelType)}
           aria-label="Tipo di canale"
-          className="rounded-lg border-0 bg-white px-2 py-2 text-sm ring-1 ring-stone-300 focus:ring-2 focus:ring-brand-600"
+          className="rounded-lg border-0 bg-white px-2 py-2 text-sm ring-1 ring-slate-300 focus:ring-2 focus:ring-brand-600"
         >
           <option value="email">Email</option>
           <option value="whatsapp">WhatsApp</option>
@@ -119,11 +126,11 @@ function DeliveriesCard({ projectId }: { projectId: string }) {
 
   return (
     <Card title="Ultimi invii" description="Le 20 notifiche più recenti. Quelle non riuscite vengono ritentate in automatico.">
-      {deliveries.data?.length === 0 && <p className="text-sm text-stone-500">Ancora nessuna notifica inviata.</p>}
+      {deliveries.data?.length === 0 && <p className="text-sm text-slate-500">Ancora nessuna notifica inviata.</p>}
       {deliveries.data && deliveries.data.length > 0 && (
         <div className="-mx-5 overflow-x-auto sm:-mx-6">
           <table className="w-full text-left text-sm">
-            <thead className="text-xs text-stone-500">
+            <thead className="text-xs text-slate-500">
               <tr>
                 <th className="px-5 py-2 font-medium sm:px-6">Quando</th>
                 <th className="px-2 py-2 font-medium">Destinatario</th>
@@ -131,12 +138,17 @@ function DeliveriesCard({ projectId }: { projectId: string }) {
                 <th className="px-5 py-2 font-medium sm:px-6">Stato</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-100">
+            <tbody className="divide-y divide-slate-100">
               {deliveries.data.map((d) => (
                 <tr key={d.id}>
-                  <td className="px-5 py-2 whitespace-nowrap text-stone-500 sm:px-6">{timeFormat.format(new Date(d.createdAt))}</td>
-                  <td className="max-w-48 truncate px-2 py-2">{channelLabel[d.channelType].icon} {d.target}</td>
-                  <td className="px-2 py-2 text-stone-600">{d.submissionId ? (d.contactName ?? "Senza nome") : "Prova"}</td>
+                  <td className="px-5 py-2 whitespace-nowrap text-slate-500 sm:px-6">{timeFormat.format(new Date(d.createdAt))}</td>
+                  <td className="max-w-56 px-2 py-2">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <Icon name={channelLabel[d.channelType].icon} className="size-4 shrink-0 text-slate-400" />
+                      <span className="truncate">{formatTarget(d.target)}</span>
+                    </span>
+                  </td>
+                  <td className="px-2 py-2 text-slate-600">{d.submissionId ? (d.contactName ?? "Senza nome") : "Prova"}</td>
                   <td className="px-5 py-2 sm:px-6">
                     <span title={d.lastError ?? undefined} className={cx("rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1", deliveryStatus[d.status].className)}>
                       {deliveryStatus[d.status].label}

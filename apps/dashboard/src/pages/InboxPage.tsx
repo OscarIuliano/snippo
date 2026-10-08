@@ -22,7 +22,7 @@ export function InboxPage({ projectId }: { projectId: string }) {
     <div>
       <PageHeader title="Richieste" description="Le richieste arrivate dal widget, le più recenti in alto." />
 
-      <div role="tablist" className="mb-4 flex gap-1 overflow-x-auto border-b border-stone-200">
+      <div role="tablist" className="mb-4 flex gap-1 overflow-x-auto border-b border-slate-200">
         {[undefined, ...submissionStatuses].map((s) => (
           <button
             key={s ?? "all"}
@@ -31,21 +31,21 @@ export function InboxPage({ projectId }: { projectId: string }) {
             onClick={() => setStatus(s)}
             className={cx(
               "-mb-px shrink-0 border-b-2 px-3 py-2 text-sm font-medium",
-              status === s ? "border-brand-700 text-brand-700" : "border-transparent text-stone-500 hover:text-stone-800",
+              status === s ? "border-brand-700 text-brand-700" : "border-transparent text-slate-500 hover:text-slate-800",
             )}
           >
-            {s ? statusInfo[s].label : "Tutte"}
-            {s && counts ? <span className="ml-1.5 rounded-full bg-stone-100 px-1.5 text-xs text-stone-600">{counts[s]}</span> : null}
+            {s ? statusInfo[s].plural : "Tutte"}
+            {s && counts ? <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 text-xs text-slate-600">{counts[s]}</span> : null}
           </button>
         ))}
       </div>
 
       {submissions.error && <Alert>{submissions.error.message}</Alert>}
-      {submissions.isPending && <p className="py-12 text-center text-sm text-stone-500">Caricamento…</p>}
+      {submissions.isPending && <p className="py-12 text-center text-sm text-slate-500">Caricamento…</p>}
       {submissions.data?.items.length === 0 && (
-        <div className="rounded-xl border border-dashed border-stone-300 px-6 py-12 text-center">
-          <p className="font-medium">Nessuna richiesta {status ? `in "${statusInfo[status].label}"` : "per ora"}</p>
-          <p className="mt-1 text-sm text-stone-500">
+        <div className="rounded-xl border border-dashed border-slate-300 px-6 py-12 text-center">
+          <p className="font-medium">Nessuna richiesta {status ? `tra le ${statusInfo[status].plural.toLowerCase()}` : "per ora"}</p>
+          <p className="mt-1 text-sm text-slate-500">
             Hai già installato il widget?{" "}
             <Link to="/progetti/$projectId/installazione" params={{ projectId }} className="font-medium text-brand-700 hover:underline">
               Vedi come fare
@@ -89,15 +89,15 @@ function SubmissionCard({ submission: s, projectId, flow }: { submission: Submis
   const details = Object.entries(s.answers).filter(([key]) => !HEADER_KEYS.has(key));
 
   return (
-    <li className="rounded-xl bg-white p-4 ring-1 ring-stone-200 sm:p-5">
+    <li className="rounded-xl bg-white p-4 ring-1 ring-slate-200 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold">
             {s.contactName ?? "Senza nome"}
-            {s.partySize ? <span className="font-normal text-stone-500"> · {s.partySize} {s.partySize === 1 ? "persona" : "persone"}</span> : null}
+            {s.partySize ? <span className="font-normal text-slate-500"> · {s.partySize} {s.partySize === 1 ? "persona" : "persone"}</span> : null}
           </p>
           {s.bookingAt && <p className="mt-0.5 text-sm font-medium text-brand-700">{formatBooking(s.bookingAt)}</p>}
-          <p className="mt-1 flex flex-wrap gap-x-3 text-sm text-stone-600">
+          <p className="mt-1 flex flex-wrap gap-x-3 text-sm text-slate-600">
             {s.contactPhone && <a href={`tel:${s.contactPhone.replace(/\s/g, "")}`} className="hover:underline">{s.contactPhone}</a>}
             {s.contactEmail && <a href={`mailto:${s.contactEmail}`} className="hover:underline">{s.contactEmail}</a>}
           </p>
@@ -108,11 +108,11 @@ function SubmissionCard({ submission: s, projectId, flow }: { submission: Submis
       </div>
 
       {details.length > 0 && (
-        <dl className="mt-3 space-y-1 border-t border-stone-100 pt-3 text-sm">
+        <dl className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-sm">
           {details.map(([key, value]) => (
             <div key={key} className="sm:flex sm:gap-2">
-              <dt className="text-stone-500">{prompt(key)}</dt>
-              <dd className="text-stone-800">{value}</dd>
+              <dt className="text-slate-500">{prompt(key)}</dt>
+              <dd className="text-slate-800">{value}</dd>
             </div>
           ))}
         </dl>
@@ -131,7 +131,7 @@ function SubmissionCard({ submission: s, projectId, flow }: { submission: Submis
         {(s.status === "rejected" || s.status === "completed") && (
           <Button variant="ghost" onClick={() => update.mutate("new")} disabled={update.isPending}>Riporta tra le nuove</Button>
         )}
-        <span className="ml-auto text-xs text-stone-400">Ricevuta {receivedFormat.format(new Date(s.createdAt))}</span>
+        <span className="ml-auto text-xs text-slate-400">Ricevuta {receivedFormat.format(new Date(s.createdAt))}</span>
         {canDelete && (
           <Button
             variant="ghost"

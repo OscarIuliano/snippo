@@ -6,9 +6,9 @@ export const templateInfo: Record<TemplateId, { label: string; description: stri
   info: { label: "Richiesta info", description: "Domande e preventivi, con risposta via email.", icon: "💬" },
 };
 
-export const statusInfo: Record<SubmissionStatus, { label: string; className: string }> = {
-  new: { label: "Nuova", className: "bg-amber-50 text-amber-800 ring-amber-200" },
-  confirmed: { label: "Confermata", className: "bg-emerald-50 text-emerald-800 ring-emerald-200" },
-  rejected: { label: "Rifiutata", className: "bg-stone-100 text-stone-600 ring-stone-200" },
-  completed: { label: "Completata", className: "bg-sky-50 text-sky-800 ring-sky-200" },
+export const statusInfo: Record<SubmissionStatus, { label: string; plural: string; className: string }> = {
+  new: { label: "Nuova", plural: "Nuove", className: "bg-amber-50 text-amber-800 ring-amber-200" },
+  confirmed: { label: "Confermata", plural: "Confermate", className: "bg-emerald-50 text-emerald-800 ring-emerald-200" },
+  rejected: { label: "Rifiutata", plural: "Rifiutate", className: "bg-slate-100 text-slate-600 ring-slate-200" },
+  completed: { label: "Completata", plural: "Completate", className: "bg-sky-50 text-sky-800 ring-sky-200" },
 };

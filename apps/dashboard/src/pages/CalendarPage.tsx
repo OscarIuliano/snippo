@@ -8,6 +8,12 @@ import { statusInfo } from "../lib/templates";
 
 const WEEKDAYS = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"];
 const monthFormat = new Intl.DateTimeFormat("it-IT", { month: "long", year: "numeric", timeZone: "UTC" });
+const longDayFormat = new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+/** "2026-10-08" -> "Giovedì 8 ottobre" */
+const longDay = (date: string) => {
+  const text = longDayFormat.format(new Date(`${date}T00:00:00Z`));
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
 
 /** Today in the browser's local time, as "YYYY-MM-DD". */
 function today(): string {
@@ -71,7 +77,7 @@ export function CalendarPage({ projectId }: { projectId: string }) {
     return (
       <div>
         <PageHeader title="Calendario" />
-        <p className="rounded-xl border border-dashed border-stone-300 px-6 py-12 text-center text-sm text-stone-500">
+        <p className="rounded-xl border border-dashed border-slate-300 px-6 py-12 text-center text-sm text-slate-500">
           Il calendario mostra le richieste con un giorno e un orario: usa il template Ristorante o Appuntamenti per averlo.
         </p>
       </div>
@@ -94,9 +100,9 @@ export function CalendarPage({ projectId }: { projectId: string }) {
       {calendar.error && <div className="mb-4"><Alert>{calendar.error.message}</Alert></div>}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <section aria-label={monthFormat.format(new Date(`${month}T00:00:00Z`))} className="rounded-xl bg-white ring-1 ring-stone-200">
-          <h2 className="border-b border-stone-200 px-4 py-3 font-semibold capitalize">{monthFormat.format(new Date(`${month}T00:00:00Z`))}</h2>
-          <div className="grid grid-cols-7 border-b border-stone-200 text-center text-xs font-medium text-stone-500">
+        <section aria-label={monthFormat.format(new Date(`${month}T00:00:00Z`))} className="rounded-xl bg-white ring-1 ring-slate-200">
+          <h2 className="border-b border-slate-200 px-4 py-3 font-semibold capitalize">{monthFormat.format(new Date(`${month}T00:00:00Z`))}</h2>
+          <div className="grid grid-cols-7 border-b border-slate-200 text-center text-xs font-medium text-slate-500">
             {WEEKDAYS.map((d) => <div key={d} className="py-2">{d}</div>)}
           </div>
           <div className={cx("grid grid-cols-7", calendar.isPending && "opacity-50")}>
@@ -112,15 +118,17 @@ export function CalendarPage({ projectId }: { projectId: string }) {
                   aria-pressed={selected === day}
                   aria-label={`${formatBooking(day)}: ${items.length} richieste`}
                   className={cx(
-                    "flex min-h-16 flex-col items-start gap-1 border-b border-r border-stone-100 p-1.5 text-left text-sm transition sm:min-h-24 sm:p-2 [&:nth-child(7n)]:border-r-0",
-                    inMonth ? "bg-white hover:bg-stone-50" : "bg-stone-50/60 text-stone-400",
+                    "flex min-h-16 flex-col items-start gap-1 border-b border-r border-slate-100 p-1.5 text-left text-sm transition sm:min-h-24 sm:p-2 [&:nth-child(7n)]:border-r-0",
+                    inMonth ? "bg-white hover:bg-slate-50" : "bg-slate-50/60 text-slate-400",
                     selected === day && "bg-brand-50 ring-2 ring-brand-600 ring-inset hover:bg-brand-50",
                   )}
                 >
-                  <span className={cx("grid size-6 place-items-center rounded-full text-xs", day === today() && "bg-brand-700 font-semibold text-white")}>
-                    {Number(day.slice(8))}
+                  <span className="flex w-full items-center justify-between">
+                    <span className={cx("grid size-6 place-items-center rounded-full text-xs", day === today() && "bg-brand-700 font-semibold text-white")}>
+                      {Number(day.slice(8))}
+                    </span>
+                    {hasNew && <span className="mr-0.5 size-1.5 shrink-0 rounded-full bg-amber-500" title="Da confermare" />}
                   </span>
-                  {hasNew && <span className="size-1.5 shrink-0 self-end rounded-full bg-amber-500 sm:-mt-6" title="Da confermare" />}
                   {(["morning", "evening"] as const).map((period) => {
                     const part = items.filter((s) => periodOf(s) === period);
                     if (part.length === 0) return null;
@@ -136,7 +144,7 @@ export function CalendarPage({ projectId }: { projectId: string }) {
               );
             })}
           </div>
-          <p className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-3 text-xs text-stone-500">
+          <p className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-3 text-xs text-slate-500">
             <span><span className="text-sky-700">☀︎</span> Mattina, fino alle {MORNING_UNTIL}</span>
             <span><span className="text-violet-700">☾</span> Sera, dopo le {MORNING_UNTIL}</span>
             <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-amber-500" /> Da confermare</span>
@@ -162,15 +170,15 @@ function DayAgenda({ projectId, day, items, loading }: { projectId: string; day:
   const pending = people(items.filter((s) => s.status === "new"));
 
   return (
-    <section aria-label={`Agenda di ${formatBooking(day)}`} className="rounded-xl bg-white p-4 ring-1 ring-stone-200 sm:p-5">
-      <h2 className="font-semibold capitalize">{formatBooking(day)}</h2>
+    <section aria-label={`Agenda di ${formatBooking(day)}`} className="rounded-xl bg-white p-4 ring-1 ring-slate-200 sm:p-5">
+      <h2 className="font-semibold">{longDay(day)}</h2>
       {items.length > 0 && (
-        <p className="mt-1 text-sm text-stone-500">
+        <p className="mt-1 text-sm text-slate-500">
           {confirmed} {confirmed === 1 ? "persona confermata" : "persone confermate"}
           {pending > 0 && <span className="text-amber-700"> · {pending} da confermare</span>}
         </p>
       )}
-      {!loading && items.length === 0 && <p className="mt-4 text-sm text-stone-500">Nessuna prenotazione per questo giorno.</p>}
+      {!loading && items.length === 0 && <p className="mt-4 text-sm text-slate-500">Nessuna prenotazione per questo giorno.</p>}
 
       {(["morning", "evening"] as const).map((period) => {
         const groups = byTime.filter(([, group]) => periodOf(group[0]!) === period);
@@ -187,7 +195,7 @@ function DayAgenda({ projectId, day, items, loading }: { projectId: string; day:
                 <div key={time} className={cx("border-l-4 pl-3", periods[period].bar)}>
                   <h4 className="flex items-baseline justify-between text-sm">
                     <span className="font-semibold">{time}</span>
-                    <span className="text-xs text-stone-500">{people(group) ? `${people(group)} persone` : `${group.length} richieste`}</span>
+                    <span className="text-xs text-slate-500">{people(group) ? `${people(group)} persone` : `${group.length} richieste`}</span>
                   </h4>
                   <ul className="mt-2 space-y-2">
                     {group.map((s) => <AgendaItem key={s.id} projectId={projectId} submission={s} />)}
@@ -213,20 +221,20 @@ function AgendaItem({ projectId, submission: s }: { projectId: string; submissio
   });
 
   return (
-    <li className="rounded-lg p-2 text-sm ring-1 ring-stone-200">
+    <li className="rounded-lg p-2 text-sm ring-1 ring-slate-200">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-medium">
             {s.contactName ?? "Senza nome"}
-            {s.partySize ? <span className="font-normal text-stone-500"> · {s.partySize} pers.</span> : null}
+            {s.partySize ? <span className="font-normal text-slate-500"> · {s.partySize} pers.</span> : null}
           </p>
           {s.contactPhone && (
-            <a href={`tel:${s.contactPhone.replace(/\s/g, "")}`} className="text-xs text-stone-500 hover:underline">{s.contactPhone}</a>
+            <a href={`tel:${s.contactPhone.replace(/\s/g, "")}`} className="text-xs text-slate-500 hover:underline">{s.contactPhone}</a>
           )}
         </div>
         <span className={cx("shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ring-1", statusInfo[s.status].className)}>{statusInfo[s.status].label}</span>
       </div>
-      {s.answers.notes && <p className="mt-1 text-xs text-stone-600">{s.answers.notes}</p>}
+      {s.answers.notes && <p className="mt-1 text-xs text-slate-600">{s.answers.notes}</p>}
       {s.status === "new" && (
         <div className="mt-2 flex gap-2">
           <Button className="px-2.5 py-1 text-xs" disabled={update.isPending} onClick={() => update.mutate("confirmed")}>Conferma</Button>

@@ -22,14 +22,14 @@ export function StatsPage({ projectId }: { projectId: string }) {
     <div className="max-w-4xl">
       <PageHeader title="Statistiche" description="Quante persone aprono il widget, quante arrivano in fondo e dove si fermano." />
 
-      <div role="radiogroup" aria-label="Periodo" className="mb-6 inline-flex rounded-lg bg-white p-1 ring-1 ring-stone-200">
+      <div role="radiogroup" aria-label="Periodo" className="mb-6 inline-flex rounded-lg bg-white p-1 ring-1 ring-slate-200">
         {PERIODS.map((p) => (
           <button
             key={p}
             role="radio"
             aria-checked={days === p}
             onClick={() => setDays(p)}
-            className={cx("rounded-md px-3 py-1.5 text-sm font-medium", days === p ? "bg-brand-700 text-white" : "text-stone-600 hover:bg-stone-100")}
+            className={cx("rounded-md px-3 py-1.5 text-sm font-medium", days === p ? "bg-brand-700 text-white" : "text-slate-600 hover:bg-slate-100")}
           >
             Ultimi {p} giorni
           </button>
@@ -37,7 +37,7 @@ export function StatsPage({ projectId }: { projectId: string }) {
       </div>
 
       {stats.error && <Alert>{stats.error.message}</Alert>}
-      {!data && !stats.error && <p className="py-12 text-center text-sm text-stone-500">Caricamento…</p>}
+      {!data && !stats.error && <p className="py-12 text-center text-sm text-slate-500">Caricamento…</p>}
       {data && (
         // Refetch keeps the frame: the previous numbers stay, dimmed, until the new ones arrive.
         <div className={cx("space-y-6 transition-opacity", stats.isPlaceholderData && "opacity-60")}>
@@ -65,10 +65,10 @@ function KpiRow({ totals }: { totals: ProjectStats["totals"] }) {
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {tiles.map((t) => (
-        <div key={t.label} className="rounded-xl bg-white p-4 ring-1 ring-stone-200">
-          <p className="text-sm text-stone-500">{t.label}</p>
-          <p className="mt-1 text-2xl font-semibold text-stone-900">{t.value}</p>
-          {t.note && <p className="mt-0.5 text-xs text-stone-500">{t.note}</p>}
+        <div key={t.label} className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
+          <p className="text-sm text-slate-500">{t.label}</p>
+          <p className="mt-1 text-2xl font-semibold text-slate-900">{t.value}</p>
+          {t.note && <p className="mt-0.5 text-xs text-slate-500">{t.note}</p>}
         </div>
       ))}
     </div>
@@ -132,7 +132,7 @@ function TrendChart({ daily }: { daily: ProjectStats["daily"] }) {
 
   return (
     <div>
-      <ul className="mb-3 flex gap-4 text-xs text-stone-600" aria-label="Legenda">
+      <ul className="mb-3 flex gap-4 text-xs text-slate-600" aria-label="Legenda">
         {series.map((s) => (
           <li key={s.key} className="flex items-center gap-1.5">
             <span className="inline-block h-0.5 w-4 rounded" style={{ background: s.color }} />
@@ -189,15 +189,15 @@ function TrendChart({ daily }: { daily: ProjectStats["daily"] }) {
         )}
         {point && hover !== null && (
           <div
-            className="pointer-events-none absolute top-2 rounded-lg bg-white px-3 py-2 text-xs shadow-lg ring-1 ring-stone-200"
+            className="pointer-events-none absolute top-2 rounded-lg bg-white px-3 py-2 text-xs shadow-lg ring-1 ring-slate-200"
             style={x(hover) > width / 2 ? { right: width - x(hover) + 12 } : { left: x(hover) + 12 }}
           >
-            <p className="mb-1 font-medium text-stone-500">{formatBooking(point.date)}</p>
+            <p className="mb-1 font-medium text-slate-500">{formatBooking(point.date)}</p>
             {series.map((s) => (
               <p key={s.key} className="flex items-center gap-2">
                 <span className="inline-block h-0.5 w-3 rounded" style={{ background: s.color }} />
-                <span className="font-semibold text-stone-900">{numberFormat.format(point[s.key])}</span>
-                <span className="text-stone-500">{s.label.toLowerCase()}</span>
+                <span className="font-semibold text-slate-900">{numberFormat.format(point[s.key])}</span>
+                <span className="text-slate-500">{s.label.toLowerCase()}</span>
               </p>
             ))}
           </div>
@@ -210,10 +210,10 @@ function TrendChart({ daily }: { daily: ProjectStats["daily"] }) {
 function DailyTable({ daily }: { daily: ProjectStats["daily"] }) {
   return (
     <details className="mt-4 text-sm">
-      <summary className="cursor-pointer text-stone-600 hover:text-stone-900">Mostra i dati in tabella</summary>
-      <div className="mt-3 max-h-72 overflow-auto rounded-lg ring-1 ring-stone-200">
+      <summary className="cursor-pointer text-slate-600 hover:text-slate-900">Mostra i dati in tabella</summary>
+      <div className="mt-3 max-h-72 overflow-auto rounded-lg ring-1 ring-slate-200">
         <table className="w-full text-left" style={{ fontVariantNumeric: "tabular-nums" }}>
-          <thead className="sticky top-0 bg-stone-50 text-xs text-stone-500">
+          <thead className="sticky top-0 bg-slate-50 text-xs text-slate-500">
             <tr>
               <th className="px-3 py-2 font-medium">Giorno</th>
               <th className="px-3 py-2 text-right font-medium">Aperture</th>
@@ -221,7 +221,7 @@ function DailyTable({ daily }: { daily: ProjectStats["daily"] }) {
               <th className="px-3 py-2 text-right font-medium">Richieste</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-100">
+          <tbody className="divide-y divide-slate-100">
             {[...daily].reverse().map((d) => (
               <tr key={d.date}>
                 <td className="px-3 py-1.5">{formatBooking(d.date)}</td>
@@ -238,7 +238,7 @@ function DailyTable({ daily }: { daily: ProjectStats["daily"] }) {
 }
 
 function StepFunnel({ steps, starts }: { steps: ProjectStats["steps"]; starts: number }) {
-  if (starts === 0) return <p className="text-sm text-stone-500">Ancora nessuna conversazione in questo periodo.</p>;
+  if (starts === 0) return <p className="text-sm text-slate-500">Ancora nessuna conversazione in questo periodo.</p>;
 
   // The biggest fall from one question to the next: where the flow loses most people.
   let worst = -1;
@@ -256,16 +256,16 @@ function StepFunnel({ steps, starts }: { steps: ProjectStats["steps"]; starts: n
         return (
           <li key={s.key} title={`${numberFormat.format(s.reached)} persone (${percent(s.reached, starts)})`}>
             <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-              <span className="truncate text-stone-700">{s.prompt}</span>
-              <span className="shrink-0 font-medium text-stone-900" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {numberFormat.format(s.reached)} <span className="font-normal text-stone-500">· {percent(s.reached, starts)}</span>
+              <span className="truncate text-slate-700">{s.prompt}</span>
+              <span className="shrink-0 font-medium text-slate-900" style={{ fontVariantNumeric: "tabular-nums" }}>
+                {numberFormat.format(s.reached)} <span className="font-normal text-slate-500">· {percent(s.reached, starts)}</span>
               </span>
             </div>
-            <div className="h-4 w-full rounded-r bg-stone-100">
+            <div className="h-4 w-full rounded-r bg-slate-100">
               <div className="h-4 rounded-r" style={{ width: `${share * 100}%`, background: COLOR_REQUESTS }} />
             </div>
             {i === worst && worstDrop >= 0.15 && (
-              <p className="mt-1 text-xs text-stone-600">
+              <p className="mt-1 text-xs text-slate-600">
                 ↓ Qui si perde il {Math.round(worstDrop * 100)}% di chi era arrivato alla domanda precedente: è il passo da semplificare.
               </p>
             )}

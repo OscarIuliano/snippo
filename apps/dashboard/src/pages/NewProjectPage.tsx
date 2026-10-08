@@ -44,12 +44,12 @@ export function NewProjectPage() {
                 aria-pressed={template === id}
                 className={cx(
                   "rounded-xl p-4 text-left ring-1 transition",
-                  template === id ? "bg-brand-50 ring-2 ring-brand-600" : "bg-white ring-stone-200 hover:ring-stone-300",
+                  template === id ? "bg-brand-50 ring-2 ring-brand-600" : "bg-white ring-slate-200 hover:ring-slate-300",
                 )}
               >
                 <span className="text-2xl" aria-hidden>{templateInfo[id].icon}</span>
                 <span className="mt-2 block font-medium">{templateInfo[id].label}</span>
-                <span className="mt-1 block text-sm text-stone-500">{templateInfo[id].description}</span>
+                <span className="mt-1 block text-sm text-slate-500">{templateInfo[id].description}</span>
               </button>
             ))}
           </div>

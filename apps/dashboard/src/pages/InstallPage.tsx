@@ -10,7 +10,7 @@ export function InstallPage({ projectId }: { projectId: string }) {
   const project = useQuery(projectQuery(projectId));
   const [copied, setCopied] = useState(false);
   if (project.error) return <Alert>{project.error.message}</Alert>;
-  if (!project.data) return <p className="py-12 text-center text-sm text-stone-500">Caricamento…</p>;
+  if (!project.data) return <p className="py-12 text-center text-sm text-slate-500">Caricamento…</p>;
 
   const apiAttribute = PUBLIC_API_URL ? `\n        data-api="${PUBLIC_API_URL}"` : "";
   const snippet = `<script src="${WIDGET_URL}"\n        data-key="${project.data.widget.publicKey}"${apiAttribute} async></script>`;
@@ -28,10 +28,10 @@ export function InstallPage({ projectId }: { projectId: string }) {
     <div className="max-w-3xl space-y-6">
       <PageHeader title="Installazione" description="Una riga di codice e il widget è online." />
       <Card title="1. Copia il codice" description="Incollalo prima della chiusura di </body>, su tutte le pagine dove vuoi il widget.">
-        <pre className="overflow-x-auto rounded-lg bg-stone-900 p-4 text-sm leading-relaxed text-stone-100"><code>{snippet}</code></pre>
+        <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm leading-relaxed text-slate-100"><code>{snippet}</code></pre>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button onClick={copy}>{copied ? "Copiato!" : "Copia codice"}</Button>
-          <a href={mailto} className="inline-flex items-center rounded-lg px-3.5 py-2 text-sm font-medium text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50">
+          <a href={mailto} className="inline-flex items-center rounded-lg px-3.5 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50">
             Invia al tuo sviluppatore
           </a>
           {import.meta.env.DEV && (
@@ -47,17 +47,17 @@ export function InstallPage({ projectId }: { projectId: string }) {
         </div>
       </Card>
       <Card title="2. Dove incollarlo">
-        <ul className="space-y-2 text-sm text-stone-600">
-          <li><span className="font-medium text-stone-800">WordPress:</span> con un plugin come "WPCode", nella sezione Footer.</li>
-          <li><span className="font-medium text-stone-800">Wix, Squarespace, Shopify:</span> nelle impostazioni del sito, alla voce "Codice personalizzato" o "Code injection", nel footer.</li>
-          <li><span className="font-medium text-stone-800">Sito su misura:</span> nel template comune a tutte le pagine, prima di &lt;/body&gt;.</li>
+        <ul className="space-y-2 text-sm text-slate-600">
+          <li><span className="font-medium text-slate-800">WordPress:</span> con un plugin come "WPCode", nella sezione Footer.</li>
+          <li><span className="font-medium text-slate-800">Wix, Squarespace, Shopify:</span> nelle impostazioni del sito, alla voce "Codice personalizzato" o "Code injection", nel footer.</li>
+          <li><span className="font-medium text-slate-800">Sito su misura:</span> nel template comune a tutte le pagine, prima di &lt;/body&gt;.</li>
         </ul>
       </Card>
       <Card title="3. Controlla i domini">
-        <p className="text-sm text-stone-600">
+        <p className="text-sm text-slate-600">
           Il widget appare solo su:{" "}
           {project.data.domains.map((d, i) => (
-            <span key={d.id}>{i > 0 && ", "}<span className="font-mono text-stone-800">{d.domain}</span></span>
+            <span key={d.id}>{i > 0 && ", "}<span className="font-mono text-slate-800">{d.domain}</span></span>
           ))}
           . Puoi aggiungerne altri nella pagina Widget.
         </p>

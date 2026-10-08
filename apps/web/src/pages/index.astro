@@ -1,4 +1,5 @@
 ---
+import Icon from "../components/Icon.astro";
 import Layout from "../layouts/Layout.astro";
 
 const appUrl = import.meta.env.PUBLIC_APP_URL ?? "https://app.snippo.io";
@@ -13,186 +14,305 @@ const demo = {
 };
 
 const steps = [
-  { title: "Scegli il template", text: "Ristorante, appuntamenti o richiesta informazioni: le domande giuste sono già pronte." },
-  { title: "Incolla una riga di codice", text: "Funziona su WordPress, Wix, Shopify o sul tuo sito su misura. Oppure lo mandi al tuo sviluppatore." },
-  { title: "Ricevi richieste complete", text: "Nome, telefono, giorno, orario, persone: tutto in ordine, con un avviso appena arriva." },
-];
+  { icon: "template", title: "Scegli il template", text: "Ristorante, appuntamenti o richiesta informazioni: le domande giuste sono già pronte, e le cambi quando vuoi." },
+  { icon: "code", title: "Incolla una riga di codice", text: "Funziona su WordPress, Wix, Shopify o sul tuo sito su misura. Oppure lo mandi al tuo sviluppatore con un clic." },
+  { icon: "bell", title: "Ricevi richieste complete", text: "Nome, telefono, giorno, orario, persone: tutto in ordine, con un avviso via email o WhatsApp appena arriva." },
+] as const;
 
 const sectors = [
-  { icon: "🍝", title: "Ristoranti", text: "Prenotazioni con giorno, orario e numero di persone. Allergie e richieste già nelle note." },
-  { icon: "💇", title: "Saloni e studi", text: "Appuntamenti per servizio e fascia oraria, senza telefonate avanti e indietro." },
-  { icon: "💬", title: "Attività e PMI", text: "Domande e preventivi con l'email per rispondere, invece di messaggi a metà." },
-];
+  { icon: "utensils", title: "Ristoranti", text: "Prenotazioni con giorno, orario e numero di persone, solo negli orari con posto libero. Allergie e richieste già nelle note." },
+  { icon: "scissors", title: "Saloni e studi", text: "Appuntamenti per servizio e fascia oraria, senza telefonate avanti e indietro." },
+  { icon: "chat", title: "Attività e PMI", text: "Domande e preventivi con l'email per rispondere, invece di messaggi a metà." },
+] as const;
+
+const promises = [
+  { icon: "clock", text: "Online in 5 minuti" },
+  { icon: "feather", text: "Circa 10 KB, non rallenta il sito" },
+  { icon: "shield", text: "Dati ospitati in Unione Europea" },
+] as const;
 
 const plans = [
   { name: "Free", price: "0 €", note: "per sempre", features: ["1 sito", "50 richieste al mese", "Avvisi via email", "Logo Snippo visibile"] },
   { name: "Starter", price: "9 €", note: "al mese", features: ["1 sito", "500 richieste al mese", "Avvisi email a più destinatari", "Senza logo, export CSV"], featured: true },
-  { name: "Pro", price: "29 €", note: "al mese", features: ["5 siti", "3.000 richieste al mese", "WhatsApp e webhook (in arrivo)", "Team fino a 5 persone"] },
+  { name: "Pro", price: "29 €", note: "al mese", features: ["5 siti", "3.000 richieste al mese", "WhatsApp e webhook", "Team fino a 5 persone"] },
   { name: "Agency", price: "79 €", note: "al mese", features: ["25 siti", "15.000 richieste al mese", "Gestione multi-cliente", "White label"] },
 ];
 
 const faqs = [
   { q: "Serve uno sviluppatore?", a: "No. Copi una riga di codice nelle impostazioni del sito (su WordPress, Wix o Shopify c'è un campo apposito). Se preferisci, dalla dashboard la mandi al tuo sviluppatore con un clic." },
-  { q: "Dove finiscono i dati dei miei clienti?", a: "In un database in Unione Europea. Il widget chiede il consenso privacy prima dell'invio e non usa cookie di tracciamento." },
-  { q: "Posso cambiare le domande?", a: "Sì: scegli il template più vicino alla tua attività e lo cambi quando vuoi. Le richieste già ricevute restano com'erano." },
-  { q: "Rallenta il mio sito?", a: "No. Il widget pesa circa 9 KB e si carica dopo la pagina, in modo isolato dal resto del sito." },
-  { q: "E WhatsApp?", a: "È in arrivo: riceverai le notifiche anche lì. Per ora gli avvisi arrivano via email." },
+  { q: "Dove finiscono i dati dei miei clienti?", a: "In un database in Unione Europea. Il widget chiede il consenso privacy prima dell'invio, non usa cookie di tracciamento e le richieste si cancellano da sole dopo il periodo che scegli." },
+  { q: "Posso cambiare le domande?", a: "Sì: parti da un template e aggiungi, modifichi, sposti o togli le domande quando vuoi. Le richieste già ricevute restano com'erano." },
+  { q: "Rallenta il mio sito?", a: "No. Il widget pesa circa 10 KB, si carica dopo la pagina ed è isolato dal resto del sito." },
+  { q: "Posso lavorare in squadra?", a: "Sì: inviti le persone con un link e scegli il ruolo. Chi risponde al telefono vede richieste e calendario, senza toccare le impostazioni." },
 ];
+
+const snippet = `<script src="https://cdn.snippo.io/v1/snippo.js"\n        data-key="pk_live_…" async></script>`;
 ---
 
 <Layout title="Snippo · Prenotazioni e richieste dal tuo sito" description="Una chat guidata per il tuo sito che raccoglie prenotazioni e richieste complete. Si installa con una riga di codice. Dati in UE.">
-  <header class="sticky top-0 z-10 border-b border-stone-200/70 bg-white/85 backdrop-blur">
+  <header class="sticky top-0 z-20 border-b border-brand-900/5 bg-cream/80 backdrop-blur-md">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-      <a href="/" class="text-xl font-bold tracking-tight text-brand-700">snippo</a>
-      <nav class="hidden gap-6 text-sm text-stone-600 md:flex" aria-label="Sezioni">
-        <a href="#come-funziona" class="hover:text-stone-900">Come funziona</a>
-        <a href="#settori" class="hover:text-stone-900">Settori</a>
-        <a href="#prezzi" class="hover:text-stone-900">Prezzi</a>
-        <a href="#faq" class="hover:text-stone-900">FAQ</a>
+      <a href="/" class="flex items-center gap-2 text-xl font-bold tracking-tight text-ink">
+        <span class="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-sm shadow-brand-700/30">
+          <Icon name="chat" class="size-4.5" />
+        </span>
+        snippo
+      </a>
+      <nav class="hidden gap-7 text-sm text-ink/70 md:flex" aria-label="Sezioni">
+        <a href="#come-funziona" class="transition hover:text-ink">Come funziona</a>
+        <a href="#settori" class="transition hover:text-ink">Settori</a>
+        <a href="#prezzi" class="transition hover:text-ink">Prezzi</a>
+        <a href="#faq" class="transition hover:text-ink">FAQ</a>
       </nav>
       <div class="flex items-center gap-2 text-sm">
-        <a href={loginUrl} class="rounded-lg px-3 py-2 font-medium text-stone-700 hover:bg-stone-100">Accedi</a>
-        <a href={signupUrl} class="rounded-lg bg-brand-700 px-3 py-2 font-medium text-white hover:bg-brand-800">Prova gratis</a>
+        <a href={loginUrl} class="rounded-lg px-3 py-2 font-medium text-ink/80 transition hover:bg-brand-900/5 hover:text-ink">Accedi</a>
+        <a href={signupUrl} class="rounded-lg bg-ink px-3.5 py-2 font-medium text-white transition hover:bg-brand-900">Prova gratis</a>
       </div>
     </div>
   </header>
 
   <main>
-    <section class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-24">
-      <div>
-        <p class="inline-block rounded-full bg-brand-50 px-3 py-1 text-sm font-medium text-brand-800 ring-1 ring-brand-100">Per ristoranti, saloni, studi e PMI</p>
-        <h1 class="mt-5 text-4xl font-bold tracking-tight text-balance sm:text-5xl">Prenotazioni e richieste dal tuo sito, già complete.</h1>
-        <p class="mt-5 max-w-xl text-lg text-stone-600">
-          Snippo è una chat guidata che chiede al cliente tutto quello che ti serve: giorno, orario, persone, telefono. Tu ricevi la richiesta in ordine e confermi con un tocco.
-        </p>
-        <div class="mt-8 flex flex-wrap gap-3">
-          <a href={signupUrl} class="rounded-lg bg-brand-700 px-5 py-3 font-medium text-white hover:bg-brand-800">Crea il tuo widget gratis</a>
-          <button type="button" data-open-demo class="rounded-lg px-5 py-3 font-medium text-stone-800 ring-1 ring-stone-300 hover:bg-stone-50">Prova la demo</button>
-        </div>
-        <p class="mt-4 text-sm text-stone-500">Senza carta di credito · Online in 5 minuti · Dati in UE</p>
+    <!-- Hero -->
+    <section class="relative overflow-hidden">
+      <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+        <div class="animate-blob absolute -top-32 -right-24 size-[34rem] rounded-full bg-brand-300/40 blur-3xl"></div>
+        <div class="animate-blob absolute top-40 -left-40 size-[28rem] rounded-full bg-amber-200/50 blur-3xl [animation-delay:-6s]"></div>
+        <div class="animate-blob absolute -bottom-40 right-1/3 size-[24rem] rounded-full bg-rose-200/40 blur-3xl [animation-delay:-12s]"></div>
       </div>
 
-      <div class="relative mx-auto w-full max-w-sm" aria-hidden="true">
-        <div class="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-stone-200">
-          <div class="bg-brand-700 px-4 py-3 text-sm font-semibold text-white">Trattoria da Mario</div>
-          <div class="space-y-2 bg-stone-50 p-4 text-sm">
-            <p class="w-fit rounded-2xl bg-white px-3 py-2 ring-1 ring-stone-200">Ciao! Vuoi prenotare un tavolo?</p>
-            <p class="w-fit rounded-2xl bg-white px-3 py-2 ring-1 ring-stone-200">Per che giorno?</p>
-            <p class="ml-auto w-fit rounded-2xl bg-brand-700 px-3 py-2 text-white">Sabato 12</p>
-            <p class="w-fit rounded-2xl bg-white px-3 py-2 ring-1 ring-stone-200">A che ora?</p>
-            <div class="flex flex-wrap gap-2 pt-1">
-              <span class="rounded-full px-3 py-1 text-brand-700 ring-1 ring-brand-700">19:30</span>
-              <span class="rounded-full bg-brand-700 px-3 py-1 text-white">20:30</span>
-              <span class="rounded-full px-3 py-1 text-brand-700 ring-1 ring-brand-700">21:30</span>
+      <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 pt-16 pb-20 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:pt-24 lg:pb-28">
+        <div data-reveal>
+          <p class="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-sm font-medium text-brand-800 shadow-sm ring-1 ring-brand-200 backdrop-blur">
+            <span class="size-1.5 rounded-full bg-brand-500"></span>
+            Per ristoranti, saloni, studi e PMI
+          </p>
+          <h1 class="mt-6 text-4xl leading-[1.05] font-bold tracking-tight text-balance sm:text-6xl">
+            Prenotazioni e richieste dal tuo sito, <span class="text-gradient">già complete.</span>
+          </h1>
+          <p class="mt-6 max-w-xl text-lg leading-relaxed text-ink/70">
+            Snippo è una chat guidata che chiede al cliente tutto quello che ti serve: giorno, orario, persone, telefono. Tu ricevi la richiesta in ordine e confermi con un tocco.
+          </p>
+          <div class="mt-9 flex flex-wrap gap-3">
+            <a
+              href={signupUrl}
+              class="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-5 py-3 font-semibold text-white shadow-lg shadow-brand-600/30 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-600/40"
+            >
+              Crea il tuo widget gratis
+              <Icon name="arrow" class="size-4 transition group-hover:translate-x-0.5" />
+            </a>
+            <button type="button" data-open-demo class="rounded-xl bg-white/80 px-5 py-3 font-semibold text-ink shadow-sm ring-1 ring-ink/10 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white">
+              Prova la demo
+            </button>
+          </div>
+          <ul class="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink/60">
+            {promises.map((p) => <li class="flex items-center gap-1.5"><Icon name={p.icon} class="size-4 text-brand-600" />{p.text}</li>)}
+          </ul>
+        </div>
+
+        <!-- The chat writes itself, then the booking reaches the owner. -->
+        <div class="relative mx-auto w-full max-w-sm pb-28" aria-hidden="true" data-reveal style="--reveal-delay: 150ms">
+          <div class="overflow-hidden rounded-3xl bg-white shadow-2xl shadow-brand-900/15 ring-1 ring-ink/5">
+            <div class="flex items-center gap-3 bg-gradient-to-r from-brand-700 to-brand-500 px-5 py-4 text-white">
+              <span class="grid size-9 place-items-center rounded-full bg-white/20"><Icon name="utensils" class="size-4.5" /></span>
+              <div>
+                <p class="text-sm font-semibold">Trattoria da Mario</p>
+                <p class="text-xs text-white/75">Risponde subito</p>
+              </div>
+            </div>
+            <div class="flex min-h-72 flex-col gap-2.5 bg-gradient-to-b from-stone-50 to-white p-5 text-sm">
+              <p class="bubble w-fit max-w-[80%] rounded-2xl rounded-tl-md bg-white px-3.5 py-2 shadow-sm ring-1 ring-ink/5" style="--at: 0.3s">Ciao! Per quante persone?</p>
+              <p class="bubble ml-auto w-fit rounded-2xl rounded-tr-md bg-brand-600 px-3.5 py-2 text-white" style="--at: 1.1s">4</p>
+              <p class="bubble w-fit max-w-[80%] rounded-2xl rounded-tl-md bg-white px-3.5 py-2 shadow-sm ring-1 ring-ink/5" style="--at: 1.8s">Per che giorno?</p>
+              <p class="bubble ml-auto w-fit rounded-2xl rounded-tr-md bg-brand-600 px-3.5 py-2 text-white" style="--at: 2.6s">Sabato 12</p>
+              <p class="bubble w-fit max-w-[80%] rounded-2xl rounded-tl-md bg-white px-3.5 py-2 shadow-sm ring-1 ring-ink/5" style="--at: 3.3s">A che ora? Ecco i posti liberi:</p>
+              <div class="bubble flex flex-wrap gap-2 pt-1" style="--at: 3.9s">
+                <span class="rounded-full px-3 py-1 text-brand-700 ring-1 ring-brand-300">19:30</span>
+                <span class="rounded-full bg-brand-600 px-3 py-1 text-white shadow-sm shadow-brand-600/30">20:30</span>
+                <span class="rounded-full px-3 py-1 text-brand-700 ring-1 ring-brand-300">21:30</span>
+              </div>
+              <span class="typing-dots flex w-fit gap-1 rounded-2xl bg-white px-3.5 py-3 shadow-sm ring-1 ring-ink/5" style="--until: 0.3s">
+                <span class="size-1.5 animate-typing rounded-full bg-ink/40"></span>
+                <span class="size-1.5 animate-typing rounded-full bg-ink/40 [animation-delay:0.15s]"></span>
+                <span class="size-1.5 animate-typing rounded-full bg-ink/40 [animation-delay:0.3s]"></span>
+              </span>
             </div>
           </div>
-        </div>
-        <div class="absolute -bottom-6 -left-6 hidden w-60 rounded-xl bg-white p-4 text-sm shadow-xl ring-1 ring-stone-200 sm:block">
-          <p class="font-semibold">Nuova prenotazione</p>
-          <p class="mt-1 text-stone-600">Anna · 4 persone · sab 12, 20:30</p>
-          <div class="mt-3 flex gap-2">
-            <span class="rounded-md bg-brand-700 px-2.5 py-1 text-xs font-medium text-white">Conferma</span>
-            <span class="rounded-md px-2.5 py-1 text-xs font-medium text-stone-600 ring-1 ring-stone-300">Rifiuta</span>
+
+          <!-- Below the chat, so it never covers it: the booking has left the site and reached the owner. -->
+          <div class="absolute bottom-0 left-4 w-64 sm:-left-10">
+            <div class="bubble animate-float" style="--at: 4.8s">
+              <div class="rounded-2xl bg-ink p-4 text-sm text-white shadow-2xl shadow-ink/30">
+                <p class="flex items-center gap-2 text-xs font-medium text-white/60"><Icon name="bell" class="size-3.5 text-brand-400" /> Nuova prenotazione</p>
+                <p class="mt-1.5 font-semibold">Anna · 4 persone</p>
+                <p class="text-white/70">sab 12, 20:30</p>
+                <div class="mt-3 flex gap-2">
+                  <span class="rounded-lg bg-brand-500 px-3 py-1 text-xs font-semibold">Conferma</span>
+                  <span class="rounded-lg px-3 py-1 text-xs font-semibold text-white/80 ring-1 ring-white/20">Rifiuta</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="come-funziona" class="bg-stone-50 py-16 sm:py-24">
+    <!-- How it works -->
+    <section id="come-funziona" class="scroll-mt-20 py-20 sm:py-28">
       <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <h2 class="text-3xl font-bold tracking-tight">Online in tre passi</h2>
-        <ol class="mt-10 grid gap-6 md:grid-cols-3">
+        <div data-reveal class="max-w-2xl">
+          <p class="text-sm font-semibold tracking-wide text-brand-700 uppercase">Come funziona</p>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Online in tre passi</h2>
+        </div>
+        <ol class="relative mt-12 grid gap-6 md:grid-cols-3">
+          <div aria-hidden="true" class="absolute top-10 right-[16%] left-[16%] hidden h-px bg-gradient-to-r from-brand-200 via-brand-400 to-brand-200 md:block"></div>
           {steps.map((step, i) => (
-            <li class="rounded-xl bg-white p-6 ring-1 ring-stone-200">
-              <span class="grid size-8 place-items-center rounded-full bg-brand-50 text-sm font-semibold text-brand-800">{i + 1}</span>
-              <h3 class="mt-4 font-semibold">{step.title}</h3>
-              <p class="mt-2 text-sm text-stone-600">{step.text}</p>
+            <li data-reveal style={`--reveal-delay: ${i * 120}ms`} class="relative rounded-2xl bg-white p-6 shadow-sm ring-1 ring-ink/5 transition hover:-translate-y-1 hover:shadow-lg hover:shadow-brand-900/5">
+              <span class="relative grid size-12 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-700/25">
+                <Icon name={step.icon} class="size-5.5" />
+                <span class="absolute -top-2 -right-2 grid size-6 place-items-center rounded-full bg-ink text-xs font-bold text-white ring-2 ring-cream">{i + 1}</span>
+              </span>
+              <h3 class="mt-5 text-lg font-semibold">{step.title}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-ink/65">{step.text}</p>
             </li>
           ))}
         </ol>
       </div>
     </section>
 
-    <section id="settori" class="py-16 sm:py-24">
+    <!-- Sectors -->
+    <section id="settori" class="scroll-mt-20 bg-gradient-to-b from-brand-50/70 to-cream py-20 sm:py-28">
       <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <h2 class="text-3xl font-bold tracking-tight">Le domande giuste per la tua attività</h2>
-        <p class="mt-3 max-w-2xl text-stone-600">Ogni template nasce per un settore. Niente messaggi a metà da richiamare: arrivano solo richieste che puoi confermare subito.</p>
-        <div class="mt-10 grid gap-6 md:grid-cols-3">
-          {sectors.map((s) => (
-            <div class="rounded-xl p-6 ring-1 ring-stone-200">
-              <span class="text-3xl">{s.icon}</span>
-              <h3 class="mt-4 font-semibold">{s.title}</h3>
-              <p class="mt-2 text-sm text-stone-600">{s.text}</p>
+        <div data-reveal class="max-w-2xl">
+          <p class="text-sm font-semibold tracking-wide text-brand-700 uppercase">Settori</p>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Le domande giuste per la tua attività</h2>
+          <p class="mt-4 text-ink/65">Ogni template nasce per un settore e lo adatti in pochi clic. Niente messaggi a metà da richiamare: arrivano solo richieste che puoi confermare subito.</p>
+        </div>
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+          {sectors.map((s, i) => (
+            <div data-reveal style={`--reveal-delay: ${i * 120}ms`} class="group rounded-2xl bg-white p-6 ring-1 ring-ink/5 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-900/5 hover:ring-brand-200">
+              <span class="grid size-12 place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100 transition group-hover:bg-brand-600 group-hover:text-white">
+                <Icon name={s.icon} class="size-5.5" />
+              </span>
+              <h3 class="mt-5 text-lg font-semibold">{s.title}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-ink/65">{s.text}</p>
             </div>
           ))}
         </div>
       </div>
     </section>
 
-    <section class="bg-stone-900 py-16 text-white sm:py-24">
-      <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
-        <div>
-          <h2 class="text-3xl font-bold tracking-tight">Per gli sviluppatori: una riga</h2>
-          <p class="mt-4 text-stone-300">
-            Niente backend, database o notifiche da costruire. Il widget gira isolato in uno Shadow DOM, pesa circa 9 KB e non tocca il CSS del sito.
-            Un account gestisce più clienti.
+    <!-- Developers -->
+    <section class="relative overflow-hidden bg-ink py-20 text-white sm:py-28">
+      <div aria-hidden="true" class="pointer-events-none absolute -top-40 left-1/2 size-[40rem] -translate-x-1/2 rounded-full bg-brand-600/20 blur-3xl"></div>
+      <div class="relative mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-2">
+        <div data-reveal>
+          <p class="text-sm font-semibold tracking-wide text-brand-400 uppercase">Per gli sviluppatori</p>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Una riga. Fine.</h2>
+          <p class="mt-4 leading-relaxed text-white/70">
+            Niente backend, database o notifiche da costruire. Il widget gira isolato in uno Shadow DOM, pesa circa 10 KB e non tocca il CSS del sito. Un account gestisce più clienti.
           </p>
         </div>
-        <pre class="overflow-x-auto rounded-xl bg-stone-800 p-5 text-sm leading-relaxed text-stone-100 ring-1 ring-stone-700"><code>{`<script src="https://cdn.snippo.io/v1/snippo.js"
-        data-key="pk_live_…" async></script>`}</code></pre>
+        <div data-reveal style="--reveal-delay: 150ms" class="rounded-2xl bg-gradient-to-br from-brand-500/60 via-white/10 to-white/5 p-px shadow-2xl shadow-black/40">
+          <div class="rounded-2xl bg-[#14100d]">
+            <div class="flex items-center justify-between border-b border-white/10 px-4 py-2.5">
+              <span class="flex gap-1.5" aria-hidden="true">
+                <span class="size-2.5 rounded-full bg-white/15"></span><span class="size-2.5 rounded-full bg-white/15"></span><span class="size-2.5 rounded-full bg-white/15"></span>
+              </span>
+              <button type="button" data-copy={snippet} class="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-white/60 transition hover:bg-white/10 hover:text-white">
+                <Icon name="copy" class="size-3.5" /><span data-copy-label>Copia</span>
+              </button>
+            </div>
+            <pre class="overflow-x-auto p-5 text-sm leading-relaxed"><code><span class="text-white/50">&lt;</span><span class="text-rose-300">script</span> <span class="text-amber-200">src</span><span class="text-white/50">=</span><span class="text-emerald-300">"https://cdn.snippo.io/v1/snippo.js"</span>
+        <span class="text-amber-200">data-key</span><span class="text-white/50">=</span><span class="text-emerald-300">"pk_live_…"</span> <span class="text-amber-200">async</span><span class="text-white/50">&gt;&lt;/</span><span class="text-rose-300">script</span><span class="text-white/50">&gt;</span></code></pre>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section id="prezzi" class="py-16 sm:py-24">
+    <!-- Pricing -->
+    <section id="prezzi" class="scroll-mt-20 py-20 sm:py-28">
       <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <h2 class="text-3xl font-bold tracking-tight">Prezzi semplici</h2>
-        <p class="mt-3 text-stone-600">Parti gratis, passa a un piano quando le richieste crescono. Disdici quando vuoi.</p>
-        <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {plans.map((plan) => (
-            <div class:list={["flex flex-col rounded-xl p-6", plan.featured ? "bg-brand-50 ring-2 ring-brand-600" : "ring-1 ring-stone-200"]}>
-              <h3 class="font-semibold">{plan.name}</h3>
-              <p class="mt-3"><span class="text-3xl font-bold">{plan.price}</span> <span class="text-sm text-stone-500">{plan.note}</span></p>
-              <ul class="mt-5 flex-1 space-y-2 text-sm text-stone-700">
-                {plan.features.map((f) => <li class="flex gap-2"><span class="text-brand-700">✓</span>{f}</li>)}
-              </ul>
-              <a href={signupUrl} class:list={["mt-6 rounded-lg px-4 py-2 text-center text-sm font-medium", plan.featured ? "bg-brand-700 text-white hover:bg-brand-800" : "ring-1 ring-stone-300 hover:bg-stone-50"]}>
-                Inizia
-              </a>
+        <div data-reveal class="mx-auto max-w-2xl text-center">
+          <p class="text-sm font-semibold tracking-wide text-brand-700 uppercase">Prezzi</p>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Parti gratis, cresci quando vuoi</h2>
+          <p class="mt-4 text-ink/65">Passa a un piano quando le richieste crescono. Disdici quando vuoi.</p>
+        </div>
+        <div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {plans.map((plan, i) => (
+            <div
+              data-reveal
+              style={`--reveal-delay: ${i * 90}ms`}
+              class:list={[
+                "relative rounded-2xl p-px transition hover:-translate-y-1",
+                plan.featured ? "bg-gradient-to-b from-brand-400 to-brand-700 shadow-xl shadow-brand-700/20" : "bg-ink/5",
+              ]}
+            >
+              {plan.featured && (
+                <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">Consigliato</span>
+              )}
+              <div class="flex h-full flex-col rounded-[15px] bg-white p-6">
+                <h3 class="font-semibold">{plan.name}</h3>
+                <p class="mt-3"><span class="text-4xl font-bold tracking-tight">{plan.price}</span> <span class="text-sm text-ink/50">{plan.note}</span></p>
+                <ul class="mt-6 flex-1 space-y-2.5 text-sm text-ink/75">
+                  {plan.features.map((f) => <li class="flex gap-2"><Icon name="check" class="mt-0.5 size-4 shrink-0 text-brand-600" />{f}</li>)}
+                </ul>
+                <a
+                  href={signupUrl}
+                  class:list={[
+                    "mt-7 rounded-xl px-4 py-2.5 text-center text-sm font-semibold transition",
+                    plan.featured ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-md shadow-brand-600/30 hover:shadow-lg" : "bg-ink/5 text-ink hover:bg-ink/10",
+                  ]}
+                >
+                  Inizia
+                </a>
+              </div>
             </div>
           ))}
         </div>
       </div>
     </section>
 
-    <section id="faq" class="bg-stone-50 py-16 sm:py-24">
+    <!-- FAQ -->
+    <section id="faq" class="scroll-mt-20 bg-gradient-to-b from-cream to-brand-50/60 py-20 sm:py-28">
       <div class="mx-auto max-w-3xl px-4 sm:px-6">
-        <h2 class="text-3xl font-bold tracking-tight">Domande frequenti</h2>
-        <div class="mt-8 divide-y divide-stone-200 rounded-xl bg-white ring-1 ring-stone-200">
+        <div data-reveal class="text-center">
+          <p class="text-sm font-semibold tracking-wide text-brand-700 uppercase">FAQ</p>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Domande frequenti</h2>
+        </div>
+        <div data-reveal class="mt-10 space-y-3">
           {faqs.map((f) => (
-            <details class="group p-5">
-              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
-                {f.q}<span class="text-stone-400 transition group-open:rotate-45">+</span>
+            <details class="group rounded-2xl bg-white px-5 shadow-sm ring-1 ring-ink/5 transition open:shadow-md open:ring-brand-200">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-medium">
+                {f.q}
+                <span class="grid size-7 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700 transition group-open:rotate-45 group-open:bg-brand-600 group-open:text-white">
+                  <Icon name="plus" class="size-4" />
+                </span>
               </summary>
-              <p class="mt-3 text-sm text-stone-600">{f.a}</p>
+              <p class="pb-5 text-sm leading-relaxed text-ink/70">{f.a}</p>
             </details>
           ))}
         </div>
       </div>
     </section>
 
-    <section class="py-16 sm:py-24">
-      <div class="mx-auto max-w-3xl px-4 text-center sm:px-6">
-        <h2 class="text-3xl font-bold tracking-tight">Il tuo widget è a cinque minuti da qui</h2>
-        <p class="mt-3 text-stone-600">Crea l'account, scegli il template, incolla il codice.</p>
-        <a href={signupUrl} class="mt-8 inline-block rounded-lg bg-brand-700 px-6 py-3 font-medium text-white hover:bg-brand-800">Crea il tuo widget gratis</a>
+    <!-- Final call to action -->
+    <section class="px-4 py-20 sm:px-6 sm:py-28">
+      <div data-reveal class="relative mx-auto max-w-5xl overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-600 to-amber-500 px-6 py-16 text-center text-white shadow-2xl shadow-brand-700/30 sm:px-12">
+        <div aria-hidden="true" class="animate-blob absolute -top-20 -left-20 size-72 rounded-full bg-white/15 blur-2xl"></div>
+        <div aria-hidden="true" class="animate-blob absolute -right-16 -bottom-24 size-80 rounded-full bg-rose-400/30 blur-2xl [animation-delay:-8s]"></div>
+        <h2 class="relative text-3xl font-bold tracking-tight text-balance sm:text-4xl">Il tuo widget è a cinque minuti da qui</h2>
+        <p class="relative mt-4 text-white/85">Crea l'account, scegli il template, incolla il codice.</p>
+        <a href={signupUrl} class="relative mt-9 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-brand-800 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
+          Crea il tuo widget gratis <Icon name="arrow" class="size-4" />
+        </a>
       </div>
     </section>
   </main>
 
-  <footer class="border-t border-stone-200">
-    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-stone-500 sm:px-6">
-      <p>© {new Date().getFullYear()} Snippo · Dati ospitati in Unione Europea</p>
-      <a href={loginUrl} class="hover:text-stone-800">Area clienti</a>
+  <footer class="border-t border-ink/5">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-ink/55 sm:px-6">
+      <p class="flex items-center gap-2"><Icon name="shield" class="size-4 text-brand-600" /> © {new Date().getFullYear()} Snippo · Dati ospitati in Unione Europea</p>
+      <a href={loginUrl} class="transition hover:text-ink">Area clienti</a>
     </div>
   </footer>
 
@@ -200,6 +320,16 @@ const faqs = [
   <script>
     document.querySelectorAll("[data-open-demo]").forEach((button) =>
       button.addEventListener("click", () => window.Snippo?.open()),
+    );
+
+    document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((button) =>
+      button.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(button.dataset.copy ?? "");
+        const label = button.querySelector("[data-copy-label]");
+        if (!label) return;
+        label.textContent = "Copiato!";
+        setTimeout(() => (label.textContent = "Copia"), 1500);
+      }),
     );
 
     declare global {

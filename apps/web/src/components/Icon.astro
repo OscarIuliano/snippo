@@ -1,0 +1,29 @@
+---
+// Line icons (24px grid, 1.75 stroke), drawn inline: no icon font, no extra request.
+interface Props {
+  name: keyof typeof paths;
+  class?: string;
+}
+
+const paths = {
+  check: "M5 12.5l4.5 4.5L19 7.5",
+  template: "M4 5h16v14H4zM4 9h16M9 9v10",
+  code: "M8.5 8L4.5 12l4 4M15.5 8l4 4-4 4M13.5 5l-3 14",
+  bell: "M6 16V11a6 6 0 1112 0v5l1.5 2h-15zM10 20.5a2 2 0 004 0",
+  utensils: "M7 3v8M5 3v4a2 2 0 004 0V3M7 11v10M17 3c-2 2-2.5 5-2.5 7h2.5v11",
+  scissors: "M6 6a2.5 2.5 0 110 .01M6 18a2.5 2.5 0 110 .01M8 7.5l12 9M8 16.5l12-9",
+  chat: "M4 5h16v11H9l-5 4zM8 9h8M8 12h5",
+  shield: "M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z",
+  feather: "M5 19l9-9M14 4c4 0 6 2 6 6-3 3-7 5-11 5l-4 4V15c0-5 4-11 9-11z",
+  clock: "M12 3a9 9 0 110 18 9 9 0 010-18zM12 7v5l3 2",
+  copy: "M9 9h11v11H9zM5 15V4h11",
+  plus: "M12 5v14M5 12h14",
+  arrow: "M5 12h14M13 6l6 6-6 6",
+};
+
+const { name, class: className = "size-5" } = Astro.props;
+---
+
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class={className} aria-hidden="true">
+  <path d={paths[name]} />
+</svg>

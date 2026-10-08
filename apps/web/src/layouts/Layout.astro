@@ -24,8 +24,27 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical} />
     <meta property="og:locale" content="it_IT" />
+    <meta name="theme-color" content="#fffaf5" />
+    <!-- Marks JavaScript as available before paint: the scroll reveal only hides content when it can show it again. -->
+    <script is:inline>document.documentElement.classList.add("js");</script>
   </head>
-  <body class="bg-white text-stone-900 antialiased">
+  <body class="bg-cream text-ink antialiased">
     <slot />
+    <script>
+      // Scroll reveal: sections fade in once, when they enter the viewport.
+      const sections = document.querySelectorAll("[data-reveal]");
+      if (!("IntersectionObserver" in window)) sections.forEach((el) => el.classList.add("is-visible"));
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        },
+        { rootMargin: "0px 0px -10% 0px" },
+      );
+      sections.forEach((el) => observer.observe(el));
+    </script>
   </body>
 </html>

@@ -3,10 +3,80 @@
 @theme {
   --color-brand-50: #fff7ed;
   --color-brand-100: #ffedd5;
+  --color-brand-200: #fed7aa;
+  --color-brand-300: #fdba74;
+  --color-brand-400: #fb923c;
+  --color-brand-500: #f97316;
   --color-brand-600: #ea580c;
   --color-brand-700: #c2410c;
   --color-brand-800: #9a3412;
+  --color-brand-900: #7c2d12;
+  /* Warm off-white page and deep warm ink: less clinical than pure white and gray. */
+  --color-cream: #fffaf5;
+  --color-ink: #1c1410;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-blob: blob 18s ease-in-out infinite;
+  --animate-typing: typing 1.2s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes blob {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -40px) scale(1.08); }
+    66% { transform: translate(-20px, 20px) scale(0.95); }
+  }
+  @keyframes typing {
+    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-3px); }
+  }
 }
 
 html { scroll-behavior: smooth; }
+
+.text-gradient {
+  background: linear-gradient(100deg, var(--color-brand-700), var(--color-brand-500) 55%, #f59e0b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Sections appear as they scroll in. Only with JavaScript (the "js" class), so nothing stays hidden without it. */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.js [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* The hero chat writes itself: each bubble pops in after the previous one. */
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes vanish {
+  to { opacity: 0; height: 0; margin: 0; padding: 0; }
+}
+.bubble {
+  opacity: 0;
+  animation: bubble-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: var(--at, 0s);
+}
+.typing-dots {
+  animation: vanish 0.01s forwards;
+  animation-delay: var(--until, 1s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .js [data-reveal], .bubble { opacity: 1; transform: none; transition: none; animation: none; }
+  .typing-dots { display: none; }
+  .animate-float, .animate-blob { animation: none; }
+}

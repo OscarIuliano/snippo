@@ -110,14 +110,15 @@ function TemplateCard({ project }: { project: ProjectDetail }) {
   );
 
   function choose(template: TemplateId) {
-    if (template === project.widget.template) return;
-    if (confirm(`Passare al template "${templateInfo[template].label}"? Le domande del widget cambieranno per le nuove conversazioni.`)) {
-      change.mutate(template);
-    }
+    const question =
+      template === project.widget.template
+        ? `Aggiornare le domande all'ultima versione del template "${templateInfo[template].label}"?`
+        : `Passare al template "${templateInfo[template].label}"? Le domande del widget cambieranno per le nuove conversazioni.`;
+    if (confirm(question)) change.mutate(template);
   }
 
   return (
-    <Card title="Domande" description="Il template decide cosa chiede il widget. Le richieste già ricevute non cambiano.">
+    <Card title="Domande" description="Il template decide cosa chiede il widget. Clicca il template attivo per aggiornarlo all'ultima versione. Le richieste già ricevute non cambiano.">
       <div className="grid gap-3 sm:grid-cols-3">
         {(Object.keys(templateInfo) as TemplateId[]).map((id) => (
           <button

@@ -36,6 +36,16 @@ function monthGrid(month: string): string[] {
 
 const people = (items: SubmissionRow[]) => items.reduce((sum, s) => sum + (s.partySize ?? 0), 0);
 
+// Two parts of the day, told apart by colour and icon (for colour-blind users too).
+// In Italy the morning runs until 13:00 (included).
+const MORNING_UNTIL = "13:00";
+type Period = "morning" | "evening";
+const periodOf = (s: SubmissionRow): Period => ((s.bookingAt?.slice(11, 16) ?? "") <= MORNING_UNTIL ? "morning" : "evening");
+const periods: Record<Period, { label: string; icon: string; pill: string; bar: string; heading: string }> = {
+  morning: { label: "Mattina", icon: "☀︎", pill: "bg-sky-50 text-sky-800 ring-sky-200", bar: "border-sky-400", heading: "text-sky-800" },
+  evening: { label: "Sera", icon: "☾", pill: "bg-violet-50 text-violet-800 ring-violet-200", bar: "border-violet-400", heading: "text-violet-800" },
+};
+
 export function CalendarPage({ projectId }: { projectId: string }) {
   const [month, setMonth] = useState(() => monthStart(today()));
   const [selected, setSelected] = useState(today);
@@ -110,17 +120,27 @@ export function CalendarPage({ projectId }: { projectId: string }) {
                   <span className={cx("grid size-6 place-items-center rounded-full text-xs", day === today() && "bg-brand-700 font-semibold text-white")}>
                     {Number(day.slice(8))}
                   </span>
-                  {items.length > 0 && (
-                    <span className="flex items-center gap-1 text-xs">
-                      {hasNew && <span className="size-1.5 shrink-0 rounded-full bg-amber-500" title="Da confermare" />}
-                      <span className="font-medium text-stone-800">{items.length}</span>
-                      <span className="hidden text-stone-500 sm:inline">{people(items) ? `· ${people(items)} pers.` : ""}</span>
-                    </span>
-                  )}
+                  {hasNew && <span className="size-1.5 shrink-0 self-end rounded-full bg-amber-500 sm:-mt-6" title="Da confermare" />}
+                  {(["morning", "evening"] as const).map((period) => {
+                    const part = items.filter((s) => periodOf(s) === period);
+                    if (part.length === 0) return null;
+                    return (
+                      <span key={period} className={cx("flex w-full items-center gap-1 rounded px-1 text-[11px] leading-5 ring-1", periods[period].pill)}>
+                        <span aria-hidden>{periods[period].icon}</span>
+                        <span className="font-medium">{part.length}</span>
+                        <span className="hidden truncate sm:inline">{people(part) ? `· ${people(part)} p.` : ""}</span>
+                      </span>
+                    );
+                  })}
                 </button>
               );
             })}
           </div>
+          <p className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-3 text-xs text-stone-500">
+            <span><span className="text-sky-700">☀︎</span> Mattina, fino alle {MORNING_UNTIL}</span>
+            <span><span className="text-violet-700">☾</span> Sera, dopo le {MORNING_UNTIL}</span>
+            <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-amber-500" /> Da confermare</span>
+          </p>
         </section>
 
         <DayAgenda projectId={projectId} day={selected} items={byDay.get(selected) ?? []} loading={calendar.isPending} />
@@ -152,19 +172,32 @@ function DayAgenda({ projectId, day, items, loading }: { projectId: string; day:
       )}
       {!loading && items.length === 0 && <p className="mt-4 text-sm text-stone-500">Nessuna prenotazione per questo giorno.</p>}
 
-      <div className="mt-4 space-y-5">
-        {byTime.map(([time, group]) => (
-          <div key={time}>
-            <h3 className="flex items-baseline justify-between border-b border-stone-100 pb-1 text-sm">
-              <span className="font-semibold">{time}</span>
-              <span className="text-xs text-stone-500">{people(group) ? `${people(group)} persone` : `${group.length} richieste`}</span>
+      {(["morning", "evening"] as const).map((period) => {
+        const groups = byTime.filter(([, group]) => periodOf(group[0]!) === period);
+        if (groups.length === 0) return null;
+        const all = groups.flatMap(([, group]) => group);
+        return (
+          <div key={period} className="mt-5">
+            <h3 className={cx("flex items-baseline justify-between text-xs font-semibold tracking-wide uppercase", periods[period].heading)}>
+              <span><span aria-hidden>{periods[period].icon}</span> {periods[period].label}</span>
+              <span className="font-normal normal-case">{people(all) ? `${people(all)} persone` : `${all.length} richieste`}</span>
             </h3>
-            <ul className="mt-2 space-y-2">
-              {group.map((s) => <AgendaItem key={s.id} projectId={projectId} submission={s} />)}
-            </ul>
+            <div className="mt-2 space-y-4">
+              {groups.map(([time, group]) => (
+                <div key={time} className={cx("border-l-4 pl-3", periods[period].bar)}>
+                  <h4 className="flex items-baseline justify-between text-sm">
+                    <span className="font-semibold">{time}</span>
+                    <span className="text-xs text-stone-500">{people(group) ? `${people(group)} persone` : `${group.length} richieste`}</span>
+                  </h4>
+                  <ul className="mt-2 space-y-2">
+                    {group.map((s) => <AgendaItem key={s.id} projectId={projectId} submission={s} />)}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
     </section>
   );
 }

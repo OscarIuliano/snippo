@@ -12,7 +12,9 @@ Il primo widget è una chat guidata con template per settore (ristorante, appunt
 
 | Percorso | Cosa contiene |
 | --- | --- |
-| `apps/api` | Worker Hono: `GET /v1/widget/config`, `POST /v1/widget/submissions` |
+| `apps/api` | Worker Hono: API pubblica del widget (`/v1/widget`), autenticazione (`/api/auth`) e API della dashboard (`/api/v1`) |
+| `apps/dashboard` | Area privata (React + Vite): registrazione, progetti, inbox richieste, widget, installazione |
+| `apps/web` | Landing (Astro) con il widget demo |
 | `apps/widgets/chat` | Widget chat (Preact, Shadow DOM), build in `dist/snippo.js` |
 | `packages/db` | Schema Drizzle, migrazioni D1, seed di sviluppo |
 | `packages/shared` | Schemi dei flussi, regole di validazione, template di settore |
@@ -23,11 +25,19 @@ Serve solo Node 24. pnpm si usa tramite `corepack` (incluso in Node), senza inst
 
 ```sh
 corepack pnpm install
+printf 'BETTER_AUTH_SECRET=%s\n' "$(openssl rand -hex 32)" > apps/api/.dev.vars   # una volta sola
 corepack pnpm db:setup   # crea il D1 locale (Miniflare, dentro .wrangler/) e carica il ristorante demo
-corepack pnpm dev        # API su http://localhost:8787, widget su http://localhost:5173
+corepack pnpm dev
 ```
 
-Apri http://localhost:5173: la pagina di prova carica il widget con la chiave demo `pk_dev_snippo`.
+| URL | Cosa |
+| --- | --- |
+| http://localhost:4321 | Landing, con il widget demo |
+| http://localhost:5174 | Dashboard: registrati e crea un progetto |
+| http://localhost:5173 | Pagina di prova del widget (chiave demo `pk_dev_snippo`) |
+| http://localhost:8787 | API |
+
+La dashboard chiama l'API sul proprio dominio (`/api`, proxy di Vite), come in produzione su `app.snippo.io`: niente CORS e cookie di sessione di prima parte.
 
 Altri comandi:
 

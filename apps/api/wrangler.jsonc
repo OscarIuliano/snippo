@@ -5,6 +5,10 @@
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  "vars": {
+    "AUTH_BASE_URL": "http://localhost:5174",
+    "DASHBOARD_ORIGIN": "http://localhost:5174"
+  },
   "d1_databases": [
     {
       "binding": "DB",

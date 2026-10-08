@@ -48,5 +48,8 @@ npx wrangler login
 npx wrangler d1 create snippo-dev --jurisdiction=eu   # copia il database_id in wrangler.jsonc
 corepack pnpm db:migrate:remote
 corepack pnpm db:seed:remote
-npx wrangler dev --remote
+cd ../..
+corepack pnpm dev:remote   # API in anteprima su Cloudflare con il D1 remoto, widget su :5173
 ```
+
+Attenzione: `pnpm dev` scrive sul D1 **locale** (`apps/api/.wrangler/state/`), che non compare nella dashboard di Cloudflare; `pnpm dev:remote` scrive su `snippo-dev`.

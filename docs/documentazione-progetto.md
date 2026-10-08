@@ -289,7 +289,7 @@ La dashboard è una single page app che parla con l'API. La landing è un sito s
 
 Un'alternativa valida è **Next.js** per la dashboard. Ha senso se si preferisce un solo framework per tutto, ma aggiunge un server da gestire.
 
-L'editor del flusso, all'MVP, è una lista ordinabile di passi con un form per ciascun passo, non un canvas a nodi. Un editor visuale stile diagramma arriva solo se servono flussi con ramificazioni.
+L'editor delle domande (pagina Domande) è una lista ordinabile con un form per ciascuna domanda, non un canvas a nodi: si parte da un template e si aggiungono, modificano, spostano e tolgono domande. Le domande speciali (nome, telefono, email, giorno, orario, persone, note) tengono il loro tipo perché alimentano inbox, calendario, disponibilità e notifiche. Un editor visuale stile diagramma arriva solo se servono flussi con ramificazioni.
 
 ## 13. Modello dati (Cloudflare D1)
 
@@ -475,7 +475,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 15 attività fatte, 5 in attesa di un tuo passaggio e 6 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 25, conservazione e cancellazione dei dati (l'export CSV ha priorità bassa).
+L'MVP ha 16 attività fatte, 5 in attesa di un tuo passaggio e 6 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 25, conservazione e cancellazione dei dati (l'export CSV ha priorità bassa).
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -505,5 +505,6 @@ L'MVP ha 15 attività fatte, 5 in attesa di un tuo passaggio e 6 da fare. Le "Da
 | 24 | Pagamenti | Piani e quote con Paddle | Da fare | |
 | 25 | Privacy | Retention dei dati e cancellazione automatica | Da fare | |
 | 26 | Infrastruttura | Monitoraggio errori (Sentry) e uptime | Da fare | |
+| 27 | Widget | Editor delle domande: partire da un template, aggiungere, modificare, riordinare e togliere domande | Fatto | Pagina Domande; le domande speciali (nome, telefono, giorno…) tengono il loro tipo |
 
 Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

@@ -57,7 +57,10 @@ export interface ProjectDetail {
     id: string;
     publicKey: string;
     theme: UpdateWidgetInput;
+    /** The template the questions started from. */
     template: TemplateId | null;
+    /** True when the questions differ from the template's. */
+    customized: boolean;
     flow: FlowDefinition | null;
   };
   domains: { id: string; domain: string }[];

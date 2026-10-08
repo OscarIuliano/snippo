@@ -38,6 +38,7 @@ import {
   createProjectSchema,
   daysBetween,
   flowDefinitionSchema,
+  flowProblems,
   isIsoDate,
   submissionStatuses,
   templates,
@@ -53,6 +54,7 @@ import {
   type TeamResponse,
   type ChannelRow,
   type DeliveryRow,
+  type FlowDefinition,
   type MeResponse,
   type ProjectStats,
   type ProjectDetail,
@@ -147,8 +149,8 @@ function newPublicKey() {
   return `pk_live_${[...bytes].map((b) => b.toString(16).padStart(2, "0")).join("")}`;
 }
 
-/** Publishes the template as a new flow version and makes it the widget's active flow. */
-async function publishTemplate(db: Db, widgetId: string, template: TemplateId) {
+/** Publishes a flow as the widget's new active version. Submissions keep the version they used. */
+async function publishFlow(db: Db, widgetId: string, definition: FlowDefinition, template: TemplateId | null) {
   const last = await db.query.flowVersions.findFirst({
     where: eq(flowVersions.widgetId, widgetId),
     orderBy: desc(flowVersions.version),
@@ -160,12 +162,15 @@ async function publishTemplate(db: Db, widgetId: string, template: TemplateId) {
       widgetId,
       version: (last?.version ?? 0) + 1,
       template,
-      definition: flowDefinitionSchema.parse(templates[template]),
+      definition,
       publishedAt: new Date().toISOString(),
     }),
     db.update(widgets).set({ activeFlowVersionId: id, updatedAt: new Date().toISOString() }).where(eq(widgets.id, widgetId)),
   ]);
 }
+
+const publishTemplate = (db: Db, widgetId: string, template: TemplateId) =>
+  publishFlow(db, widgetId, flowDefinitionSchema.parse(templates[template]), template);
 
 dashboardRoutes.get("/me", async (c) => {
   const { db, user, organizationId, role, organizations: mine } = c.var;
@@ -231,6 +236,8 @@ dashboardRoutes.get("/projects/:id", async (c) => {
     db.query.projectDomains.findMany({ where: eq(projectDomains.projectId, project.id), orderBy: projectDomains.createdAt }),
   ]);
 
+  const template = (flow?.template as TemplateId | null) ?? null;
+  const definition = flow ? flowDefinitionSchema.parse(flow.definition) : null;
   const body: ProjectDetail = {
     id: project.id,
     name: project.name,
@@ -239,8 +246,9 @@ dashboardRoutes.get("/projects/:id", async (c) => {
       id: widget.id,
       publicKey: widget.publicKey,
       theme: updateWidgetSchema.parse(widget.theme),
-      template: (flow?.template as TemplateId | null) ?? null,
-      flow: flow ? flowDefinitionSchema.parse(flow.definition) : null,
+      template,
+      customized: Boolean(definition && template && JSON.stringify(definition) !== JSON.stringify(flowDefinitionSchema.parse(templates[template]))),
+      flow: definition,
     },
     domains: domains.map((d) => ({ id: d.id, domain: d.domain })),
   };
@@ -269,6 +277,25 @@ dashboardRoutes.put("/projects/:id/template", async (c) => {
   if (!widget) return problem(c, 404, "Widget non trovato");
 
   await publishTemplate(c.var.db, widget.id, input.template);
+  return c.body(null, 204);
+});
+
+/** Publishes the questions edited in the dashboard, keeping the template they started from. */
+dashboardRoutes.put("/projects/:id/flow", async (c) => {
+  const parsed = flowDefinitionSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return problem(c, 422, "Domande non valide");
+  const problems = flowProblems(parsed.data);
+  if (problems.length > 0) return problem(c, 422, problems[0]!.message, { problems });
+
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+  const widget = await projectWidget(c.var.db, project.id);
+  if (!widget) return problem(c, 404, "Widget non trovato");
+  const current = widget.activeFlowVersionId
+    ? await c.var.db.query.flowVersions.findFirst({ where: eq(flowVersions.id, widget.activeFlowVersionId) })
+    : undefined;
+
+  await publishFlow(c.var.db, widget.id, parsed.data, (current?.template as TemplateId | null) ?? null);
   return c.body(null, 204);
 });
 

@@ -38,6 +38,7 @@ export function AppShell() {
         { to: "/progetti/$projectId/statistiche", label: "Statistiche" },
         ...(manager
           ? ([
+              { to: "/progetti/$projectId/domande", label: "Domande" },
               { to: "/progetti/$projectId/widget", label: "Widget" },
               { to: "/progetti/$projectId/notifiche", label: "Notifiche" },
               { to: "/progetti/$projectId/installazione", label: "Installazione" },

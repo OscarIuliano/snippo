@@ -1,6 +1,7 @@
 export * from "./availability";
 export * from "./dashboard-api";
 export * from "./flow";
+export * from "./flow-editor";
 export * from "./format";
 export * from "./notifications";
 export * from "./rules";

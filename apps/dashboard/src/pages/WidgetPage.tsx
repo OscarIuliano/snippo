@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { normalizeDomain, type ProjectDetail, type TemplateId, type UpdateWidgetInput } from "@snippo/shared";
+import { normalizeDomain, type ProjectDetail, type UpdateWidgetInput } from "@snippo/shared";
 import { Alert, Button, Card, Field, Input, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
 import { projectQuery } from "../lib/queries";
@@ -15,7 +16,7 @@ export function WidgetPage({ projectId }: { projectId: string }) {
     <div className="max-w-3xl space-y-6">
       <PageHeader title="Widget" description="Aspetto, domande e siti su cui il widget è autorizzato." />
       <AppearanceCard project={project.data} />
-      <TemplateCard project={project.data} />
+      <QuestionsCard project={project.data} />
       <DomainsCard project={project.data} />
     </div>
   );
@@ -104,49 +105,17 @@ function Preview({ theme }: { theme: UpdateWidgetInput }) {
   );
 }
 
-function TemplateCard({ project }: { project: ProjectDetail }) {
-  const change = useProjectMutation(project.id, (template: TemplateId) =>
-    api(`/projects/${project.id}/template`, { method: "PUT", body: { template } }),
-  );
-
-  function choose(template: TemplateId) {
-    const question =
-      template === project.widget.template
-        ? `Aggiornare le domande all'ultima versione del template "${templateInfo[template].label}"?`
-        : `Passare al template "${templateInfo[template].label}"? Le domande del widget cambieranno per le nuove conversazioni.`;
-    if (confirm(question)) change.mutate(template);
-  }
-
+function QuestionsCard({ project }: { project: ProjectDetail }) {
+  const steps = project.widget.flow?.steps.filter((s) => s.type !== "message") ?? [];
   return (
-    <Card title="Domande" description="Il template decide cosa chiede il widget. Clicca il template attivo per aggiornarlo all'ultima versione. Le richieste già ricevute non cambiano.">
-      <div className="grid gap-3 sm:grid-cols-3">
-        {(Object.keys(templateInfo) as TemplateId[]).map((id) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => choose(id)}
-            disabled={change.isPending}
-            aria-pressed={project.widget.template === id}
-            className={cx(
-              "rounded-xl p-3 text-left text-sm ring-1 transition",
-              project.widget.template === id ? "bg-brand-50 ring-2 ring-brand-600" : "bg-white ring-stone-200 hover:ring-stone-300",
-            )}
-          >
-            <span aria-hidden>{templateInfo[id].icon}</span> <span className="font-medium">{templateInfo[id].label}</span>
-          </button>
-        ))}
-      </div>
-      {project.widget.flow && (
-        <ol className="mt-5 space-y-1.5 text-sm text-stone-600">
-          {project.widget.flow.steps.map((step, i) => (
-            <li key={step.key} className="flex gap-2">
-              <span className="w-5 shrink-0 text-right text-stone-400">{i + 1}.</span>
-              <span>{step.prompt}{step.type !== "message" && !step.required && <span className="text-stone-400"> (facoltativa)</span>}</span>
-            </li>
-          ))}
-        </ol>
-      )}
-      {change.error && <div className="mt-3"><Alert>{change.error.message}</Alert></div>}
+    <Card title="Domande" description={`${steps.length} domande${project.widget.customized ? ", personalizzate" : ""}${project.widget.template ? `, dal template ${templateInfo[project.widget.template].label}` : ""}.`}>
+      <Link
+        to="/progetti/$projectId/domande"
+        params={{ projectId: project.id }}
+        className="inline-flex items-center rounded-lg px-3.5 py-2 text-sm font-medium text-stone-800 ring-1 ring-stone-300 hover:bg-stone-50"
+      >
+        Modifica le domande
+      </Link>
     </Card>
   );
 }

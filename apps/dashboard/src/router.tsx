@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "./components/AppShell";
 import { AvailabilityPage } from "./pages/AvailabilityPage";
 import { CalendarPage } from "./pages/CalendarPage";
+import { FlowEditorPage } from "./pages/FlowEditorPage";
 import { meQuery, sessionQuery } from "./lib/queries";
 import { LoginPage, SignupPage } from "./pages/AuthPages";
 import { InboxPage } from "./pages/InboxPage";
@@ -91,6 +92,13 @@ const statsRoute = createRoute({
     return <StatsPage projectId={statsRoute.useParams().projectId} />;
   },
 });
+const questionsRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "/domande",
+  component: function Questions() {
+    return <FlowEditorPage projectId={questionsRoute.useParams().projectId} />;
+  },
+});
 const widgetRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "/widget",
@@ -117,7 +125,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   signupRoute,
   inviteRoute,
-  appRoute.addChildren([homeRoute, newProjectRoute, teamRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, statsRoute, widgetRoute, notificationsRoute, installRoute])]),
+  appRoute.addChildren([homeRoute, newProjectRoute, teamRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, statsRoute, questionsRoute, widgetRoute, notificationsRoute, installRoute])]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {

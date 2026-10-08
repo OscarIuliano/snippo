@@ -32,7 +32,9 @@ function useAuthSubmit() {
     const { error } = await action();
     setPending(false);
     if (error) return setError(translateAuthError(error));
-    await queryClient.invalidateQueries();
+    // The cached session is the "signed out" one read on this page: drop it, or the
+    // route guard would reuse it and send the user back to the login page.
+    queryClient.clear();
     await navigate({ to: "/" });
   }
 

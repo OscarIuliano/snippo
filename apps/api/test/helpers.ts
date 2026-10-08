@@ -34,7 +34,7 @@ export async function createProject(api: Api): Promise<string> {
 }
 
 /** Sends a valid restaurant booking through the public widget API, as a visitor would. */
-export async function submitBooking(api: Api, projectId: string, name = "Anna"): Promise<string> {
+export async function submitBooking(api: Api, projectId: string, overrides: Record<string, string> = {}): Promise<string> {
   const project = await (await api(`/projects/${projectId}`)).json<ProjectDetail>();
   const key = project.widget.publicKey;
   const config = await exports.default.fetch(`${PUBLIC_API}/v1/widget/config?key=${key}`, { headers: { Origin: SITE_ORIGIN } });
@@ -44,7 +44,7 @@ export async function submitBooking(api: Api, projectId: string, name = "Anna"):
     headers: { "Content-Type": "application/json", Origin: SITE_ORIGIN },
     body: JSON.stringify({
       flowVersionId,
-      answers: { date: "2026-12-12", time: "20:30", party_size: "4", name, phone: "+39 333 1112223", notes: "Un seggiolone" },
+      answers: { date: "2026-12-12", time: "20:30", party_size: "4", name: "Anna", phone: "+39 333 1112223", notes: "Un seggiolone", ...overrides },
       consent: true,
     }),
   });

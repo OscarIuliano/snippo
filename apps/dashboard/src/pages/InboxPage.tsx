@@ -70,6 +70,7 @@ function SubmissionCard({ submission: s, projectId, flow }: { submission: Submis
     onSuccess: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: ["submissions", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["calendar", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["me"] }),
       ]),
   });

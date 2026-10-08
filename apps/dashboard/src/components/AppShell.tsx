@@ -22,6 +22,7 @@ export function AppShell() {
   const navItems = projectId
     ? ([
         { to: "/progetti/$projectId/richieste", label: "Richieste", badge: current?.newSubmissions },
+        { to: "/progetti/$projectId/calendario", label: "Calendario" },
         { to: "/progetti/$projectId/widget", label: "Widget" },
         { to: "/progetti/$projectId/notifiche", label: "Notifiche" },
         { to: "/progetti/$projectId/installazione", label: "Installazione" },

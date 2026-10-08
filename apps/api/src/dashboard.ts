@@ -3,12 +3,14 @@ import { v7 as uuidv7 } from "uuid";
 import {
   and,
   count,
+  gte,
   createDb,
   desc,
   eq,
   flowVersions,
   lt,
   memberships,
+  ne,
   notificationChannels,
   notificationDeliveries,
   organizations,
@@ -19,11 +21,14 @@ import {
   type Db,
 } from "@snippo/db";
 import {
+  addDays,
   addDomainSchema,
   changeTemplateSchema,
   createChannelSchema,
   createProjectSchema,
+  daysBetween,
   flowDefinitionSchema,
+  isIsoDate,
   submissionStatuses,
   templates,
   updateSubmissionSchema,
@@ -237,6 +242,18 @@ dashboardRoutes.delete("/projects/:id/domains/:domainId", async (c) => {
   return c.body(null, 204);
 });
 
+const toSubmissionRow = (s: typeof submissions.$inferSelect): SubmissionRow => ({
+  id: s.id,
+  status: s.status,
+  answers: s.answers as Record<string, string>,
+  contactName: s.contactName,
+  contactPhone: s.contactPhone,
+  contactEmail: s.contactEmail,
+  bookingAt: s.bookingAt,
+  partySize: s.partySize,
+  createdAt: s.createdAt,
+});
+
 dashboardRoutes.get("/projects/:id/submissions", async (c) => {
   const project = await ownedProject(c, c.req.param("id"));
   if (!project) return problem(c, 404, "Progetto non trovato");
@@ -265,23 +282,37 @@ dashboardRoutes.get("/projects/:id/submissions", async (c) => {
       .groupBy(submissions.status),
   ]);
 
-  const items: SubmissionRow[] = rows.slice(0, limit).map((s) => ({
-    id: s.id,
-    status: s.status,
-    answers: s.answers as Record<string, string>,
-    contactName: s.contactName,
-    contactPhone: s.contactPhone,
-    contactEmail: s.contactEmail,
-    bookingAt: s.bookingAt,
-    partySize: s.partySize,
-    createdAt: s.createdAt,
-  }));
+  const items = rows.slice(0, limit).map(toSubmissionRow);
   const body: SubmissionsPage = {
     items,
     counts: Object.fromEntries(submissionStatuses.map((st) => [st, countRows.find((r) => r.status === st)?.n ?? 0])) as SubmissionsPage["counts"],
     nextCursor: rows.length > limit ? items.at(-1)!.id : null,
   };
   return c.json(body);
+});
+
+/** Requests with a booking date in [from, to], both "YYYY-MM-DD" inclusive. Rejected ones are left out. */
+dashboardRoutes.get("/projects/:id/calendar", async (c) => {
+  const from = c.req.query("from") ?? "";
+  const to = c.req.query("to") ?? "";
+  if (!isIsoDate(from) || !isIsoDate(to) || daysBetween(from, to) < 0 || daysBetween(from, to) > 62) {
+    return problem(c, 422, "Intervallo di date non valido (massimo 62 giorni)");
+  }
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  // booking_at is "YYYY-MM-DDTHH:MM" local time: string comparison orders it correctly.
+  const rows = await c.var.db.query.submissions.findMany({
+    where: and(
+      eq(submissions.projectId, project.id),
+      gte(submissions.bookingAt, from),
+      lt(submissions.bookingAt, addDays(to, 1)),
+      ne(submissions.status, "rejected"),
+    ),
+    orderBy: submissions.bookingAt,
+    limit: 2000,
+  });
+  return c.json(rows.map(toSubmissionRow));
 });
 
 dashboardRoutes.patch("/submissions/:id", async (c) => {

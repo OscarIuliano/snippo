@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import type { ChannelRow, DeliveryRow, MeResponse, ProjectDetail, SubmissionStatus, SubmissionsPage } from "@snippo/shared";
+import type { ChannelRow, DeliveryRow, MeResponse, ProjectDetail, SubmissionRow, SubmissionStatus, SubmissionsPage } from "@snippo/shared";
 import { api } from "./api";
 import { authClient } from "./auth";
 
@@ -30,4 +30,12 @@ export const deliveriesQuery = (projectId: string) =>
     queryFn: () => api<DeliveryRow[]>(`/projects/${projectId}/deliveries`),
     // Poll while something is still being sent.
     refetchInterval: (query) => (query.state.data?.some((d) => d.status === "pending") ? 3_000 : 30_000),
+  });
+
+export const calendarQuery = (projectId: string, from: string, to: string) =>
+  queryOptions({
+    queryKey: ["calendar", projectId, from, to],
+    queryFn: () => api<SubmissionRow[]>(`/projects/${projectId}/calendar?from=${from}&to=${to}`),
+    placeholderData: (previous) => previous,
+    refetchInterval: 60_000,
   });

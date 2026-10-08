@@ -7,5 +7,7 @@ export default defineConfig({
   build: {
     lib: { entry: "src/main.tsx", formats: ["iife"], name: "SnippoWidget", fileName: () => "snippo.js" },
     target: "es2019",
+    // Served as /v1/snippo.js: the major version is part of the URL customers embed.
+    outDir: "dist/v1",
   },
 });

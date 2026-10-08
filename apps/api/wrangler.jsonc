@@ -29,5 +29,36 @@
       "database_id": "3abe3332-c5e0-4f90-8556-5571b9ab82ef",
       "migrations_dir": "../../packages/db/migrations"
     }
-  ]
+  ],
+  "env": {
+    // Staging on workers.dev. Bindings are not inherited by environments: each one is listed here.
+    "staging": {
+      "name": "snippo-api-staging",
+      "vars": {
+        "AUTH_BASE_URL": "https://snippo-dashboard-staging.oiuliano90.workers.dev",
+        "DASHBOARD_ORIGIN": "https://snippo-dashboard-staging.oiuliano90.workers.dev",
+        "PUBLIC_API_URL": "https://snippo-api-staging.oiuliano90.workers.dev"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "snippo-staging",
+          "database_id": "38ae2fc9-7c1e-4000-8d18-806d9c9695a2",
+          "migrations_dir": "../../packages/db/migrations"
+        }
+      ],
+      "queues": {
+        "producers": [{ "binding": "NOTIFICATIONS", "queue": "snippo-notifications-staging" }],
+        "consumers": [
+          {
+            "queue": "snippo-notifications-staging",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 5,
+            "dead_letter_queue": "snippo-notifications-dlq-staging"
+          }
+        ]
+      }
+    }
+  }
 }

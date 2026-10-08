@@ -1,0 +1,17 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "snippo-dashboard",
+  "main": "worker.ts",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "env": {
+    "staging": {
+      "name": "snippo-dashboard-staging",
+      "services": [{ "binding": "API", "service": "snippo-api-staging" }]
+    }
+  }
+}

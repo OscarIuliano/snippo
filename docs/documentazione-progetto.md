@@ -436,7 +436,7 @@ snippo/
 | --- | --- | --- | --- |
 | Locale | Sviluppo | `wrangler dev`: D1 simulato da Miniflare dentro `node_modules`, senza Docker; oppure `--remote` sul D1 di dev | — |
 | Dev / preview | Test di ogni pull request | D1 `snippo-dev` (UE) | Preview URL dei Workers sulla PR |
-| Staging | Test prima del rilascio | D1 `snippo-staging` (UE) | Automatico su `main` |
+| Staging | Test prima del rilascio, su `*.oiuliano90.workers.dev` | D1 `snippo-staging` (UE) | Automatico su `main` (job `deploy-staging` della CI) |
 | Produzione | Clienti | D1 `snippo-prod` (UE) con Time Travel | Tag di release o approvazione manuale |
 
 **Pipeline CI/CD (GitHub Actions)**
@@ -475,7 +475,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 10 attività fatte, 6 in attesa di un tuo passaggio e 10 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima è lo staging online.
+L'MVP ha 11 attività fatte, 6 in attesa di un tuo passaggio e 9 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima è l'anti-spam nel widget.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -495,7 +495,7 @@ L'MVP ha 10 attività fatte, 6 in attesa di un tuo passaggio e 10 da fare. Le "D
 | 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
 | 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Prima dei clienti paganti |
 | 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
-| 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Da fare | Serve un token API Cloudflare |
+| 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Fatto | Il deploy automatico parte quando aggiungi i secret Cloudflare su GitHub |
 | 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Da fare | Prima di andare online |
 | 19 | Area privata | Verifica email e reset password | Da fare | Dopo Resend |
 | 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo Resend |

@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  // Static files only (no Worker script): the widget bundle, at /v1/snippo.js.
+  "name": "snippo-cdn",
+  "compatibility_date": "2025-09-01",
+  "assets": { "directory": "./dist" },
+  "env": {
+    "staging": { "name": "snippo-cdn-staging" }
+  }
+}

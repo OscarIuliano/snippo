@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "astro dev --port 4321",
     "dev:remote": "astro dev --port 4321",
-    "build": "astro build"
+    "build": "astro build",
+    "deploy:staging": "astro build --mode staging && wrangler deploy --env staging"
   },
   "dependencies": {
     "astro": "^7.3.7"

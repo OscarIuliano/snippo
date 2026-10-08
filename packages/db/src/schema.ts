@@ -271,3 +271,25 @@ export const widgetStepStats = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.widgetId, t.date, t.stepKey] })],
 );
+
+// --- Team invitations ---
+// Shareable links: only a hash of the token is stored, the link works once and expires.
+
+export const invitations = sqliteTable(
+  "invitations",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+    role: text("role", { enum: ["admin", "operator"] }).notNull(),
+    /** SHA-256 of the token in the link, hex. */
+    tokenHash: text("token_hash").notNull().unique(),
+    /** Optional: when set, only this email can accept (the email invite, once Resend is in place). */
+    email: text("email"),
+    createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: text("expires_at").notNull(),
+    acceptedAt: text("accepted_at"),
+    acceptedBy: text("accepted_by").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (t) => [index("invitations_org_idx").on(t.organizationId)],
+);

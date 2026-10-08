@@ -24,8 +24,9 @@ export async function signUp(email: string): Promise<Api> {
   });
   expect(res.status).toBe(200);
   const cookie = res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
+  // "/projects/…" is relative to /api/v1; a path starting with /api/ is used as it is.
   return (path, init = {}) =>
-    exports.default.fetch(`${DASHBOARD}/api/v1${path}`, {
+    exports.default.fetch(`${DASHBOARD}${path.startsWith("/api/") ? path : `/api/v1${path}`}`, {
       ...init,
       headers: { "Content-Type": "application/json", Cookie: cookie, Origin: DASHBOARD, ...init.headers },
     });

@@ -5,11 +5,13 @@ import {
   businessHours,
   closures,
   count,
-  gte,
   createDb,
   desc,
   eq,
   flowVersions,
+  gte,
+  invitations,
+  isNull,
   lt,
   memberships,
   ne,
@@ -20,6 +22,7 @@ import {
   projects,
   sql,
   submissions,
+  users,
   widgetDailyStats,
   widgetStepStats,
   widgets,
@@ -40,7 +43,14 @@ import {
   templates,
   updateSubmissionSchema,
   updateWidgetSchema,
+  ORGANIZATION_HEADER,
+  canManageProjects,
+  canManageTeam,
+  createInvitationSchema,
+  updateMemberSchema,
   type AvailabilitySettings,
+  type Role,
+  type TeamResponse,
   type ChannelRow,
   type DeliveryRow,
   type MeResponse,
@@ -54,6 +64,7 @@ import {
 import type { z } from "zod";
 import { nowIn, slotSteps } from "./availability";
 import { createAuth } from "./auth";
+import { createInvitationToken } from "./invitations";
 import type { AppEnv } from "./env";
 import { problem } from "./problem";
 
@@ -62,6 +73,8 @@ interface DashboardEnv extends AppEnv {
     db: Db;
     user: { id: string; name: string; email: string };
     organizationId: string;
+    role: Role;
+    organizations: { id: string; name: string; role: Role }[];
   };
 }
 
@@ -76,12 +89,40 @@ dashboardRoutes.use("*", async (c, next) => {
   if (!session) return problem(c, 401, "Accesso richiesto");
 
   const db = createDb(c.env.DB);
-  const membership = await db.query.memberships.findFirst({ where: eq(memberships.userId, session.user.id) });
-  if (!membership) return problem(c, 403, "Nessuna organizzazione associata");
+  const user = { id: session.user.id, name: session.user.name, email: session.user.email };
+  let mine = await userOrganizations(db, user.id);
+  if (mine.length === 0) {
+    // First use without an invitation: a personal organization, owned by the user.
+    const organizationId = uuidv7();
+    await db.batch([
+      db.insert(organizations).values({ id: organizationId, name: user.name, slug: organizationId }),
+      db.insert(memberships).values({ organizationId, userId: user.id, role: "owner" }),
+    ]);
+    mine = await userOrganizations(db, user.id);
+  }
+  // Users in several organizations pick one with a header; anything else falls back to the first.
+  const current = mine.find((o) => o.id === c.req.header(ORGANIZATION_HEADER)) ?? mine[0]!;
 
   c.set("db", db);
-  c.set("user", { id: session.user.id, name: session.user.name, email: session.user.email });
-  c.set("organizationId", membership.organizationId);
+  c.set("user", user);
+  c.set("organizationId", current.id);
+  c.set("role", current.role);
+  c.set("organizations", mine);
+  await next();
+});
+
+async function userOrganizations(db: Db, userId: string) {
+  return db
+    .select({ id: organizations.id, name: organizations.name, role: memberships.role })
+    .from(memberships)
+    .innerJoin(organizations, eq(organizations.id, memberships.organizationId))
+    .where(eq(memberships.userId, userId))
+    .orderBy(memberships.createdAt);
+}
+
+// Operators handle requests and the calendar, but do not change project settings.
+dashboardRoutes.on(["POST", "PUT", "PATCH", "DELETE"], ["/projects", "/projects/*"], async (c, next) => {
+  if (!canManageProjects(c.var.role)) return problem(c, 403, "Il tuo ruolo non può modificare le impostazioni");
   await next();
 });
 
@@ -127,9 +168,8 @@ async function publishTemplate(db: Db, widgetId: string, template: TemplateId) {
 }
 
 dashboardRoutes.get("/me", async (c) => {
-  const { db, user, organizationId } = c.var;
-  const [organization, projectRows, newCounts] = await Promise.all([
-    db.query.organizations.findFirst({ where: eq(organizations.id, organizationId) }),
+  const { db, user, organizationId, role, organizations: mine } = c.var;
+  const [projectRows, newCounts] = await Promise.all([
     db.query.projects.findMany({ where: eq(projects.organizationId, organizationId), orderBy: projects.createdAt }),
     db
       .select({ projectId: submissions.projectId, n: count() })
@@ -140,7 +180,8 @@ dashboardRoutes.get("/me", async (c) => {
   ]);
   const body: MeResponse = {
     user,
-    organization: { id: organizationId, name: organization?.name ?? "" },
+    organization: { id: organizationId, name: mine.find((o) => o.id === organizationId)!.name, role },
+    organizations: mine,
     projects: projectRows.map((p) => ({
       id: p.id,
       name: p.name,
@@ -562,4 +603,98 @@ dashboardRoutes.get("/projects/:id/stats", async (c) => {
       .map((step) => ({ key: step.key, prompt: step.prompt, reached: Number(stepRows.find((r) => r.stepKey === step.key)?.reached ?? 0) })),
   };
   return c.json(body);
+});
+
+// --- Team ---
+
+dashboardRoutes.get("/team", async (c) => {
+  const { db, organizationId, role, user } = c.var;
+  const [members, pending] = await Promise.all([
+    db
+      .select({ userId: users.id, name: users.name, email: users.email, role: memberships.role, joinedAt: memberships.createdAt })
+      .from(memberships)
+      .innerJoin(users, eq(users.id, memberships.userId))
+      .where(eq(memberships.organizationId, organizationId))
+      .orderBy(memberships.createdAt),
+    canManageTeam(role)
+      ? db.query.invitations.findMany({
+          where: and(eq(invitations.organizationId, organizationId), isNull(invitations.acceptedAt), gte(invitations.expiresAt, new Date().toISOString())),
+          orderBy: desc(invitations.createdAt),
+        })
+      : [],
+  ]);
+  const body: TeamResponse = {
+    members: members.map((m) => ({ ...m, isYou: m.userId === user.id })),
+    invitations: pending.map((i) => ({ id: i.id, role: i.role, createdAt: i.createdAt, expiresAt: i.expiresAt })),
+  };
+  return c.json(body);
+});
+
+const ownerOnly = (c: DashboardContext) =>
+  canManageTeam(c.var.role) ? null : problem(c, 403, "Solo il titolare può gestire il team");
+
+/** Creates a shareable invitation link. The token is shown only now: only its hash is stored. */
+dashboardRoutes.post("/team/invitations", async (c) => {
+  const denied = ownerOnly(c);
+  if (denied) return denied;
+  const input = await parseBody(c, createInvitationSchema);
+  if (!input) return problem(c, 422, "Ruolo non valido");
+
+  const { token, tokenHash } = await createInvitationToken();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString();
+  await c.var.db.insert(invitations).values({
+    id: uuidv7(),
+    organizationId: c.var.organizationId,
+    role: input.role,
+    tokenHash,
+    createdBy: c.var.user.id,
+    expiresAt,
+  });
+  return c.json({ url: `${c.env.DASHBOARD_ORIGIN}/invito/${token}`, expiresAt }, 201);
+});
+
+dashboardRoutes.delete("/team/invitations/:id", async (c) => {
+  const denied = ownerOnly(c);
+  if (denied) return denied;
+  await c.var.db
+    .delete(invitations)
+    .where(and(eq(invitations.id, c.req.param("id")), eq(invitations.organizationId, c.var.organizationId)));
+  return c.body(null, 204);
+});
+
+/** The owner's membership cannot be changed or removed (no transfer of ownership yet). */
+async function memberToManage(c: DashboardContext, userId: string) {
+  const member = await c.var.db.query.memberships.findFirst({
+    where: and(eq(memberships.organizationId, c.var.organizationId), eq(memberships.userId, userId)),
+  });
+  if (!member) return { error: problem(c, 404, "Persona non trovata nel team") };
+  if (member.role === "owner") return { error: problem(c, 403, "Il ruolo del titolare non si può cambiare") };
+  return { member };
+}
+
+dashboardRoutes.patch("/team/members/:userId", async (c) => {
+  const denied = ownerOnly(c);
+  if (denied) return denied;
+  const input = await parseBody(c, updateMemberSchema);
+  if (!input) return problem(c, 422, "Ruolo non valido");
+  const { error } = await memberToManage(c, c.req.param("userId"));
+  if (error) return error;
+
+  await c.var.db
+    .update(memberships)
+    .set({ role: input.role, updatedAt: new Date().toISOString() })
+    .where(and(eq(memberships.organizationId, c.var.organizationId), eq(memberships.userId, c.req.param("userId"))));
+  return c.body(null, 204);
+});
+
+dashboardRoutes.delete("/team/members/:userId", async (c) => {
+  const denied = ownerOnly(c);
+  if (denied) return denied;
+  const { error } = await memberToManage(c, c.req.param("userId"));
+  if (error) return error;
+
+  await c.var.db
+    .delete(memberships)
+    .where(and(eq(memberships.organizationId, c.var.organizationId), eq(memberships.userId, c.req.param("userId"))));
+  return c.body(null, 204);
 });

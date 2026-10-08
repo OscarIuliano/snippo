@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { v7 as uuidv7 } from "uuid";
-import { createDb, memberships, organizations, schema } from "@snippo/db";
+import { createDb, schema } from "@snippo/db";
 import type { AppEnv } from "./env";
 import { hashPassword, verifyPassword } from "./password";
 
@@ -23,20 +23,8 @@ export function createAuth(env: AppEnv["Bindings"]) {
     advanced: {
       database: { generateId: () => uuidv7() },
     },
-    databaseHooks: {
-      user: {
-        create: {
-          // Every new user gets their own organization, as owner.
-          after: async (user) => {
-            const organizationId = uuidv7();
-            await db.batch([
-              db.insert(organizations).values({ id: organizationId, name: user.name, slug: organizationId }),
-              db.insert(memberships).values({ organizationId, userId: user.id, role: "owner" }),
-            ]);
-          },
-        },
-      },
-    },
+    // No organization is created at sign-up: the dashboard creates a personal one on first use,
+    // unless the user joins someone else's through an invitation first.
   });
 }
 

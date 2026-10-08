@@ -5,5 +5,6 @@ export * from "./format";
 export * from "./notifications";
 export * from "./rules";
 export * from "./stats";
+export * from "./team";
 export * from "./templates";
 export * from "./widget-api";

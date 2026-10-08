@@ -475,7 +475,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 14 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV.
+L'MVP ha 15 attività fatte, 5 in attesa di un tuo passaggio e 6 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 25, conservazione e cancellazione dei dati (l'export CSV ha priorità bassa).
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -501,7 +501,7 @@ L'MVP ha 14 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da
 | 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo Resend |
 | 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Fatto | Pagina Statistiche: aperture, conversione, dove ci si ferma |
 | 22 | Area privata | Export CSV delle richieste | Da fare | |
-| 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Da fare | |
+| 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Fatto | Inviti con link (7 giorni, uso singolo); l'invio via email arriva con Resend |
 | 24 | Pagamenti | Piani e quote con Paddle | Da fare | |
 | 25 | Privacy | Retention dei dati e cancellazione automatica | Da fare | |
 | 26 | Infrastruttura | Monitoraggio errori (Sentry) e uptime | Da fare | |

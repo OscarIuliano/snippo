@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Alert, Button, Field, Input } from "../components/ui";
 import { authClient } from "../lib/auth";
@@ -23,6 +23,7 @@ function AuthLayout({ title, subtitle, children, footer }: { title: string; subt
 function useAuthSubmit() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { invito } = useSearch({ strict: false }) as { invito?: string };
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -35,10 +36,11 @@ function useAuthSubmit() {
     // The cached session is the "signed out" one read on this page: drop it, or the
     // route guard would reuse it and send the user back to the login page.
     queryClient.clear();
-    await navigate({ to: "/" });
+    // Signed in from an invitation link: back to it, to join the team.
+    await (invito ? navigate({ to: "/invito/$token", params: { token: invito } }) : navigate({ to: "/" }));
   }
 
-  return { error, pending, run };
+  return { error, pending, run, invito };
 }
 
 function translateAuthError(error: { message?: string; status?: number }): string {
@@ -51,7 +53,7 @@ function translateAuthError(error: { message?: string; status?: number }): strin
 }
 
 export function LoginPage() {
-  const { error, pending, run } = useAuthSubmit();
+  const { error, pending, run, invito } = useAuthSubmit();
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -62,8 +64,8 @@ export function LoginPage() {
   return (
     <AuthLayout
       title="Accedi"
-      subtitle="Gestisci le richieste che arrivano dal tuo sito."
-      footer={<>Non hai un account? <Link to="/registrati" className="font-medium text-brand-700 hover:underline">Registrati</Link></>}
+      subtitle={invito ? "Accedi per unirti al team che ti ha invitato." : "Gestisci le richieste che arrivano dal tuo sito."}
+      footer={<>Non hai un account? <Link to="/registrati" search={{ invito }} className="font-medium text-brand-700 hover:underline">Registrati</Link></>}
     >
       <form onSubmit={onSubmit} className="space-y-4">
         {error && <Alert>{error}</Alert>}
@@ -80,7 +82,7 @@ export function LoginPage() {
 }
 
 export function SignupPage() {
-  const { error, pending, run } = useAuthSubmit();
+  const { error, pending, run, invito } = useAuthSubmit();
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -97,8 +99,8 @@ export function SignupPage() {
   return (
     <AuthLayout
       title="Crea il tuo account"
-      subtitle="Gratis, senza carta di credito. Il widget è online in pochi minuti."
-      footer={<>Hai già un account? <Link to="/accedi" className="font-medium text-brand-700 hover:underline">Accedi</Link></>}
+      subtitle={invito ? "Crea l'account per unirti al team che ti ha invitato." : "Gratis, senza carta di credito. Il widget è online in pochi minuti."}
+      footer={<>Hai già un account? <Link to="/accedi" search={{ invito }} className="font-medium text-brand-700 hover:underline">Accedi</Link></>}
     >
       <form onSubmit={onSubmit} className="space-y-4">
         {error && <Alert>{error}</Alert>}

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { FlowDefinition } from "./flow";
+import type { Role } from "./team";
 import type { TemplateId } from "./templates";
 
 export const templateIds = ["restaurant", "appointments", "info"] as const satisfies readonly TemplateId[];
@@ -42,7 +43,9 @@ export type UpdateWidgetInput = z.infer<typeof updateWidgetSchema>;
 
 export interface MeResponse {
   user: { id: string; name: string; email: string };
-  organization: { id: string; name: string };
+  /** The organization the dashboard is working on, with the user's role in it. */
+  organization: { id: string; name: string; role: Role };
+  organizations: { id: string; name: string; role: Role }[];
   projects: { id: string; name: string; industry: string; newSubmissions: number }[];
 }
 

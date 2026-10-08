@@ -9,6 +9,14 @@
     <h1>Trattoria Demo</h1>
     <p>Pagina di prova: il widget usa l'API locale (<code>wrangler dev</code> su :8787) e il widget demo del seed.</p>
     <button onclick="window.Snippo && Snippo.open()">Prenota un tavolo</button>
-    <script type="module" src="/src/main.tsx" data-key="pk_dev_snippo" data-api="http://localhost:8787"></script>
+    <script>
+      // ?key=pk_... tests a widget created in the dashboard; without it, the seed demo widget.
+      const script = document.createElement("script");
+      script.type = "module";
+      script.src = "/src/main.tsx";
+      script.dataset.key = new URLSearchParams(location.search).get("key") ?? "pk_dev_snippo";
+      script.dataset.api = "http://localhost:8787";
+      document.body.appendChild(script);
+    </script>
   </body>
 </html>

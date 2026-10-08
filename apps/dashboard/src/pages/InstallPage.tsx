@@ -34,6 +34,16 @@ export function InstallPage({ projectId }: { projectId: string }) {
           <a href={mailto} className="inline-flex items-center rounded-lg px-3.5 py-2 text-sm font-medium text-stone-700 ring-1 ring-stone-300 hover:bg-stone-50">
             Invia al tuo sviluppatore
           </a>
+          {import.meta.env.DEV && (
+            <a
+              href={`http://localhost:5173/?key=${project.data.widget.publicKey}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-lg px-3.5 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50"
+            >
+              Prova in locale ↗
+            </a>
+          )}
         </div>
       </Card>
       <Card title="2. Dove incollarlo">

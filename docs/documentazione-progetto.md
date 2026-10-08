@@ -475,7 +475,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 12 attività fatte, 6 in attesa di un tuo passaggio e 8 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 21, le statistiche.
+L'MVP ha 13 attività fatte, 5 in attesa di un tuo passaggio e 8 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 21, le statistiche.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -488,7 +488,7 @@ L'MVP ha 12 attività fatte, 6 in attesa di un tuo passaggio e 8 da fare. Le "Da
 | 7 | Landing | Home con demo, settori, prezzi, FAQ | Fatto | |
 | 8 | Notifiche | Destinatari email e WhatsApp, coda, link Conferma/Rifiuta | Fatto | In sviluppo finiscono nel log |
 | 9 | Area privata | Calendario con mattina (fino alle 13:00) e sera | Fatto | |
-| 10 | Repository | Merge dei branch su `main` | In attesa di te | In ordine: scaffold, portal, notifications, calendar |
+| 10 | Repository | Merge dei branch su `main` | Fatto | Allineato l'8 ottobre; da qui un branch e una PR per attività |
 | 11 | Notifiche | Email reali con Resend | In attesa di te | Serve la chiave API; per inviare a tutti, anche il dominio |
 | 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Servono portfolio e app Meta con numero di test, poi il template approvato |
 | 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet |

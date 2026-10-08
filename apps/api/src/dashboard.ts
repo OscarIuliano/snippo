@@ -10,6 +10,7 @@ import {
   eq,
   flowVersions,
   gte,
+  inArray,
   invitations,
   isNull,
   lt,
@@ -37,9 +38,11 @@ import {
   createChannelSchema,
   createProjectSchema,
   daysBetween,
+  eraseSchema,
   flowDefinitionSchema,
   flowProblems,
   isIsoDate,
+  retentionSchema,
   submissionStatuses,
   templates,
   updateSubmissionSchema,
@@ -56,6 +59,7 @@ import {
   type DeliveryRow,
   type FlowDefinition,
   type MeResponse,
+  type PrivacyMatch,
   type ProjectStats,
   type ProjectDetail,
   type SubmissionRow,
@@ -393,6 +397,25 @@ dashboardRoutes.get("/projects/:id/calendar", async (c) => {
   return c.json(rows.map(toSubmissionRow));
 });
 
+/** Deletes one request (and its notification log). Owners and admins only. */
+dashboardRoutes.delete("/submissions/:id", async (c) => {
+  if (!canManageProjects(c.var.role)) return problem(c, 403, "Il tuo ruolo non può eliminare richieste");
+  const { db, organizationId } = c.var;
+  const submission = await db
+    .select({ id: submissions.id })
+    .from(submissions)
+    .innerJoin(projects, eq(projects.id, submissions.projectId))
+    .where(and(eq(submissions.id, c.req.param("id")), eq(projects.organizationId, organizationId)))
+    .get();
+  if (!submission) return problem(c, 404, "Richiesta non trovata");
+
+  await db.batch([
+    db.delete(notificationDeliveries).where(eq(notificationDeliveries.submissionId, submission.id)),
+    db.delete(submissions).where(eq(submissions.id, submission.id)),
+  ]);
+  return c.body(null, 204);
+});
+
 dashboardRoutes.patch("/submissions/:id", async (c) => {
   const input = await parseBody(c, updateSubmissionSchema);
   if (!input) return problem(c, 422, "Stato non valido");
@@ -724,4 +747,99 @@ dashboardRoutes.delete("/team/members/:userId", async (c) => {
     .delete(memberships)
     .where(and(eq(memberships.organizationId, c.var.organizationId), eq(memberships.userId, c.req.param("userId"))));
   return c.body(null, 204);
+});
+
+// --- Privacy: retention period, access and erasure requests (owners and admins) ---
+
+dashboardRoutes.get("/projects/:id/privacy", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+  return c.json({ retentionMonths: project.retentionMonths });
+});
+
+dashboardRoutes.put("/projects/:id/privacy", async (c) => {
+  const input = await parseBody(c, retentionSchema);
+  if (!input) return problem(c, 422, "Il periodo va da 1 a 60 mesi");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  await c.var.db.update(projects).set({ retentionMonths: input.retentionMonths, updatedAt: new Date().toISOString() }).where(eq(projects.id, project.id));
+  return c.body(null, 204);
+});
+
+/** Requests of one person, by name, email or phone (digits only, so "333 12" finds "+39 333 123…"). */
+async function findPerson(c: DashboardContext, projectId: string, query: string) {
+  const text = `%${query.toLowerCase().replace(/[%_]/g, "")}%`;
+  const digits = query.replace(/\D/g, "");
+  return c.var.db
+    .select()
+    .from(submissions)
+    .where(
+      and(
+        eq(submissions.projectId, projectId),
+        sql`(lower(${submissions.contactName}) LIKE ${text} OR lower(${submissions.contactEmail}) LIKE ${text}${
+          digits.length >= 4 ? sql` OR replace(replace(replace(${submissions.contactPhone}, ' ', ''), '+', ''), '-', '') LIKE ${`%${digits}%`}` : sql``
+        })`,
+      ),
+    )
+    .orderBy(desc(submissions.createdAt))
+    .limit(500);
+}
+
+async function privacyRequest(c: DashboardContext) {
+  if (!canManageProjects(c.var.role)) return { error: problem(c, 403, "Il tuo ruolo non può accedere ai dati personali in blocco") };
+  const query = (c.req.query("q") ?? "").trim();
+  if (query.length < 3) return { error: problem(c, 422, "Scrivi almeno 3 caratteri") };
+  const project = await ownedProject(c, c.req.param("id")!);
+  if (!project) return { error: problem(c, 404, "Progetto non trovato") };
+  return { rows: await findPerson(c, project.id, query), project, query };
+}
+
+dashboardRoutes.get("/projects/:id/privacy/search", async (c) => {
+  const found = await privacyRequest(c);
+  if (found.error) return found.error;
+  const matches: PrivacyMatch[] = found.rows.map((s) => ({
+    id: s.id,
+    createdAt: s.createdAt,
+    status: s.status,
+    contactName: s.contactName,
+    contactPhone: s.contactPhone,
+    contactEmail: s.contactEmail,
+  }));
+  return c.json(matches);
+});
+
+/** Everything stored about the person, as a JSON file to hand over (right of access). */
+dashboardRoutes.get("/projects/:id/privacy/export", async (c) => {
+  const found = await privacyRequest(c);
+  if (found.error) return found.error;
+  const body = {
+    project: found.project.name,
+    search: found.query,
+    exportedAt: new Date().toISOString(),
+    requests: found.rows.map(({ id, createdAt, status, answers, contactName, contactPhone, contactEmail, bookingAt, partySize, sourceUrl, consentAt }) => ({
+      id, createdAt, status, answers, contactName, contactPhone, contactEmail, bookingAt, partySize, sourceUrl, consentAt,
+    })),
+  };
+  c.header("Content-Disposition", `attachment; filename="dati-${found.project.id}.json"`);
+  return c.json(body);
+});
+
+/** Right to erasure: deletes the given requests of this project (ids from another one are ignored). */
+dashboardRoutes.post("/projects/:id/privacy/erase", async (c) => {
+  const input = await parseBody(c, eraseSchema);
+  if (!input) return problem(c, 422, "Nessuna richiesta da cancellare");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const { db } = c.var;
+  const owned = db
+    .select({ id: submissions.id })
+    .from(submissions)
+    .where(and(eq(submissions.projectId, project.id), inArray(submissions.id, input.ids)));
+  const [, deleted] = await db.batch([
+    db.delete(notificationDeliveries).where(inArray(notificationDeliveries.submissionId, owned)),
+    db.delete(submissions).where(and(eq(submissions.projectId, project.id), inArray(submissions.id, input.ids))).returning({ id: submissions.id }),
+  ]);
+  return c.json({ deleted: deleted.length });
 });

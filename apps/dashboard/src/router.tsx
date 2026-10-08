@@ -12,6 +12,7 @@ import { InvitePage } from "./pages/InvitePage";
 import { InstallPage } from "./pages/InstallPage";
 import { NewProjectPage } from "./pages/NewProjectPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import { PrivacyPage } from "./pages/PrivacyPage";
 import { StatsPage } from "./pages/StatsPage";
 import { TeamPage } from "./pages/TeamPage";
 import { WidgetPage } from "./pages/WidgetPage";
@@ -113,6 +114,13 @@ const notificationsRoute = createRoute({
     return <NotificationsPage projectId={notificationsRoute.useParams().projectId} />;
   },
 });
+const privacyRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "/privacy",
+  component: function Privacy() {
+    return <PrivacyPage projectId={privacyRoute.useParams().projectId} />;
+  },
+});
 const installRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "/installazione",
@@ -125,7 +133,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   signupRoute,
   inviteRoute,
-  appRoute.addChildren([homeRoute, newProjectRoute, teamRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, statsRoute, questionsRoute, widgetRoute, notificationsRoute, installRoute])]),
+  appRoute.addChildren([homeRoute, newProjectRoute, teamRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, statsRoute, questionsRoute, widgetRoute, notificationsRoute, privacyRoute, installRoute])]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {

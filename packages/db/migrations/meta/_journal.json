@@ -43,6 +43,13 @@
       "when": 1791472593375,
       "tag": "0005_chief_arclight",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791474289617,
+      "tag": "0006_flaky_lethal_legion",
+      "breakpoints": true
     }
   ]
 }

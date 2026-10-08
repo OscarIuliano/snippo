@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { formatBooking, submissionStatuses, type FlowDefinition, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
+import { canManageProjects, formatBooking, submissionStatuses, type FlowDefinition, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
 import { Alert, Button, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
-import { projectQuery, submissionsQuery } from "../lib/queries";
+import { meQuery, projectQuery, submissionsQuery } from "../lib/queries";
 import { statusInfo } from "../lib/templates";
 
 const receivedFormat = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -75,6 +75,16 @@ function SubmissionCard({ submission: s, projectId, flow }: { submission: Submis
       ]),
   });
 
+  const me = useQuery(meQuery);
+  const canDelete = me.data ? canManageProjects(me.data.organization.role) : false;
+  const remove = useMutation({
+    mutationFn: () => api(`/submissions/${s.id}`, { method: "DELETE" }),
+    onSuccess: () =>
+      Promise.all(
+        [["submissions", projectId], ["calendar", projectId], ["me"]].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      ),
+  });
+
   const prompt = (key: string) => flow?.steps.find((step) => step.key === key)?.prompt ?? key;
   const details = Object.entries(s.answers).filter(([key]) => !HEADER_KEYS.has(key));
 
@@ -122,8 +132,18 @@ function SubmissionCard({ submission: s, projectId, flow }: { submission: Submis
           <Button variant="ghost" onClick={() => update.mutate("new")} disabled={update.isPending}>Riporta tra le nuove</Button>
         )}
         <span className="ml-auto text-xs text-stone-400">Ricevuta {receivedFormat.format(new Date(s.createdAt))}</span>
+        {canDelete && (
+          <Button
+            variant="ghost"
+            className="px-2 py-1 text-xs"
+            disabled={remove.isPending}
+            onClick={() => confirm("Eliminare definitivamente questa richiesta?") && remove.mutate()}
+          >
+            Elimina
+          </Button>
+        )}
       </div>
-      {update.error && <div className="mt-3"><Alert>{update.error.message}</Alert></div>}
+      {(update.error || remove.error) && <div className="mt-3"><Alert>{(update.error ?? remove.error)!.message}</Alert></div>}
     </li>
   );
 }

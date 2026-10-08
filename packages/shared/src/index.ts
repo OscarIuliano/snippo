@@ -4,6 +4,7 @@ export * from "./flow";
 export * from "./flow-editor";
 export * from "./format";
 export * from "./notifications";
+export * from "./privacy";
 export * from "./rules";
 export * from "./stats";
 export * from "./team";

@@ -5,6 +5,8 @@
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // Every night at 03:17 UTC: data retention (src/retention.ts).
+  "triggers": { "crons": ["17 3 * * *"] },
   "vars": {
     "AUTH_BASE_URL": "http://localhost:5174",
     "DASHBOARD_ORIGIN": "http://localhost:5174",
@@ -41,6 +43,7 @@
     // Staging on workers.dev. Bindings are not inherited by environments: each one is listed here.
     "staging": {
       "name": "snippo-api-staging",
+      "triggers": { "crons": ["17 3 * * *"] },
       "vars": {
         "AUTH_BASE_URL": "https://snippo-dashboard-staging.oiuliano90.workers.dev",
         "DASHBOARD_ORIGIN": "https://snippo-dashboard-staging.oiuliano90.workers.dev",

@@ -41,6 +41,7 @@ export function AppShell() {
               { to: "/progetti/$projectId/domande", label: "Domande" },
               { to: "/progetti/$projectId/widget", label: "Widget" },
               { to: "/progetti/$projectId/notifiche", label: "Notifiche" },
+              { to: "/progetti/$projectId/privacy", label: "Privacy" },
               { to: "/progetti/$projectId/installazione", label: "Installazione" },
             ] as const)
           : []),

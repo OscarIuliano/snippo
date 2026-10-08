@@ -1,0 +1,1 @@
+ALTER TABLE `projects` ADD `retention_months` integer DEFAULT 24 NOT NULL;

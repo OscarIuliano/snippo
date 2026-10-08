@@ -356,7 +356,7 @@ Trattiamo dati personali dei visitatori (nome, telefono, email) per conto delle 
 - DPA standard accettato all'attivazione del piano; registro dei trattamenti.
 - Consenso esplicito nel widget, con link alla privacy dell'azienda; data e ora del consenso salvate (`consent_at`).
 - Minimizzazione: IP salvato solo come hash; nessun cookie di tracciamento nel widget.
-- Retention configurabile per progetto (default 24 mesi), poi cancellazione automatica con un Cron Trigger; export e cancellazione dei dati di un visitatore su richiesta.
+- Retention configurabile per progetto (default 24 mesi, pagina Privacy), poi cancellazione automatica ogni notte con un Cron Trigger, insieme a sessioni e inviti scaduti. Nella stessa pagina si cercano per telefono, email o nome le richieste di una persona, per scaricarle in JSON (diritto di accesso) o cancellarle (diritto all'oblio).
 
 **Sicurezza applicativa**
 
@@ -475,7 +475,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 16 attività fatte, 5 in attesa di un tuo passaggio e 6 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 25, conservazione e cancellazione dei dati (l'export CSV ha priorità bassa).
+L'MVP ha 17 attività fatte, 5 in attesa di un tuo passaggio e 5 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano Resend, Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -503,7 +503,7 @@ L'MVP ha 16 attività fatte, 5 in attesa di un tuo passaggio e 6 da fare. Le "Da
 | 22 | Area privata | Export CSV delle richieste | Da fare | |
 | 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Fatto | Inviti con link (7 giorni, uso singolo); l'invio via email arriva con Resend |
 | 24 | Pagamenti | Piani e quote con Paddle | Da fare | |
-| 25 | Privacy | Retention dei dati e cancellazione automatica | Da fare | |
+| 25 | Privacy | Retention dei dati e cancellazione automatica | Fatto | Cron ogni notte; pagina Privacy per accesso e cancellazione dei dati di una persona |
 | 26 | Infrastruttura | Monitoraggio errori (Sentry) e uptime | Da fare | |
 | 27 | Widget | Editor delle domande: partire da un template, aggiungere, modificare, riordinare e togliere domande | Fatto | Pagina Domande; le domande speciali (nome, telefono, giorno…) tengono il loro tipo |
 

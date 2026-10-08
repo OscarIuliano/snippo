@@ -27,6 +27,8 @@ export const projects = sqliteTable(
     defaultLocale: text("default_locale").notNull().default("it"),
     /** Max people per time slot (bookings, when the flow has no party size). Null = no limit. */
     slotCapacity: integer("slot_capacity"),
+    /** Requests older than this are deleted every night (GDPR storage limitation). */
+    retentionMonths: integer("retention_months").notNull().default(24),
     ...timestamps,
   },
   (t) => [index("projects_org_idx").on(t.organizationId)],

@@ -11,6 +11,12 @@
   --color-brand-700: #c2410c;
   --color-brand-800: #9a3412;
   --color-brand-900: #7c2d12;
+  /* Second hue (gradients, blobs) and a third glow, so a theme is more than one color. */
+  --color-accent-200: #fde68a;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-glow-200: #fecdd3;
+  --color-glow-400: #fb7185;
   /* Warm off-white page and deep warm ink: less clinical than pure white and gray. */
   --color-cream: #fffaf5;
   --color-ink: #1c1410;
@@ -38,7 +44,7 @@
 html { scroll-behavior: smooth; }
 
 .text-gradient {
-  background: linear-gradient(100deg, var(--color-brand-700), var(--color-brand-500) 55%, #f59e0b);
+  background: linear-gradient(100deg, var(--color-brand-700), var(--color-brand-500) 55%, var(--color-accent-500));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -79,4 +85,33 @@ html { scroll-behavior: smooth; }
   .js [data-reveal], .bubble { opacity: 1; transform: none; transition: none; animation: none; }
   .typing-dots { display: none; }
   .animate-float, .animate-blob { animation: none; }
+}
+
+/*
+ * Alternative color themes, for comparison (?tema=… or the switcher). Each one swaps the same
+ * tokens: the page uses only brand-*, accent-*, glow-*, cream and ink.
+ */
+:root[data-theme="indaco"] {
+  --color-brand-50: #eef2ff; --color-brand-100: #e0e7ff; --color-brand-200: #c7d2fe; --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8; --color-brand-500: #6366f1; --color-brand-600: #4f46e5; --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3; --color-brand-900: #312e81;
+  --color-accent-200: #f5d0fe; --color-accent-400: #e879f9; --color-accent-500: #d946ef;
+  --color-glow-200: #bae6fd; --color-glow-400: #38bdf8;
+  --color-cream: #f8f8ff; --color-ink: #15132b;
+}
+:root[data-theme="smeraldo"] {
+  --color-brand-50: #ecfdf5; --color-brand-100: #d1fae5; --color-brand-200: #a7f3d0; --color-brand-300: #6ee7b7;
+  --color-brand-400: #34d399; --color-brand-500: #10b981; --color-brand-600: #059669; --color-brand-700: #047857;
+  --color-brand-800: #065f46; --color-brand-900: #064e3b;
+  --color-accent-200: #d9f99d; --color-accent-400: #a3e635; --color-accent-500: #84cc16;
+  --color-glow-200: #a5f3fc; --color-glow-400: #22d3ee;
+  --color-cream: #f7fbf8; --color-ink: #0f1f1a;
+}
+:root[data-theme="oceano"] {
+  --color-brand-50: #eff6ff; --color-brand-100: #dbeafe; --color-brand-200: #bfdbfe; --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa; --color-brand-500: #3b82f6; --color-brand-600: #2563eb; --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af; --color-brand-900: #1e3a8a;
+  --color-accent-200: #a5f3fc; --color-accent-400: #22d3ee; --color-accent-500: #06b6d4;
+  --color-glow-200: #ddd6fe; --color-glow-400: #a78bfa;
+  --color-cream: #f6f9ff; --color-ink: #0f172a;
 }

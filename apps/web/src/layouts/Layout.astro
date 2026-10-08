@@ -7,6 +7,15 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
+
+// Theme switcher for comparing color palettes: development and staging only.
+const showThemeSwitcher = import.meta.env.DEV || import.meta.env.PUBLIC_THEME_SWITCHER === "true";
+const themes = [
+  { id: "arancio", label: "Arancio", color: "linear-gradient(135deg, #ea580c, #f59e0b)" },
+  { id: "indaco", label: "Indaco", color: "linear-gradient(135deg, #4f46e5, #d946ef)" },
+  { id: "smeraldo", label: "Smeraldo", color: "linear-gradient(135deg, #059669, #84cc16)" },
+  { id: "oceano", label: "Oceano", color: "linear-gradient(135deg, #2563eb, #06b6d4)" },
+];
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -27,9 +36,25 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="theme-color" content="#fffaf5" />
     <!-- Marks JavaScript as available before paint: the scroll reveal only hides content when it can show it again. -->
     <script is:inline>document.documentElement.classList.add("js");</script>
+    <!-- Color theme preview: ?tema=indaco|smeraldo|oceano, remembered for the visit. -->
+    <script is:inline>
+      try {
+        const chosen = new URLSearchParams(location.search).get("tema") ?? sessionStorage.getItem("snippo:tema");
+        if (chosen && chosen !== "arancio") document.documentElement.dataset.theme = chosen;
+        if (chosen) sessionStorage.setItem("snippo:tema", chosen);
+      } catch {}
+    </script>
   </head>
   <body class="bg-cream text-ink antialiased">
     <slot />
+    {showThemeSwitcher && (
+      <div class="fixed bottom-4 left-4 z-30 flex items-center gap-2 rounded-full bg-white/90 py-1.5 pr-1.5 pl-3 text-xs font-medium text-ink shadow-lg ring-1 ring-ink/10 backdrop-blur">
+        Tema
+        {themes.map((t) => (
+          <a href={`?tema=${t.id}`} title={t.label} aria-label={`Tema ${t.label}`} class="size-6 rounded-full ring-2 ring-white transition hover:scale-110" style={`background: ${t.color}`}></a>
+        ))}
+      </div>
+    )}
     <script>
       // Scroll reveal: sections fade in once, when they enter the viewport.
       const sections = document.querySelectorAll("[data-reveal]");

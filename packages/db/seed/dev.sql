@@ -30,3 +30,30 @@ VALUES ('fv_dev_1', 'wgt_dev', 1, 'restaurant', '{
 }', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
 
 UPDATE widgets SET active_flow_version_id = 'fv_dev_1' WHERE id = 'wgt_dev';
+
+-- v2 del flusso demo: "Quante persone?" prima di giorno e orario, per mostrare solo gli orari con posto.
+INSERT OR IGNORE INTO flow_versions (id, widget_id, version, template, definition, published_at)
+VALUES ('fv_dev_2', 'wgt_dev', 2, 'restaurant', '{
+  "steps": [
+    {"key":"welcome","type":"message","prompt":"Ciao! Vuoi prenotare un tavolo?"},
+    {"key":"party_size","type":"number","prompt":"Quante persone?","min":1,"max":12},
+    {"key":"date","type":"date","prompt":"Per che giorno?"},
+    {"key":"time","type":"time","prompt":"A che ora?","options":["12:30","13:30","19:30","20:30","21:30"]},
+    {"key":"name","type":"text","prompt":"Come ti chiami?","maxLength":80},
+    {"key":"phone","type":"phone","prompt":"Un numero di telefono per confermarti?"},
+    {"key":"notes","type":"text","prompt":"Allergie o richieste particolari?","required":false,"maxLength":500}
+  ],
+  "successMessage":"Richiesta inviata! Ti confermeremo la prenotazione al piu'' presto."
+}', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+
+UPDATE widgets SET active_flow_version_id = 'fv_dev_2' WHERE id = 'wgt_dev';
+
+-- Orari demo: lunedi' chiuso, pranzo 12-15 e cena 19-23 gli altri giorni, 20 coperti per orario.
+UPDATE projects SET slot_capacity = 20 WHERE id = 'prj_dev';
+INSERT OR IGNORE INTO business_hours (id, project_id, weekday, opens_at, closes_at) VALUES
+  ('bh_dev_1l', 'prj_dev', 1, '12:00', '15:00'), ('bh_dev_1c', 'prj_dev', 1, '19:00', '23:00'),
+  ('bh_dev_2l', 'prj_dev', 2, '12:00', '15:00'), ('bh_dev_2c', 'prj_dev', 2, '19:00', '23:00'),
+  ('bh_dev_3l', 'prj_dev', 3, '12:00', '15:00'), ('bh_dev_3c', 'prj_dev', 3, '19:00', '23:00'),
+  ('bh_dev_4l', 'prj_dev', 4, '12:00', '15:00'), ('bh_dev_4c', 'prj_dev', 4, '19:00', '23:00'),
+  ('bh_dev_5l', 'prj_dev', 5, '12:00', '15:00'), ('bh_dev_5c', 'prj_dev', 5, '19:00', '23:00'),
+  ('bh_dev_6l', 'prj_dev', 6, '12:00', '15:00'), ('bh_dev_6c', 'prj_dev', 6, '19:00', '23:00');

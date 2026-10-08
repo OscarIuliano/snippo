@@ -11,9 +11,10 @@ export const templates: Record<TemplateId, FlowDefinitionInput> = {
   restaurant: {
     steps: [
       { key: "welcome", type: "message", prompt: "Ciao! Vuoi prenotare un tavolo?" },
+      // Party size first: the widget then offers only the times with enough room left.
+      { key: "party_size", type: "number", prompt: "Quante persone?", min: 1, max: 12 },
       { key: "date", type: "date", prompt: "Per che giorno?" },
       { key: "time", type: "time", prompt: "A che ora?", options: ["12:30", "13:30", "19:30", "20:30", "21:30"] },
-      { key: "party_size", type: "number", prompt: "Quante persone?", min: 1, max: 12 },
       ...contactSteps,
       { key: "notes", type: "text", prompt: "Allergie o richieste particolari?", required: false, maxLength: 500 },
     ],

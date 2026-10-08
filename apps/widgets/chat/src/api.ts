@@ -1,3 +1,4 @@
+import type { WidgetAvailability } from "@snippo/shared/availability";
 import type { SubmissionInput, WidgetConfig } from "@snippo/shared/widget-api";
 
 export class ApiError extends Error {
@@ -10,12 +11,19 @@ export class ApiError extends Error {
 }
 
 export function createApi(baseUrl: string, publicKey: string) {
-  const url = (path: string) => `${baseUrl.replace(/\/$/, "")}/v1/widget${path}?key=${encodeURIComponent(publicKey)}`;
+  const url = (path: string, params = "") => `${baseUrl.replace(/\/$/, "")}/v1/widget${path}?key=${encodeURIComponent(publicKey)}${params}`;
 
   return {
     async getConfig(): Promise<WidgetConfig> {
       const res = await fetch(url("/config"));
       if (!res.ok) throw new ApiError(`Configurazione non disponibile (${res.status})`);
+      return res.json();
+    },
+
+    /** Bookable times per day for the next 31 days. */
+    async getAvailability(partySize: number): Promise<WidgetAvailability> {
+      const res = await fetch(url("/availability", `&partySize=${partySize}`));
+      if (!res.ok) throw new ApiError(`Disponibilità non disponibile (${res.status})`);
       return res.json();
     },
 

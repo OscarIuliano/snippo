@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { Navigate, Outlet, createRootRouteWithContext, createRoute, createRouter, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "./components/AppShell";
+import { AvailabilityPage } from "./pages/AvailabilityPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { meQuery, sessionQuery } from "./lib/queries";
 import { LoginPage, SignupPage } from "./pages/AuthPages";
@@ -60,6 +61,13 @@ const calendarRoute = createRoute({
     return <CalendarPage projectId={calendarRoute.useParams().projectId} />;
   },
 });
+const availabilityRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "/orari",
+  component: function Availability() {
+    return <AvailabilityPage projectId={availabilityRoute.useParams().projectId} />;
+  },
+});
 const widgetRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "/widget",
@@ -85,7 +93,7 @@ const installRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   loginRoute,
   signupRoute,
-  appRoute.addChildren([homeRoute, newProjectRoute, projectRoute.addChildren([inboxRoute, calendarRoute, widgetRoute, notificationsRoute, installRoute])]),
+  appRoute.addChildren([homeRoute, newProjectRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, widgetRoute, notificationsRoute, installRoute])]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {

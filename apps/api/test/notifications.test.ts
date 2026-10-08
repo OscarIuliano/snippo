@@ -1,10 +1,10 @@
 import { createExecutionContext, createMessageBatch, getQueueResult } from "cloudflare:test";
 import { env, exports } from "cloudflare:workers";
 import { describe, expect, it, vi } from "vitest";
-import type { ChannelRow, DeliveryRow, NotificationMessage, SubmissionsPage } from "@snippo/shared";
+import { formatBooking, type ChannelRow, type DeliveryRow, type NotificationMessage, type SubmissionsPage } from "@snippo/shared";
 import worker from "../src/index";
 import { createActionToken } from "../src/notifications/action-token";
-import { createProject, signUp, submitBooking, type Api } from "./helpers";
+import { BOOKING_DATE, createProject, signUp, submitBooking, type Api } from "./helpers";
 
 /** Runs the queue consumer on one message, as Cloudflare Queues would. */
 async function consume(body: NotificationMessage) {
@@ -68,7 +68,7 @@ describe("notification delivery", () => {
       ["whatsapp", "sent", 1],
     ]);
     const output = log.mock.calls.flat().join("\n");
-    expect(output).toContain("Nuova richiesta: Anna · sab 12 dic, 20:30 · 4 persone");
+    expect(output).toContain(`Nuova richiesta: Anna · ${formatBooking(`${BOOKING_DATE}T20:30`)} · 4 persone`);
     expect(output).toContain("/v1/actions/");
     log.mockRestore();
   });

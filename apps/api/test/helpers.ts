@@ -1,10 +1,17 @@
 import { exports } from "cloudflare:workers";
 import { expect } from "vitest";
-import type { ProjectDetail } from "@snippo/shared";
+import { addDays, type ProjectDetail } from "@snippo/shared";
+import { nowIn } from "../src/availability";
 
 export const DASHBOARD = "http://localhost:5174";
 export const SITE_ORIGIN = "https://trattoria-mario.it";
 const PUBLIC_API = "https://api.snippo.test";
+
+/** Dates relative to today (Europe/Rome), so the tests never fall into the past. */
+export const TODAY = nowIn("Europe/Rome").date;
+export const inDays = (n: number) => addDays(TODAY, n);
+/** The default booking date of submitBooking. */
+export const BOOKING_DATE = inDays(30);
 
 export type Api = (path: string, init?: RequestInit) => Promise<Response>;
 
@@ -44,7 +51,7 @@ export async function submitBooking(api: Api, projectId: string, overrides: Reco
     headers: { "Content-Type": "application/json", Origin: SITE_ORIGIN },
     body: JSON.stringify({
       flowVersionId,
-      answers: { date: "2026-12-12", time: "20:30", party_size: "4", name: "Anna", phone: "+39 333 1112223", notes: "Un seggiolone", ...overrides },
+      answers: { date: BOOKING_DATE, time: "20:30", party_size: "4", name: "Anna", phone: "+39 333 1112223", notes: "Un seggiolone", ...overrides },
       consent: true,
     }),
   });

@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import type { ChannelRow, DeliveryRow, MeResponse, ProjectDetail, SubmissionRow, SubmissionStatus, SubmissionsPage } from "@snippo/shared";
+import type { AvailabilitySettings, ChannelRow, DeliveryRow, MeResponse, ProjectDetail, SubmissionRow, SubmissionStatus, SubmissionsPage } from "@snippo/shared";
 import { api } from "./api";
 import { authClient } from "./auth";
 
@@ -39,3 +39,6 @@ export const calendarQuery = (projectId: string, from: string, to: string) =>
     placeholderData: (previous) => previous,
     refetchInterval: 60_000,
   });
+
+export const availabilityQuery = (projectId: string) =>
+  queryOptions({ queryKey: ["availability", projectId], queryFn: () => api<AvailabilitySettings>(`/projects/${projectId}/availability`) });

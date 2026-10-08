@@ -25,6 +25,8 @@ export const projects = sqliteTable(
     industry: text("industry", { enum: ["restaurant", "appointments", "info", "b2b", "other"] }).notNull(),
     timezone: text("timezone").notNull().default("Europe/Rome"),
     defaultLocale: text("default_locale").notNull().default("it"),
+    /** Max people per time slot (bookings, when the flow has no party size). Null = no limit. */
+    slotCapacity: integer("slot_capacity"),
     ...timestamps,
   },
   (t) => [index("projects_org_idx").on(t.organizationId)],
@@ -206,4 +208,36 @@ export const notificationDeliveries = sqliteTable(
     uniqueIndex("notification_deliveries_channel_submission_uq").on(t.channelId, t.submissionId),
     index("notification_deliveries_submission_idx").on(t.submissionId),
   ],
+);
+
+// --- Availability ---
+// No opening hours configured = every day and every time of the flow is bookable.
+
+export const businessHours = sqliteTable(
+  "business_hours",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    /** 0 = Monday ... 6 = Sunday. A day can have several ranges (lunch and dinner). */
+    weekday: integer("weekday").notNull(),
+    /** "HH:MM", local time of the project. A time slot is open when opensAt <= time < closesAt. */
+    opensAt: text("opens_at").notNull(),
+    closesAt: text("closes_at").notNull(),
+    ...timestamps,
+  },
+  (t) => [index("business_hours_project_idx").on(t.projectId, t.weekday)],
+);
+
+export const closures = sqliteTable(
+  "closures",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    /** "YYYY-MM-DD", both included. */
+    dateFrom: text("date_from").notNull(),
+    dateTo: text("date_to").notNull(),
+    reason: text("reason"),
+    ...timestamps,
+  },
+  (t) => [index("closures_project_idx").on(t.projectId, t.dateTo)],
 );

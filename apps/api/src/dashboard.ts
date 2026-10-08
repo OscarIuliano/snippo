@@ -2,6 +2,8 @@ import { Hono, type Context } from "hono";
 import { v7 as uuidv7 } from "uuid";
 import {
   and,
+  businessHours,
+  closures,
   count,
   gte,
   createDb,
@@ -21,8 +23,10 @@ import {
   type Db,
 } from "@snippo/db";
 import {
+  addClosureSchema,
   addDays,
   addDomainSchema,
+  availabilitySettingsSchema,
   changeTemplateSchema,
   createChannelSchema,
   createProjectSchema,
@@ -33,6 +37,7 @@ import {
   templates,
   updateSubmissionSchema,
   updateWidgetSchema,
+  type AvailabilitySettings,
   type ChannelRow,
   type DeliveryRow,
   type MeResponse,
@@ -43,6 +48,7 @@ import {
   type TemplateId,
 } from "@snippo/shared";
 import type { z } from "zod";
+import { slotSteps } from "./availability";
 import { createAuth } from "./auth";
 import type { AppEnv } from "./env";
 import { problem } from "./problem";
@@ -431,4 +437,64 @@ dashboardRoutes.get("/projects/:id/deliveries", async (c) => {
     createdAt: delivery.createdAt,
   }));
   return c.json(body);
+});
+
+dashboardRoutes.get("/projects/:id/availability", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const { db } = c.var;
+  const widget = await projectWidget(db, project.id);
+  const flowVersion = widget?.activeFlowVersionId
+    ? await db.query.flowVersions.findFirst({ where: eq(flowVersions.id, widget.activeFlowVersionId) })
+    : undefined;
+  const flow = flowVersion ? flowDefinitionSchema.parse(flowVersion.definition) : null;
+  const [hours, closed] = await Promise.all([
+    db.query.businessHours.findMany({ where: eq(businessHours.projectId, project.id), orderBy: [businessHours.weekday, businessHours.opensAt] }),
+    db.query.closures.findMany({ where: eq(closures.projectId, project.id), orderBy: closures.dateFrom }),
+  ]);
+
+  const body: AvailabilitySettings = {
+    hours: hours.map(({ weekday, opensAt, closesAt }) => ({ weekday, opensAt, closesAt })),
+    slotCapacity: project.slotCapacity,
+    closures: closed.map(({ id, dateFrom, dateTo, reason }) => ({ id, dateFrom, dateTo, reason })),
+    capacityUnit: flow?.steps.some((s) => s.key === "party_size") ? "people" : "bookings",
+    timeOptions: (flow && slotSteps(flow)?.timeOptions) ?? [],
+  };
+  return c.json(body);
+});
+
+/** Replaces the weekly opening hours and the slot capacity. */
+dashboardRoutes.put("/projects/:id/availability", async (c) => {
+  const input = await parseBody(c, availabilitySettingsSchema);
+  if (!input) return problem(c, 422, "Orari non validi: controlla che ogni apertura preceda la chiusura");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const { db } = c.var;
+  await db.batch([
+    db.delete(businessHours).where(eq(businessHours.projectId, project.id)),
+    ...input.hours.map((h) => db.insert(businessHours).values({ id: uuidv7(), projectId: project.id, ...h })),
+    db.update(projects).set({ slotCapacity: input.slotCapacity, updatedAt: new Date().toISOString() }).where(eq(projects.id, project.id)),
+  ]);
+  return c.body(null, 204);
+});
+
+dashboardRoutes.post("/projects/:id/closures", async (c) => {
+  const input = await parseBody(c, addClosureSchema);
+  if (!input) return problem(c, 422, "Date di chiusura non valide");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  const id = uuidv7();
+  await c.var.db.insert(closures).values({ id, projectId: project.id, dateFrom: input.dateFrom, dateTo: input.dateTo, reason: input.reason || null });
+  return c.json({ id }, 201);
+});
+
+dashboardRoutes.delete("/projects/:id/closures/:closureId", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  await c.var.db.delete(closures).where(and(eq(closures.id, c.req.param("closureId")), eq(closures.projectId, project.id)));
+  return c.body(null, 204);
 });

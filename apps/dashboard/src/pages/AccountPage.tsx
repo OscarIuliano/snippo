@@ -1,45 +1,50 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { Alert, Button, Card, Field, Input, Notice, PageHeader } from "../components/ui";
-import type { AccountDeletionPlan } from "@snippo/shared";
+import { locales, type AccountDeletionPlan, type Locale } from "@snippo/shared";
+import { Alert, Button, Card, Field, Input, Notice, PageHeader, cx } from "../components/ui";
+import { fill, useFormat, useI18n, useT, type Translate } from "../i18n";
 import { api } from "../lib/api";
 import { authClient } from "../lib/auth";
 import { setActiveOrganization } from "../lib/organization";
 import { meQuery, sessionQuery } from "../lib/queries";
 import type { AuthSearch } from "./AuthPages";
 
-const dateFormat = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+type AuthError = { message?: string; status?: number; code?: string };
 
-/** Better Auth answers { data, error }: an error becomes a thrown one, for useMutation. */
-async function unwrap<T>(call: Promise<{ data: T; error: { message?: string; status?: number } | null }>): Promise<T> {
-  const { data, error } = await call;
-  if (error) throw new Error(accountError(error));
-  return data;
+function accountError(t: Translate, error: AuthError): string {
+  const message = error.message ?? "";
+  if (error.code === "OWNER_OF_TEAM") return t("Prima passa la titolarità delle organizzazioni in cui ci sono altre persone.");
+  if (/invalid password/i.test(message)) return t("La password attuale non è corretta.");
+  if (/password.*short/i.test(message)) return t("La nuova password deve avere almeno 8 caratteri.");
+  if (/already exists|already in use/i.test(message)) return t("Questo indirizzo è già usato da un altro account.");
+  if (/same/i.test(message)) return t("È già il tuo indirizzo.");
+  if (error.status === 429) return t("Troppi tentativi, riprova tra poco.");
+  return t("Qualcosa è andato storto, riprova.");
 }
 
-function accountError(error: { message?: string; status?: number }): string {
-  const message = error.message ?? "";
-  if (/invalid password/i.test(message)) return "La password attuale non è corretta.";
-  if (/password.*short/i.test(message)) return "La nuova password deve avere almeno 8 caratteri.";
-  if (/already exists|already in use/i.test(message)) return "Questo indirizzo è già usato da un altro account.";
-  if (/same/i.test(message)) return "È già il tuo indirizzo.";
-  // The API already explains which organizations need a new owner.
-  if (/titolarità/.test(message)) return message;
-  if (error.status === 429) return "Troppi tentativi, riprova tra poco.";
-  return "Qualcosa è andato storto, riprova.";
+/** Better Auth answers { data, error }: an error becomes a thrown one, in the user's language, for useMutation. */
+function useUnwrap() {
+  const t = useT();
+  return async <T,>(call: Promise<{ data: T; error: AuthError | null }>): Promise<T> => {
+    const { data, error } = await call;
+    if (error) throw new Error(accountError(t, error));
+    return data;
+  };
 }
 
 export function AccountPage() {
+  const t = useT();
   const me = useQuery(meQuery);
   const { error: linkError } = useSearch({ strict: false }) as AuthSearch;
   if (!me.data) return null;
 
   return (
     <div className="max-w-3xl space-y-6">
-      <PageHeader title="Il tuo account" description="I tuoi dati di accesso. Valgono per tutti i progetti e i team di cui fai parte." />
-      {linkError && <Alert>Il link di conferma della nuova email non è più valido: chiedine un altro qui sotto.</Alert>}
+      <PageHeader title={t("Il tuo account")} description={t("I tuoi dati di accesso. Valgono per tutti i progetti e i team di cui fai parte.")} />
+      {linkError && <Alert>{t("Il link di conferma della nuova email non è più valido: chiedine un altro qui sotto.")}</Alert>}
       <ProfileCard name={me.data.user.name} />
+      <LanguageCard />
       <EmailCard email={me.data.user.email} />
       <PasswordCard />
       <SessionsCard />
@@ -54,12 +59,14 @@ function useRefreshUser() {
 }
 
 function ProfileCard({ name }: { name: string }) {
+  const t = useT();
+  const unwrap = useUnwrap();
   const refresh = useRefreshUser();
   const [value, setValue] = useState(name);
   const save = useMutation({ mutationFn: () => unwrap(authClient.updateUser({ name: value.trim() })), onSuccess: refresh });
 
   return (
-    <Card title="Profilo" description="Il nome che vede il tuo team.">
+    <Card title={t("Profilo")} description={t("Il nome che vede il tuo team.")}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -68,19 +75,57 @@ function ProfileCard({ name }: { name: string }) {
         className="flex flex-wrap items-end gap-3"
       >
         <div className="min-w-56 flex-1">
-          <Field label="Nome e cognome">
+          <Field label={t("Nome e cognome")}>
             <Input value={value} onChange={(e) => setValue(e.target.value)} autoComplete="name" required minLength={2} maxLength={100} />
           </Field>
         </div>
-        <Button type="submit" disabled={save.isPending || value.trim() === name}>Salva</Button>
+        <Button type="submit" disabled={save.isPending || value.trim() === name}>{t("Salva")}</Button>
       </form>
-      {save.isSuccess && value.trim() === name && <p className="mt-3 text-sm text-emerald-700">Salvato.</p>}
+      {save.isSuccess && value.trim() === name && <p className="mt-3 text-sm text-emerald-700">{t("Salvato.")}</p>}
+      {save.error && <div className="mt-3"><Alert>{save.error.message}</Alert></div>}
+    </Card>
+  );
+}
+
+const languageNames: Record<Locale, string> = { it: "Italiano", en: "English" };
+
+/** The language switches at once; saving it on the account makes it follow the user on every device. */
+function LanguageCard() {
+  const { t, locale, setLocale } = useI18n();
+  const unwrap = useUnwrap();
+  const refresh = useRefreshUser();
+  const save = useMutation({ mutationFn: (next: Locale) => unwrap(authClient.updateUser({ locale: next })), onSuccess: refresh });
+
+  function choose(next: Locale) {
+    if (next === locale) return;
+    setLocale(next);
+    save.mutate(next);
+  }
+
+  return (
+    <Card title={t("Lingua")} description={t("La lingua della dashboard e delle email sul tuo account.")}>
+      <div role="radiogroup" aria-label={t("Lingua")} className="inline-flex rounded-lg bg-white p-1 ring-1 ring-slate-200">
+        {locales.map((l) => (
+          <button
+            key={l}
+            role="radio"
+            aria-checked={locale === l}
+            disabled={save.isPending}
+            onClick={() => choose(l)}
+            className={cx("rounded-md px-3 py-1.5 text-sm font-medium", locale === l ? "bg-brand-700 text-white" : "text-slate-600 hover:bg-slate-100")}
+          >
+            {languageNames[l]}
+          </button>
+        ))}
+      </div>
       {save.error && <div className="mt-3"><Alert>{save.error.message}</Alert></div>}
     </Card>
   );
 }
 
 function EmailCard({ email }: { email: string }) {
+  const t = useT();
+  const unwrap = useUnwrap();
   const [value, setValue] = useState("");
   const change = useMutation({
     mutationFn: (newEmail: string) => unwrap(authClient.changeEmail({ newEmail, callbackURL: "/account" })),
@@ -92,25 +137,26 @@ function EmailCard({ email }: { email: string }) {
   }
 
   return (
-    <Card title="Email" description="Per accedere e per ricevere gli avvisi sull'account.">
-      <p className="text-sm">
-        Indirizzo attuale: <strong className="font-medium">{email}</strong>
-      </p>
+    <Card title={t("Email")} description={t("Per accedere e per ricevere gli avvisi sull'account.")}>
+      <p className="text-sm">{fill(t("Indirizzo attuale: {email}"), { email: <strong className="font-medium">{email}</strong> })}</p>
       {change.isSuccess ? (
         <div className="mt-4 space-y-3">
           <Notice>
-            Ti abbiamo mandato un link a <strong className="font-medium">{change.variables}</strong>. L'indirizzo cambia quando lo apri; fino ad allora resta {email}.
+            {fill(t("Ti abbiamo mandato un link a {newEmail}. L'indirizzo cambia quando lo apri; fino ad allora resta {email}."), {
+              newEmail: <strong className="font-medium">{change.variables}</strong>,
+              email,
+            })}
           </Notice>
-          <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => change.reset()}>Usa un altro indirizzo</Button>
+          <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => change.reset()}>{t("Usa un altro indirizzo")}</Button>
         </div>
       ) : (
         <form onSubmit={onSubmit} className="mt-4 flex flex-wrap items-end gap-3">
           <div className="min-w-56 flex-1">
-            <Field label="Nuovo indirizzo">
-              <Input type="email" value={value} onChange={(e) => setValue(e.target.value)} autoComplete="email" required placeholder="nome@esempio.it" />
+            <Field label={t("Nuovo indirizzo")}>
+              <Input type="email" value={value} onChange={(e) => setValue(e.target.value)} autoComplete="email" required placeholder={t("nome@esempio.it")} />
             </Field>
           </div>
-          <Button type="submit" variant="secondary" disabled={change.isPending}>{change.isPending ? "Invio…" : "Cambia email"}</Button>
+          <Button type="submit" variant="secondary" disabled={change.isPending}>{change.isPending ? t("Invio…") : t("Cambia email")}</Button>
         </form>
       )}
       {change.error && <div className="mt-3"><Alert>{change.error.message}</Alert></div>}
@@ -119,6 +165,8 @@ function EmailCard({ email }: { email: string }) {
 }
 
 function PasswordCard() {
+  const t = useT();
+  const unwrap = useUnwrap();
   const queryClient = useQueryClient();
   const [mismatch, setMismatch] = useState(false);
   const change = useMutation({
@@ -141,26 +189,26 @@ function PasswordCard() {
   }
 
   return (
-    <Card title="Password" description="Dopo il cambio ti mandiamo un'email di avviso, nel caso non fossi stato tu.">
+    <Card title={t("Password")} description={t("Dopo il cambio ti mandiamo un'email di avviso, nel caso non fossi stato tu.")}>
       <form onSubmit={onSubmit} className="space-y-4">
-        <Field label="Password attuale">
+        <Field label={t("Password attuale")}>
           <Input name="current" type="password" autoComplete="current-password" required />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nuova password" hint="Almeno 8 caratteri.">
+          <Field label={t("Nuova password")} hint={t("Almeno 8 caratteri.")}>
             <Input name="new" type="password" autoComplete="new-password" required minLength={8} />
           </Field>
-          <Field label="Ripeti la nuova password" error={mismatch ? "Le due password non coincidono." : null}>
+          <Field label={t("Ripeti la nuova password")} error={mismatch ? t("Le due password non coincidono.") : null}>
             <Input name="confirm" type="password" autoComplete="new-password" required minLength={8} />
           </Field>
         </div>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" name="revoke" defaultChecked className="accent-brand-700" />
-          Esci dagli altri dispositivi
+          {t("Esci dagli altri dispositivi")}
         </label>
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" disabled={change.isPending}>{change.isPending ? "Salvataggio…" : "Cambia password"}</Button>
-          {change.isSuccess && <span className="text-sm text-emerald-700">Password cambiata.</span>}
+          <Button type="submit" disabled={change.isPending}>{change.isPending ? t("Salvataggio…") : t("Cambia password")}</Button>
+          {change.isSuccess && <span className="text-sm text-emerald-700">{t("Password cambiata.")}</span>}
         </div>
         {change.error && <Alert>{change.error.message}</Alert>}
       </form>
@@ -169,14 +217,17 @@ function PasswordCard() {
 }
 
 /** "Chrome su Mac" from a user agent: enough to recognise a device, no library needed. */
-function describeDevice(userAgent: string | null | undefined): string {
-  if (!userAgent) return "Dispositivo sconosciuto";
+function describeDevice(t: Translate, userAgent: string | null | undefined): string {
+  if (!userAgent) return t("Dispositivo sconosciuto");
   const browser = /Edg\//.test(userAgent) ? "Edge" : /Firefox\//.test(userAgent) ? "Firefox" : /Chrome\//.test(userAgent) ? "Chrome" : /Safari\//.test(userAgent) ? "Safari" : "Browser";
   const os = /iPhone|iPad/.test(userAgent) ? "iPhone" : /Android/.test(userAgent) ? "Android" : /Mac OS X/.test(userAgent) ? "Mac" : /Windows/.test(userAgent) ? "Windows" : /Linux/.test(userAgent) ? "Linux" : null;
-  return os ? `${browser} su ${os}` : browser;
+  return os ? t("{browser} su {os}", { browser, os }) : browser;
 }
 
 function SessionsCard() {
+  const t = useT();
+  const unwrap = useUnwrap();
+  const dateFormat = useFormat((intl) => new Intl.DateTimeFormat(intl, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }));
   const queryClient = useQueryClient();
   const current = useQuery(sessionQuery);
   const sessions = useQuery({ queryKey: ["sessions"], queryFn: () => unwrap(authClient.listSessions()) });
@@ -189,25 +240,27 @@ function SessionsCard() {
   const others = list.filter((s) => s.token !== currentToken).length;
 
   return (
-    <Card title="Dispositivi" description="Dove hai fatto l'accesso. Se non riconosci un dispositivo, fallo uscire e cambia la password.">
+    <Card title={t("Dispositivi")} description={t("Dove hai fatto l'accesso. Se non riconosci un dispositivo, fallo uscire e cambia la password.")}>
       {sessions.error && <Alert>{sessions.error.message}</Alert>}
       <ul className="divide-y divide-slate-100 rounded-lg ring-1 ring-slate-200 empty:hidden">
         {list.map((s) => (
           <li key={s.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5 text-sm">
             <span className="min-w-40 flex-1">
-              <span className="font-medium">{describeDevice(s.userAgent)}</span>
-              {s.token === currentToken && <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800 ring-1 ring-brand-100">questo dispositivo</span>}
-              <span className="block text-xs text-slate-500">Ultimo uso {dateFormat.format(new Date(s.updatedAt))}</span>
+              <span className="font-medium">{describeDevice(t, s.userAgent)}</span>
+              {s.token === currentToken && (
+                <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800 ring-1 ring-brand-100">{t("questo dispositivo")}</span>
+              )}
+              <span className="block text-xs text-slate-500">{t("Ultimo uso {date}", { date: dateFormat.format(new Date(s.updatedAt)) })}</span>
             </span>
             {s.token !== currentToken && (
-              <Button variant="ghost" className="px-2 py-1 text-xs" disabled={revoke.isPending} onClick={() => revoke.mutate(s.token)}>Fai uscire</Button>
+              <Button variant="ghost" className="px-2 py-1 text-xs" disabled={revoke.isPending} onClick={() => revoke.mutate(s.token)}>{t("Fai uscire")}</Button>
             )}
           </li>
         ))}
       </ul>
       {others > 0 && (
         <Button variant="secondary" className="mt-4" disabled={revokeOthers.isPending} onClick={() => revokeOthers.mutate()}>
-          Esci da tutti gli altri ({others})
+          {t("Esci da tutti gli altri ({count})", { count: others })}
         </Button>
       )}
       {(revoke.error || revokeOthers.error) && <div className="mt-3"><Alert>{(revoke.error ?? revokeOthers.error)!.message}</Alert></div>}
@@ -216,6 +269,8 @@ function SessionsCard() {
 }
 
 function DeleteAccountCard() {
+  const t = useT();
+  const unwrap = useUnwrap();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const plan = useQuery({ queryKey: ["account-deletion"], queryFn: () => api<AccountDeletionPlan>("/account/deletion") });
@@ -243,19 +298,19 @@ function DeleteAccountCard() {
   const deleted = plan.data?.deleted ?? [];
 
   return (
-    <Card title="Elimina account" description="Cancella per sempre il tuo account e i tuoi dati. Non si può annullare.">
+    <Card title={t("Elimina account")} description={t("Cancella per sempre il tuo account e i tuoi dati. Non si può annullare.")}>
       {plan.error && <Alert>{plan.error.message}</Alert>}
       {plan.data && blocking.length > 0 && (
         <div className="space-y-3 text-sm">
-          <p>Prima di eliminare l'account, passa la titolarità a un'altra persona del team, da Team → Rendi titolare:</p>
+          <p>{t("Prima di eliminare l'account, passa la titolarità a un'altra persona del team, da Team → Rendi titolare:")}</p>
           <ul className="divide-y divide-slate-100 rounded-lg ring-1 ring-slate-200">
             {blocking.map((o) => (
               <li key={o.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
                 <span className="min-w-40 flex-1">
                   <span className="font-medium">{o.name}</span>
-                  <span className="text-slate-500"> · {o.members} persone</span>
+                  <span className="text-slate-500"> · {t("{count} persone", { count: o.members })}</span>
                 </span>
-                <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => openTeam(o.id)}>Apri il team</Button>
+                <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => openTeam(o.id)}>{t("Apri il team")}</Button>
               </li>
             ))}
           </ul>
@@ -264,24 +319,30 @@ function DeleteAccountCard() {
       {plan.data && blocking.length === 0 && (
         <form onSubmit={onSubmit} className="space-y-4 text-sm">
           <ul className="list-disc space-y-1 pl-5 text-slate-700">
-            <li>Escono tutti i tuoi dispositivi e il tuo profilo viene cancellato.</li>
+            <li>{t("Escono tutti i tuoi dispositivi e il tuo profilo viene cancellato.")}</li>
             {deleted.map((o) => (
               <li key={o.id}>
-                L'organizzazione <strong className="font-medium">{o.name}</strong> viene eliminata con{" "}
-                {o.projects === 1 ? "il suo progetto" : `i suoi ${o.projects} progetti`}, le richieste ricevute e le statistiche. I widget smettono di funzionare sui siti.
+                {fill(
+                  o.projects === 1
+                    ? t("L'organizzazione {name} viene eliminata con il suo progetto, le richieste ricevute e le statistiche. I widget smettono di funzionare sui siti.")
+                    : t("L'organizzazione {name} viene eliminata con i suoi {count} progetti, le richieste ricevute e le statistiche. I widget smettono di funzionare sui siti.", {
+                        count: o.projects,
+                      }),
+                  { name: <strong className="font-medium">{o.name}</strong> },
+                )}
               </li>
             ))}
-            <li>Dai team di altre persone esci soltanto: i loro progetti restano.</li>
+            <li>{t("Dai team di altre persone esci soltanto: i loro progetti restano.")}</li>
           </ul>
-          <Field label="Password">
+          <Field label={t("Password")}>
             <Input name="password" type="password" autoComplete="current-password" required />
           </Field>
           <label className="flex items-start gap-2 text-slate-700">
             <input type="checkbox" checked={understood} onChange={(e) => setUnderstood(e.target.checked)} className="mt-0.5 accent-red-700" />
-            Ho capito che i dati non si possono recuperare.
+            {t("Ho capito che i dati non si possono recuperare.")}
           </label>
           <Button type="submit" variant="danger" disabled={!understood || remove.isPending}>
-            {remove.isPending ? "Eliminazione…" : "Elimina definitivamente"}
+            {remove.isPending ? t("Eliminazione…") : t("Elimina definitivamente")}
           </Button>
           {remove.error && <Alert>{remove.error.message}</Alert>}
         </form>

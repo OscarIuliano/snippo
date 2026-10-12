@@ -4,15 +4,23 @@ import { useState } from "react";
 import { canManageProjects, formatBooking, submissionStatuses, type FlowDefinition, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
 import { Alert, Button, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
+import { msg, useFormat, useI18n, useT } from "../i18n";
 import { meQuery, projectQuery, submissionsQuery } from "../lib/queries";
 import { statusInfo } from "../lib/templates";
 
-const receivedFormat = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const emptyTitle: Record<SubmissionStatus | "all", string> = {
+  all: msg("Nessuna richiesta per ora"),
+  new: msg("Nessuna richiesta nuova"),
+  confirmed: msg("Nessuna richiesta confermata"),
+  rejected: msg("Nessuna richiesta rifiutata"),
+  completed: msg("Nessuna richiesta completata"),
+};
 
 // Answers already shown in the card header.
 const HEADER_KEYS = new Set(["name", "phone", "email", "date", "time", "party_size"]);
 
 export function InboxPage({ projectId }: { projectId: string }) {
+  const t = useT();
   const [status, setStatus] = useState<SubmissionStatus | undefined>("new");
   const project = useQuery(projectQuery(projectId));
   const submissions = useQuery(submissionsQuery(projectId, status));
@@ -20,7 +28,7 @@ export function InboxPage({ projectId }: { projectId: string }) {
 
   return (
     <div>
-      <PageHeader title="Richieste" description="Le richieste arrivate dal widget, le più recenti in alto." />
+      <PageHeader title={t("Richieste")} description={t("Le richieste arrivate dal widget, le più recenti in alto.")} />
 
       <div role="tablist" className="mb-4 flex gap-1 overflow-x-auto border-b border-slate-200">
         {[undefined, ...submissionStatuses].map((s) => (
@@ -34,21 +42,21 @@ export function InboxPage({ projectId }: { projectId: string }) {
               status === s ? "border-brand-700 text-brand-700" : "border-transparent text-slate-500 hover:text-slate-800",
             )}
           >
-            {s ? statusInfo[s].plural : "Tutte"}
+            {s ? t(statusInfo[s].plural) : t("Tutte")}
             {s && counts ? <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 text-xs text-slate-600">{counts[s]}</span> : null}
           </button>
         ))}
       </div>
 
       {submissions.error && <Alert>{submissions.error.message}</Alert>}
-      {submissions.isPending && <p className="py-12 text-center text-sm text-slate-500">Caricamento…</p>}
+      {submissions.isPending && <p className="py-12 text-center text-sm text-slate-500">{t("Caricamento…")}</p>}
       {submissions.data?.items.length === 0 && (
         <div className="rounded-xl border border-dashed border-slate-300 px-6 py-12 text-center">
-          <p className="font-medium">Nessuna richiesta {status ? `tra le ${statusInfo[status].plural.toLowerCase()}` : "per ora"}</p>
+          <p className="font-medium">{t(emptyTitle[status ?? "all"])}</p>
           <p className="mt-1 text-sm text-slate-500">
-            Hai già installato il widget?{" "}
+            {t("Hai già installato il widget?")}{" "}
             <Link to="/progetti/$projectId/installazione" params={{ projectId }} className="font-medium text-brand-700 hover:underline">
-              Vedi come fare
+              {t("Vedi come fare")}
             </Link>
           </p>
         </div>
@@ -64,6 +72,8 @@ export function InboxPage({ projectId }: { projectId: string }) {
 }
 
 function SubmissionCard({ submission: s, projectId, flow }: { submission: SubmissionRow; projectId: string; flow: FlowDefinition | null }) {
+  const { t, intl } = useI18n();
+  const receivedFormat = useFormat((intl) => new Intl.DateTimeFormat(intl, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
   const queryClient = useQueryClient();
   const update = useMutation({
     mutationFn: (status: SubmissionStatus) => api(`/submissions/${s.id}`, { method: "PATCH", body: { status } }),
@@ -93,17 +103,17 @@ function SubmissionCard({ submission: s, projectId, flow }: { submission: Submis
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold">
-            {s.contactName ?? "Senza nome"}
-            {s.partySize ? <span className="font-normal text-slate-500"> · {s.partySize} {s.partySize === 1 ? "persona" : "persone"}</span> : null}
+            {s.contactName ?? t("Senza nome")}
+            {s.partySize ? <span className="font-normal text-slate-500"> · {s.partySize === 1 ? t("1 persona") : t("{count} persone", { count: s.partySize })}</span> : null}
           </p>
-          {s.bookingAt && <p className="mt-0.5 text-sm font-medium text-brand-700">{formatBooking(s.bookingAt)}</p>}
+          {s.bookingAt && <p className="mt-0.5 text-sm font-medium text-brand-700">{formatBooking(s.bookingAt, intl)}</p>}
           <p className="mt-1 flex flex-wrap gap-x-3 text-sm text-slate-600">
             {s.contactPhone && <a href={`tel:${s.contactPhone.replace(/\s/g, "")}`} className="hover:underline">{s.contactPhone}</a>}
             {s.contactEmail && <a href={`mailto:${s.contactEmail}`} className="hover:underline">{s.contactEmail}</a>}
           </p>
         </div>
         <span className={cx("rounded-full px-2 py-0.5 text-xs font-medium ring-1", statusInfo[s.status].className)}>
-          {statusInfo[s.status].label}
+          {t(statusInfo[s.status].label)}
         </span>
       </div>
 
@@ -121,27 +131,27 @@ function SubmissionCard({ submission: s, projectId, flow }: { submission: Submis
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {s.status === "new" && (
           <>
-            <Button onClick={() => update.mutate("confirmed")} disabled={update.isPending}>Conferma</Button>
-            <Button variant="danger" onClick={() => update.mutate("rejected")} disabled={update.isPending}>Rifiuta</Button>
+            <Button onClick={() => update.mutate("confirmed")} disabled={update.isPending}>{t("Conferma")}</Button>
+            <Button variant="danger" onClick={() => update.mutate("rejected")} disabled={update.isPending}>{t("Rifiuta")}</Button>
           </>
         )}
         {s.status === "confirmed" && (
-          <Button variant="secondary" onClick={() => update.mutate("completed")} disabled={update.isPending}>Segna come completata</Button>
+          <Button variant="secondary" onClick={() => update.mutate("completed")} disabled={update.isPending}>{t("Segna come completata")}</Button>
         )}
         {(s.status === "rejected" || s.status === "completed") && (
-          <Button variant="ghost" onClick={() => update.mutate("new")} disabled={update.isPending}>Riporta tra le nuove</Button>
+          <Button variant="ghost" onClick={() => update.mutate("new")} disabled={update.isPending}>{t("Riporta tra le nuove")}</Button>
         )}
         {/* Date and delete stay together: on a narrow screen they wrap as one line, not one each. */}
         <span className="ml-auto flex items-center gap-1 text-xs text-slate-400">
-          Ricevuta {receivedFormat.format(new Date(s.createdAt))}
+          {t("Ricevuta {date}", { date: receivedFormat.format(new Date(s.createdAt)) })}
           {canDelete && (
             <Button
               variant="ghost"
               className="px-2 py-1 text-xs"
               disabled={remove.isPending}
-              onClick={() => confirm("Eliminare definitivamente questa richiesta?") && remove.mutate()}
+              onClick={() => confirm(t("Eliminare definitivamente questa richiesta?")) && remove.mutate()}
             >
-              Elimina
+              {t("Elimina")}
             </Button>
           )}
         </span>

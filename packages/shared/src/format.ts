@@ -1,8 +1,10 @@
-const dayFormat = new Intl.DateTimeFormat("it-IT", { weekday: "short", day: "numeric", month: "short" });
+const dayFormats = new Map<string, Intl.DateTimeFormat>();
 
-/** "2026-12-12T20:30" (business local time) -> "sab 12 dic, 20:30" */
-export function formatBooking(bookingAt: string): string {
+/** "2026-12-12T20:30" (business local time) -> "sab 12 dic, 20:30", or "Sat 12 Dec, 20:30" with "en-GB". */
+export function formatBooking(bookingAt: string, intl = "it-IT"): string {
   const [date, time] = bookingAt.split("T");
+  let dayFormat = dayFormats.get(intl);
+  if (!dayFormat) dayFormats.set(intl, (dayFormat = new Intl.DateTimeFormat(intl, { weekday: "short", day: "numeric", month: "short" })));
   // Noon avoids the date shifting by a day in any timezone.
   const day = dayFormat.format(new Date(`${date}T12:00:00`));
   return time && time !== "00:00" ? `${day}, ${time}` : day;

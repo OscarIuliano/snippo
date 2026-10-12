@@ -156,7 +156,7 @@ function Editor({ project }: { project: ProjectDetail }) {
       </Card>
 
       {(dirty || saved || save.error) && (
-        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:left-60">
+        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:left-64">
           <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3">
             {save.error ? (
               <span className="text-sm text-red-700">{save.error.message}</span>

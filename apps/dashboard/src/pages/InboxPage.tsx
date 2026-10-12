@@ -131,17 +131,20 @@ function SubmissionCard({ submission: s, projectId, flow }: { submission: Submis
         {(s.status === "rejected" || s.status === "completed") && (
           <Button variant="ghost" onClick={() => update.mutate("new")} disabled={update.isPending}>Riporta tra le nuove</Button>
         )}
-        <span className="ml-auto text-xs text-slate-400">Ricevuta {receivedFormat.format(new Date(s.createdAt))}</span>
-        {canDelete && (
-          <Button
-            variant="ghost"
-            className="px-2 py-1 text-xs"
-            disabled={remove.isPending}
-            onClick={() => confirm("Eliminare definitivamente questa richiesta?") && remove.mutate()}
-          >
-            Elimina
-          </Button>
-        )}
+        {/* Date and delete stay together: on a narrow screen they wrap as one line, not one each. */}
+        <span className="ml-auto flex items-center gap-1 text-xs text-slate-400">
+          Ricevuta {receivedFormat.format(new Date(s.createdAt))}
+          {canDelete && (
+            <Button
+              variant="ghost"
+              className="px-2 py-1 text-xs"
+              disabled={remove.isPending}
+              onClick={() => confirm("Eliminare definitivamente questa richiesta?") && remove.mutate()}
+            >
+              Elimina
+            </Button>
+          )}
+        </span>
       </div>
       {(update.error || remove.error) && <div className="mt-3"><Alert>{(update.error ?? remove.error)!.message}</Alert></div>}
     </li>

@@ -17,6 +17,8 @@ const formatTarget = (target: string) => {
   return it ? `+39 ${it[1]} ${it[2]} ${it[3]}` : target;
 };
 
+const requestLabel = (d: DeliveryRow) => (d.submissionId ? (d.contactName ?? "Senza nome") : "Prova");
+
 const deliveryStatus: Record<DeliveryRow["status"], { label: string; className: string }> = {
   pending: { label: "In invio", className: "bg-amber-50 text-amber-800 ring-amber-200" },
   sent: { label: "Inviata", className: "bg-emerald-50 text-emerald-800 ring-emerald-200" },
@@ -77,20 +79,23 @@ function ChannelsCard({ projectId }: { projectId: string }) {
         {channels.data?.map((ch) => (
           <li key={ch.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5 text-sm">
             <Icon name={channelLabel[ch.type].icon} className="size-4.5 shrink-0 text-slate-400" />
-            <span className={cx("min-w-0 flex-1 truncate", !ch.isActive && "text-slate-400 line-through")}>
+            <span className={cx("min-w-40 flex-1 truncate", !ch.isActive && "text-slate-400 line-through")}>
               <span className="sr-only">{channelLabel[ch.type].name}: </span>
               {formatTarget(ch.target)}
             </span>
-            <label className="flex items-center gap-1.5 text-xs text-slate-600">
-              <input type="checkbox" checked={ch.isActive} onChange={() => toggle.mutate(ch)} className="accent-brand-700" />
-              Attivo
-            </label>
-            <Button variant="secondary" className="px-2.5 py-1 text-xs" disabled={!ch.isActive || test.isPending} onClick={() => test.mutate(ch.id)}>
-              Invia prova
-            </Button>
-            <Button variant="ghost" className="px-2 py-1 text-xs" disabled={remove.isPending} onClick={() => confirm(`Rimuovere ${ch.target}?`) && remove.mutate(ch.id)}>
-              Rimuovi
-            </Button>
+            {/* On a phone the controls wrap below the address together, instead of squeezing it. */}
+            <span className="ml-auto flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-slate-600">
+                <input type="checkbox" checked={ch.isActive} onChange={() => toggle.mutate(ch)} className="accent-brand-700" />
+                Attivo
+              </label>
+              <Button variant="secondary" className="px-2.5 py-1 text-xs" disabled={!ch.isActive || test.isPending} onClick={() => test.mutate(ch.id)}>
+                Invia prova
+              </Button>
+              <Button variant="ghost" className="px-2 py-1 text-xs" disabled={remove.isPending} onClick={() => confirm(`Rimuovere ${ch.target}?`) && remove.mutate(ch.id)}>
+                Rimuovi
+              </Button>
+            </span>
           </li>
         ))}
       </ul>
@@ -134,7 +139,7 @@ function DeliveriesCard({ projectId }: { projectId: string }) {
               <tr>
                 <th className="px-5 py-2 font-medium sm:px-6">Quando</th>
                 <th className="px-2 py-2 font-medium">Destinatario</th>
-                <th className="px-2 py-2 font-medium">Richiesta</th>
+                <th className="hidden px-2 py-2 font-medium sm:table-cell">Richiesta</th>
                 <th className="px-5 py-2 font-medium sm:px-6">Stato</th>
               </tr>
             </thead>
@@ -142,13 +147,15 @@ function DeliveriesCard({ projectId }: { projectId: string }) {
               {deliveries.data.map((d) => (
                 <tr key={d.id}>
                   <td className="px-5 py-2 whitespace-nowrap text-slate-500 sm:px-6">{timeFormat.format(new Date(d.createdAt))}</td>
-                  <td className="max-w-56 px-2 py-2">
+                  <td className="max-w-40 px-2 py-2 sm:max-w-56">
                     <span className="flex min-w-0 items-center gap-1.5">
                       <Icon name={channelLabel[d.channelType].icon} className="size-4 shrink-0 text-slate-400" />
                       <span className="truncate">{formatTarget(d.target)}</span>
                     </span>
+                    {/* Phones have no room for the Richiesta column: it goes under the recipient. */}
+                    <span className="block truncate text-xs text-slate-500 sm:hidden">{requestLabel(d)}</span>
                   </td>
-                  <td className="px-2 py-2 text-slate-600">{d.submissionId ? (d.contactName ?? "Senza nome") : "Prova"}</td>
+                  <td className="hidden px-2 py-2 text-slate-600 sm:table-cell">{requestLabel(d)}</td>
                   <td className="px-5 py-2 sm:px-6">
                     <span title={d.lastError ?? undefined} className={cx("rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1", deliveryStatus[d.status].className)}>
                       {deliveryStatus[d.status].label}

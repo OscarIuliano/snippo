@@ -7,7 +7,7 @@ import { statsQuery } from "../lib/queries";
 // Emphasis form: the requests (the point) in the brand colour, the opens (context) in gray.
 // Both validated: contrast >= 3:1 on white, worst colour-blind ΔE 11.7 (tritan).
 const COLOR_REQUESTS = "#4f46e5";
-const COLOR_OPENS = "#78716c";
+const COLOR_OPENS = "#64748b";
 const PERIODS = [7, 30, 90] as const;
 
 const numberFormat = new Intl.NumberFormat("it-IT");
@@ -31,7 +31,7 @@ export function StatsPage({ projectId }: { projectId: string }) {
             onClick={() => setDays(p)}
             className={cx("rounded-md px-3 py-1.5 text-sm font-medium", days === p ? "bg-brand-700 text-white" : "text-slate-600 hover:bg-slate-100")}
           >
-            Ultimi {p} giorni
+            <span className="hidden sm:inline">Ultimi </span>{p} giorni
           </button>
         ))}
       </div>
@@ -112,7 +112,8 @@ function TrendChart({ daily }: { daily: ProjectStats["daily"] }) {
   const y = (v: number) => m.top + innerH - (v / yMax) * innerH;
   const path = (key: "opens" | "submissions") => daily.map((d, i) => `${i ? "L" : "M"}${x(i)},${y(d[key])}`).join("");
   const last = daily.length - 1;
-  const labelEvery = Math.ceil(daily.length / 6);
+  // About one date every 60px, so a phone shows fewer of them instead of overlapping.
+  const labelEvery = Math.ceil(daily.length / Math.max(2, Math.min(6, Math.floor(innerW / 60))));
 
   function onPointerMove(e: PointerEvent<SVGSVGElement>) {
     const box = e.currentTarget.getBoundingClientRect();
@@ -156,20 +157,20 @@ function TrendChart({ daily }: { daily: ProjectStats["daily"] }) {
           >
             {ticks.map((t) => (
               <g key={t}>
-                <line x1={m.left} x2={width - m.right} y1={y(t)} y2={y(t)} stroke="#e7e5e4" />
-                <text x={m.left - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="#78716c" style={{ fontVariantNumeric: "tabular-nums" }}>
+                <line x1={m.left} x2={width - m.right} y1={y(t)} y2={y(t)} stroke="#e2e8f0" />
+                <text x={m.left - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="#64748b" style={{ fontVariantNumeric: "tabular-nums" }}>
                   {numberFormat.format(t)}
                 </text>
               </g>
             ))}
             {daily.map((d, i) =>
-              i % labelEvery === 0 || i === last ? (
-                <text key={d.date} x={x(i)} y={height - 8} textAnchor={i === 0 ? "start" : i === last ? "end" : "middle"} fontSize="11" fill="#78716c">
+              (i % labelEvery === 0 && x(last) - x(i) >= 72) || i === last ? (
+                <text key={d.date} x={x(i)} y={height - 8} textAnchor={i === 0 ? "start" : i === last ? "end" : "middle"} fontSize="11" fill="#64748b">
                   {shortDate(d.date)}
                 </text>
               ) : null,
             )}
-            {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={m.top} y2={m.top + innerH} stroke="#a8a29e" />}
+            {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={m.top} y2={m.top + innerH} stroke="#94a3b8" />}
             {[...series].reverse().map((s) => (
               <path key={s.key} d={path(s.key)} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
             ))}
@@ -181,7 +182,7 @@ function TrendChart({ daily }: { daily: ProjectStats["daily"] }) {
             })}
             {hover === null &&
               series.map((s) => (
-                <text key={s.key} x={x(last) + 8} y={y(daily[last]![s.key]) + 4} fontSize="11" fontWeight="600" fill="#44403c">
+                <text key={s.key} x={x(last) + 8} y={y(daily[last]![s.key]) + 4} fontSize="11" fontWeight="600" fill="#334155">
                   {numberFormat.format(daily[last]![s.key])}
                 </text>
               ))}

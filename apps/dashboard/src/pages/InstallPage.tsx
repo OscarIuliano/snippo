@@ -28,7 +28,7 @@ export function InstallPage({ projectId }: { projectId: string }) {
     <div className="max-w-3xl space-y-6">
       <PageHeader title="Installazione" description="Una riga di codice e il widget è online." />
       <Card title="1. Copia il codice" description="Incollalo prima della chiusura di </body>, su tutte le pagine dove vuoi il widget.">
-        <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm leading-relaxed text-slate-100"><code>{snippet}</code></pre>
+        <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm leading-relaxed break-all whitespace-pre-wrap text-slate-100 sm:break-normal sm:whitespace-pre"><code>{snippet}</code></pre>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button onClick={copy}>{copied ? "Copiato!" : "Copia codice"}</Button>
           <a href={mailto} className="inline-flex items-center rounded-lg px-3.5 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50">

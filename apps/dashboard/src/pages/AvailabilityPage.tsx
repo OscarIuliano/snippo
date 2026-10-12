@@ -88,13 +88,13 @@ function HoursCard({ projectId, settings }: { projectId: string; settings: Avail
             return (
               <li key={name} className="flex flex-wrap items-start gap-x-4 gap-y-2 px-3 py-3">
                 <span className="w-24 pt-1.5 text-sm font-medium">{name}</span>
-                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <div className="flex min-w-0 flex-1 basis-60 flex-col gap-2">
                   {ranges.length === 0 && <span className="pt-1.5 text-sm text-slate-400">Chiuso</span>}
                   {ranges.map(({ h, i }) => (
                     <div key={i} className="flex items-center gap-2 text-sm">
-                      <Input type="time" value={h.opensAt} onChange={(e) => update(i, { opensAt: e.target.value })} className="w-28" aria-label={`${name}, apertura`} required />
+                      <Input type="time" value={h.opensAt} onChange={(e) => update(i, { opensAt: e.target.value })} className="min-w-0 flex-1 sm:w-28 sm:flex-none" aria-label={`${name}, apertura`} required />
                       <span className="text-slate-400">–</span>
-                      <Input type="time" value={h.closesAt} onChange={(e) => update(i, { closesAt: e.target.value })} className="w-28" aria-label={`${name}, chiusura`} required />
+                      <Input type="time" value={h.closesAt} onChange={(e) => update(i, { closesAt: e.target.value })} className="min-w-0 flex-1 sm:w-28 sm:flex-none" aria-label={`${name}, chiusura`} required />
                       <Button type="button" variant="ghost" className="px-2 py-1 text-xs" aria-label={`Rimuovi fascia di ${name}`} onClick={() => setHours(hours.filter((_, j) => j !== i))}>
                         ×
                       </Button>

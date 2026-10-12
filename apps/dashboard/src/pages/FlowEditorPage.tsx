@@ -15,6 +15,7 @@ import {
 } from "@snippo/shared";
 import { Alert, Button, Card, Input, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
+import { fill, useT } from "../i18n";
 import { projectQuery } from "../lib/queries";
 import { templateInfo } from "../lib/templates";
 
@@ -24,14 +25,16 @@ const typeLabel = (step: Step) =>
   isSpecialKey(step.key) ? specialSteps[step.key].label : genericSteps[step.type as GenericType]?.label ?? step.type;
 
 export function FlowEditorPage({ projectId }: { projectId: string }) {
+  const t = useT();
   const project = useQuery(projectQuery(projectId));
   if (project.error) return <Alert>{project.error.message}</Alert>;
-  if (!project.data?.widget.flow) return <p className="py-12 text-center text-sm text-slate-500">Caricamento…</p>;
+  if (!project.data?.widget.flow) return <p className="py-12 text-center text-sm text-slate-500">{t("Caricamento…")}</p>;
   // Remount on every published version: the draft restarts from what is live.
   return <Editor key={JSON.stringify(project.data.widget.flow)} project={project.data} />;
 }
 
 function Editor({ project }: { project: ProjectDetail }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const live = project.widget.flow!;
   const [draft, setDraft] = useState<FlowDefinitionInput>(() => structuredClone(live));
@@ -67,7 +70,7 @@ function Editor({ project }: { project: ProjectDetail }) {
   const missingSpecial = (Object.keys(specialSteps) as SpecialKey[]).filter((k) => !usedKeys.includes(k));
 
   function restoreTemplate(template: TemplateId) {
-    if (confirm(`Ripristinare le domande del template "${templateInfo[template].label}"? Le personalizzazioni andranno perse.`)) {
+    if (confirm(t("Ripristinare le domande del template \"{template}\"? Le personalizzazioni andranno perse.", { template: t(templateInfo[template].label) }))) {
       restore.mutate(template);
     }
   }
@@ -75,26 +78,26 @@ function Editor({ project }: { project: ProjectDetail }) {
   return (
     <div className="max-w-3xl space-y-6 pb-24">
       <PageHeader
-        title="Domande"
-        description="Cosa chiede il widget, in che ordine. Le richieste già ricevute restano con le domande di allora."
+        title={t("Domande")}
+        description={t("Cosa chiede il widget, in che ordine. Le richieste già ricevute restano con le domande di allora.")}
       />
 
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
           <p>
-            Basate sul template <strong>{project.widget.template ? templateInfo[project.widget.template].label : "—"}</strong>
-            {project.widget.customized && <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800 ring-1 ring-brand-100">personalizzate</span>}
+            {fill(t("Basate sul template {template}"), { template: <strong>{project.widget.template ? t(templateInfo[project.widget.template].label) : "—"}</strong> })}
+            {project.widget.customized && <span className="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800 ring-1 ring-brand-100">{t("personalizzate")}</span>}
           </p>
           <label className="flex items-center gap-2 text-slate-600">
-            Ripristina
+            {t("Ripristina")}
             <select
               value=""
               disabled={restore.isPending}
               onChange={(e) => e.target.value && restoreTemplate(e.target.value as TemplateId)}
               className="rounded-lg border-0 bg-white px-2 py-1.5 text-sm ring-1 ring-slate-300 focus:ring-2 focus:ring-brand-600"
             >
-              <option value="">un template…</option>
-              {(Object.keys(templateInfo) as TemplateId[]).map((t) => <option key={t} value={t}>{templateInfo[t].label}</option>)}
+              <option value="">{t("un template…")}</option>
+              {(Object.keys(templateInfo) as TemplateId[]).map((id) => <option key={id} value={id}>{t(templateInfo[id].label)}</option>)}
             </select>
           </label>
         </div>
@@ -108,7 +111,7 @@ function Editor({ project }: { project: ProjectDetail }) {
             index={i}
             step={step}
             last={i === steps.length - 1}
-            problems={problems.filter((p) => p.step === i).map((p) => p.message)}
+            problems={problems.filter((p) => p.step === i).map((p) => t(p.message))}
             onChange={(s) => update(i, s)}
             onMove={(by) => move(i, by)}
             onRemove={() => setSteps(steps.filter((_, j) => j !== i))}
@@ -116,36 +119,36 @@ function Editor({ project }: { project: ProjectDetail }) {
         ))}
       </ol>
 
-      <Card title="Aggiungi una domanda">
+      <Card title={t("Aggiungi una domanda")}>
         {missingSpecial.length > 0 && (
           <>
-            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">Con un significato per Snippo</p>
-            <p className="mt-1 text-xs text-slate-500">Finiscono nei campi della richiesta, nel calendario e nelle notifiche.</p>
+            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">{t("Con un significato per Snippo")}</p>
+            <p className="mt-1 text-xs text-slate-500">{t("Finiscono nei campi della richiesta, nel calendario e nelle notifiche.")}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {missingSpecial.map((k) => (
                 <Button key={k} variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => setSteps([...steps, structuredClone(specialSteps[k].step) as Step])}>
-                  + {specialSteps[k].label}
+                  + {t(specialSteps[k].label)}
                 </Button>
               ))}
             </div>
           </>
         )}
-        <p className={cx("text-xs font-medium tracking-wide text-slate-500 uppercase", missingSpecial.length > 0 && "mt-4")}>Personalizzate</p>
+        <p className={cx("text-xs font-medium tracking-wide text-slate-500 uppercase", missingSpecial.length > 0 && "mt-4")}>{t("Personalizzate")}</p>
         <div className="mt-2 flex flex-wrap gap-2">
-          {(Object.keys(genericSteps) as GenericType[]).map((t) => (
+          {(Object.keys(genericSteps) as GenericType[]).map((type) => (
             <Button
-              key={t}
+              key={type}
               variant="secondary"
               className="px-2.5 py-1 text-xs"
-              onClick={() => setSteps([...steps, { ...structuredClone(genericSteps[t].step), key: newStepKey(usedKeys) } as Step])}
+              onClick={() => setSteps([...steps, { ...structuredClone(genericSteps[type].step), key: newStepKey(usedKeys) } as Step])}
             >
-              + {genericSteps[t].label}
+              + {t(genericSteps[type].label)}
             </Button>
           ))}
         </div>
       </Card>
 
-      <Card title="Messaggio finale" description="Quello che il cliente legge dopo aver inviato la richiesta.">
+      <Card title={t("Messaggio finale")} description={t("Quello che il cliente legge dopo aver inviato la richiesta.")}>
         <textarea
           value={draft.successMessage}
           onChange={(e) => setDraft({ ...draft, successMessage: e.target.value })}
@@ -161,15 +164,15 @@ function Editor({ project }: { project: ProjectDetail }) {
             {save.error ? (
               <span className="text-sm text-red-700">{save.error.message}</span>
             ) : problems.length > 0 ? (
-              <span className="text-sm text-red-700">{problems.length === 1 ? problems[0]!.message : `${problems.length} problemi da sistemare`}</span>
+              <span className="text-sm text-red-700">{problems.length === 1 ? t(problems[0]!.message) : t("{count} problemi da sistemare", { count: problems.length })}</span>
             ) : saved && !dirty ? (
-              <span className="text-sm text-emerald-700">Salvato. Il widget usa le nuove domande entro un minuto.</span>
+              <span className="text-sm text-emerald-700">{t("Salvato. Il widget usa le nuove domande entro un minuto.")}</span>
             ) : (
-              <span className="text-sm text-slate-600">Modifiche non salvate</span>
+              <span className="text-sm text-slate-600">{t("Modifiche non salvate")}</span>
             )}
             <div className="ml-auto flex gap-2">
-              {dirty && <Button variant="ghost" onClick={() => setDraft(structuredClone(live))}>Annulla</Button>}
-              {dirty && <Button disabled={problems.length > 0 || save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Salvataggio…" : "Salva le domande"}</Button>}
+              {dirty && <Button variant="ghost" onClick={() => setDraft(structuredClone(live))}>{t("Annulla")}</Button>}
+              {dirty && <Button disabled={problems.length > 0 || save.isPending} onClick={() => save.mutate()}>{save.isPending ? t("Salvataggio…") : t("Salva le domande")}</Button>}
             </div>
           </div>
         </div>
@@ -188,16 +191,17 @@ function StepCard(props: {
   onRemove: () => void;
 }) {
   const { index, step, last, problems, onChange, onMove, onRemove } = props;
+  const t = useT();
 
   return (
     <li className={cx("rounded-xl bg-white p-4 ring-1", problems.length > 0 ? "ring-red-300" : "ring-slate-200")}>
       <div className="flex items-center gap-2">
         <span className="w-6 text-sm text-slate-400">{index + 1}.</span>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{typeLabel(step)}</span>
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{t(typeLabel(step))}</span>
         <div className="ml-auto flex gap-1">
-          <Button variant="ghost" className="px-2 py-1 text-xs" disabled={index === 0} aria-label="Sposta su" onClick={() => onMove(-1)}>↑</Button>
-          <Button variant="ghost" className="px-2 py-1 text-xs" disabled={last} aria-label="Sposta giù" onClick={() => onMove(1)}>↓</Button>
-          <Button variant="ghost" className="px-2 py-1 text-xs" aria-label="Elimina domanda" onClick={() => confirm("Eliminare questa domanda?") && onRemove()}>✕</Button>
+          <Button variant="ghost" className="px-2 py-1 text-xs" disabled={index === 0} aria-label={t("Sposta su")} onClick={() => onMove(-1)}>↑</Button>
+          <Button variant="ghost" className="px-2 py-1 text-xs" disabled={last} aria-label={t("Sposta giù")} onClick={() => onMove(1)}>↓</Button>
+          <Button variant="ghost" className="px-2 py-1 text-xs" aria-label={t("Elimina domanda")} onClick={() => confirm(t("Eliminare questa domanda?")) && onRemove()}>✕</Button>
         </div>
       </div>
 
@@ -206,7 +210,7 @@ function StepCard(props: {
         onChange={(e) => onChange({ ...step, prompt: e.target.value })}
         rows={2}
         maxLength={300}
-        aria-label={`Testo della domanda ${index + 1}`}
+        aria-label={t("Testo della domanda {number}", { number: index + 1 })}
         className="mt-3 block w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-slate-300 focus:ring-2 focus:ring-brand-600 focus:outline-none"
       />
 
@@ -214,22 +218,22 @@ function StepCard(props: {
         {step.type !== "message" && (
           <label className="flex items-center gap-2 text-slate-700">
             <input type="checkbox" checked={step.required !== false} onChange={(e) => onChange({ ...step, required: e.target.checked } as Step)} className="accent-brand-700" />
-            Obbligatoria
+            {t("Obbligatoria")}
           </label>
         )}
-        {step.type === "choice" && <OptionsEditor options={step.options} placeholder="Opzione" onChange={(options) => onChange({ ...step, options })} />}
+        {step.type === "choice" && <OptionsEditor options={step.options} placeholder={t("Opzione")} onChange={(options) => onChange({ ...step, options })} />}
         {step.type === "time" && (
           <>
             <OptionsEditor options={step.options} type="time" onChange={(options) => onChange({ ...step, options: [...options].sort() })} />
-            <p className="text-xs text-slate-500">Il widget propone solo quelli dentro gli orari di apertura e con posto libero (pagina Orari).</p>
+            <p className="text-xs text-slate-500">{t("Il widget propone solo quelli dentro gli orari di apertura e con posto libero (pagina Orari).")}</p>
           </>
         )}
         {step.type === "number" && (
           <div className="flex items-center gap-2">
-            <span className="text-slate-600">Da</span>
-            <Input type="number" value={step.min} onChange={(e) => onChange({ ...step, min: Number(e.target.value) })} className="w-24" aria-label="Minimo" />
-            <span className="text-slate-600">a</span>
-            <Input type="number" value={step.max} onChange={(e) => onChange({ ...step, max: Number(e.target.value) })} className="w-24" aria-label="Massimo" />
+            <span className="text-slate-600">{t("Da")}</span>
+            <Input type="number" value={step.min} onChange={(e) => onChange({ ...step, min: Number(e.target.value) })} className="w-24" aria-label={t("Minimo")} />
+            <span className="text-slate-600">{t("a")}</span>
+            <Input type="number" value={step.max} onChange={(e) => onChange({ ...step, max: Number(e.target.value) })} className="w-24" aria-label={t("Massimo")} />
           </div>
         )}
         {problems.map((p) => <p key={p} className="text-red-700">{p}</p>)}
@@ -239,6 +243,7 @@ function StepCard(props: {
 }
 
 function OptionsEditor({ options, onChange, type = "text", placeholder }: { options: string[]; onChange: (options: string[]) => void; type?: "text" | "time"; placeholder?: string }) {
+  const t = useT();
   return (
     <div className="flex flex-wrap items-center gap-2">
       {options.map((o, i) => (
@@ -249,15 +254,15 @@ function OptionsEditor({ options, onChange, type = "text", placeholder }: { opti
             placeholder={placeholder}
             onChange={(e) => onChange(options.map((x, j) => (j === i ? e.target.value : x)))}
             className={type === "time" ? "w-28" : "w-36"}
-            aria-label={`Opzione ${i + 1}`}
+            aria-label={t("Opzione {number}", { number: i + 1 })}
           />
-          <Button variant="ghost" className="px-1.5 py-1 text-xs" aria-label={`Rimuovi opzione ${i + 1}`} disabled={options.length === 1} onClick={() => onChange(options.filter((_, j) => j !== i))}>
+          <Button variant="ghost" className="px-1.5 py-1 text-xs" aria-label={t("Rimuovi opzione {number}", { number: i + 1 })} disabled={options.length === 1} onClick={() => onChange(options.filter((_, j) => j !== i))}>
             ×
           </Button>
         </span>
       ))}
       <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => onChange([...options, type === "time" ? "20:00" : `Opzione ${options.length + 1}`])}>
-        + Aggiungi
+        {t("+ Aggiungi")}
       </Button>
     </div>
   );

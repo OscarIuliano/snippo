@@ -475,7 +475,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 17 attività fatte, 5 in attesa di un tuo passaggio e 5 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano Resend, Paddle o Sentry.
+L'MVP ha 18 attività fatte, 5 in attesa di un tuo passaggio e 5 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano Resend, Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -506,5 +506,6 @@ L'MVP ha 17 attività fatte, 5 in attesa di un tuo passaggio e 5 da fare. Le "Da
 | 25 | Privacy | Retention dei dati e cancellazione automatica | Fatto | Cron ogni notte; pagina Privacy per accesso e cancellazione dei dati di una persona |
 | 26 | Infrastruttura | Monitoraggio errori (Sentry) e uptime | Da fare | |
 | 27 | Widget | Editor delle domande: partire da un template, aggiungere, modificare, riordinare e togliere domande | Fatto | Pagina Domande; le domande speciali (nome, telefono, giorno…) tengono il loro tipo |
+| 28 | Dashboard | Rifinitura grafica della dashboard: palette indaco, menu con icone e gruppi, versione mobile | Fatto | Sidebar con progetto e organizzazione, pagine verificate su desktop e su telefono (390px) |
 
 Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

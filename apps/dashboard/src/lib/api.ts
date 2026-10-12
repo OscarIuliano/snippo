@@ -1,4 +1,5 @@
 import { ORGANIZATION_HEADER } from "@snippo/shared";
+import { activeLocale, translate } from "../i18n";
 import { activeOrganization } from "./organization";
 
 export class ApiError extends Error {
@@ -16,6 +17,7 @@ export async function api<T = void>(path: string, init: { method?: string; body?
   const res = await fetch(`/api/v1${path}`, {
     method: init.method ?? "GET",
     headers: {
+      "Accept-Language": activeLocale(),
       ...(init.body === undefined ? {} : { "Content-Type": "application/json" }),
       ...(organization ? { [ORGANIZATION_HEADER]: organization } : {}),
     },
@@ -24,7 +26,7 @@ export async function api<T = void>(path: string, init: { method?: string; body?
   });
   if (!res.ok) {
     const problem = (await res.json().catch(() => ({}))) as { title?: string };
-    throw new ApiError(res.status, problem.title ?? `Errore ${res.status}`);
+    throw new ApiError(res.status, problem.title ?? translate(activeLocale(), "Errore {status}", { status: res.status }));
   }
   return (res.status === 204 ? undefined : await res.json()) as T;
 }

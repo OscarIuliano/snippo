@@ -120,6 +120,8 @@ export const users = sqliteTable("users", {
   email: text("email").notNull().unique(),
   emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
   image: text("image"),
+  /** Language of the dashboard and of the account emails: "it" (default) or "en". */
+  locale: text("locale").notNull().default("it"),
   ...authTimestamps,
 });
 

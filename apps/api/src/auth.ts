@@ -4,7 +4,8 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 import { AccountDeletionBlocked, prepareAccountDeletion } from "./account";
 import { v7 as uuidv7 } from "uuid";
 import { createDb, schema } from "@snippo/db";
-import { accountDeletedMessage, passwordChangedMessage, resetPasswordMessage, sendEmail, verifyEmailMessage } from "./email";
+import { isLocale } from "@snippo/shared";
+import { accountEmail, sendEmail } from "./email";
 import type { AppEnv } from "./env";
 import { hashPassword, verifyPassword } from "./password";
 
@@ -25,13 +26,13 @@ export function createAuth(env: AppEnv["Bindings"]) {
       password: { hash: hashPassword, verify: verifyPassword },
       // The link opens the dashboard page that asks for the new password.
       sendResetPassword: async ({ user, url }) => {
-        await sendEmail(env, resetPasswordMessage(user.email, user.name, url));
+        await sendEmail(env, accountEmail("reset", user, url));
       },
       resetPasswordTokenExpiresIn: 60 * 60,
       // A reset is what you do when someone else may know the password: sign out everywhere.
       revokeSessionsOnPasswordReset: true,
       onPasswordReset: async ({ user }) => {
-        await sendEmail(env, passwordChangedMessage(user.email, user.name, env.DASHBOARD_ORIGIN));
+        await sendEmail(env, accountEmail("passwordChanged", user, env.DASHBOARD_ORIGIN));
       },
     },
     emailVerification: {
@@ -41,10 +42,14 @@ export function createAuth(env: AppEnv["Bindings"]) {
       expiresIn: 60 * 60 * 24,
       // Also used for a change of address: the link then goes to the new one.
       sendVerificationEmail: async ({ user, url }) => {
-        await sendEmail(env, verifyEmailMessage(user.email, user.name, url));
+        await sendEmail(env, accountEmail("verify", user, url));
       },
     },
     user: {
+      // Language of the dashboard and of these emails; set at sign-up and from the account page.
+      additionalFields: {
+        locale: { type: "string", required: false, defaultValue: "it", input: true },
+      },
       // The new address must be confirmed: until then the old one stays.
       changeEmail: { enabled: true },
       deleteUser: {
@@ -55,6 +60,7 @@ export function createAuth(env: AppEnv["Bindings"]) {
             await prepareAccountDeletion(env.DB, user.id);
           } catch (error) {
             if (!(error instanceof AccountDeletionBlocked)) throw error;
+            // The dashboard shows its own text for this code, with the organizations from /account/deletion.
             throw new APIError("BAD_REQUEST", {
               code: "OWNER_OF_TEAM",
               message: `Sei titolare di ${error.organizations.map((o) => o.name).join(", ")}, con altre persone nel team: prima passa la titolarità.`,
@@ -62,13 +68,16 @@ export function createAuth(env: AppEnv["Bindings"]) {
           }
         },
         afterDelete: async (user) => {
-          await sendEmail(env, accountDeletedMessage(user.email, user.name));
+          await sendEmail(env, accountEmail("deleted", user));
         },
       },
     },
     hooks: {
       // Deleting the account always asks for the password, even from a fresh session.
       before: createAuthMiddleware(async (ctx) => {
+        if ((ctx.path === "/sign-up/email" || ctx.path === "/update-user") && ctx.body?.locale !== undefined && !isLocale(ctx.body.locale)) {
+          throw new APIError("BAD_REQUEST", { code: "INVALID_LOCALE", message: "Lingua non supportata" });
+        }
         if (ctx.path === "/delete-user" && !ctx.body?.password) {
           throw new APIError("BAD_REQUEST", { code: "PASSWORD_REQUIRED", message: "Serve la password per eliminare l'account" });
         }
@@ -81,7 +90,7 @@ export function createAuth(env: AppEnv["Bindings"]) {
         // Checked by shape: the error class can come from another copy of the library.
         const failed = typeof ctx.context.returned === "object" && ctx.context.returned !== null && "statusCode" in ctx.context.returned;
         if (ctx.path !== "/change-password" || !user || failed) return;
-        await sendEmail(env, passwordChangedMessage(user.email, user.name, env.DASHBOARD_ORIGIN));
+        await sendEmail(env, accountEmail("passwordChanged", user, env.DASHBOARD_ORIGIN));
       }),
     },
     advanced: {

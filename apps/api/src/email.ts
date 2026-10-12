@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@snippo/shared";
 import type { AppEnv } from "./env";
 
 export interface Email {
@@ -37,53 +38,76 @@ export function emailButton(href: string, label: string, primary = true): string
   }">${escapeHtml(label)}</a>`;
 }
 
-/** An email with a greeting, a paragraph, one button and a closing note. */
-function actionEmail(to: string, subject: string, opts: { name: string; intro: string; button: string; url: string; note: string }): Email {
-  const text = [`Ciao ${opts.name},`, "", opts.intro, "", `${opts.button}: ${opts.url}`, "", opts.note].join("\n");
-  const html = emailLayout(`<p style="margin:0 0 12px">Ciao ${escapeHtml(opts.name)},</p>
-<p style="margin:0 0 20px;line-height:1.5">${escapeHtml(opts.intro)}</p>
-<p style="margin:0 0 20px">${emailButton(opts.url, opts.button)}</p>
-<p style="margin:0;font-size:13px;color:#64748b;line-height:1.5">${escapeHtml(opts.note)}</p>
-<p style="margin:12px 0 0;font-size:12px;color:#94a3b8;word-break:break-all">${escapeHtml(opts.url)}</p>`);
-  return { to, subject, text, html };
-}
+type AccountEmail = "verify" | "reset" | "passwordChanged" | "deleted";
 
-export function verifyEmailMessage(to: string, name: string, url: string): Email {
-  return actionEmail(to, "Conferma il tuo indirizzo email", {
-    name,
-    intro: "Per usare questo indirizzo con Snippo, confermalo con il pulsante qui sotto.",
-    button: "Conferma l'email",
-    url,
-    note: "Il link vale 24 ore. Se non hai chiesto tu un account Snippo, ignora questa email.",
-  });
-}
+/** The account emails in each language: subject, paragraph, button and closing note. */
+const accountCopy: Record<Locale, { hello: (name: string) => string } & Record<AccountEmail, { subject: string; intro: string; button?: string; note: string }>> = {
+  it: {
+    hello: (name) => `Ciao ${name},`,
+    verify: {
+      subject: "Conferma il tuo indirizzo email",
+      intro: "Per usare questo indirizzo con Snippo, confermalo con il pulsante qui sotto.",
+      button: "Conferma l'email",
+      note: "Il link vale 24 ore. Se non hai chiesto tu un account Snippo, ignora questa email.",
+    },
+    reset: {
+      subject: "Reimposta la password di Snippo",
+      intro: "Abbiamo ricevuto una richiesta per reimpostare la password del tuo account. Scegli quella nuova con il pulsante qui sotto.",
+      button: "Scegli una nuova password",
+      note: "Il link vale 1 ora e funziona una sola volta. Se non l'hai chiesto tu, ignora questa email: la password resta quella di prima.",
+    },
+    passwordChanged: {
+      subject: "La password di Snippo è cambiata",
+      intro: "La password del tuo account Snippo è appena stata cambiata.",
+      button: "Apri Snippo",
+      note: "Se non sei stato tu, usa subito \"Password dimenticata?\" nella pagina di accesso per sceglierne una nuova.",
+    },
+    deleted: {
+      subject: "Il tuo account Snippo è stato eliminato",
+      intro: "Il tuo account Snippo è stato eliminato, insieme ai progetti di cui eri l'unico titolare e alle loro richieste.",
+      note: "Puoi creare un nuovo account quando vuoi.",
+    },
+  },
+  en: {
+    hello: (name) => `Hi ${name},`,
+    verify: {
+      subject: "Confirm your email address",
+      intro: "To use this address with Snippo, confirm it with the button below.",
+      button: "Confirm email",
+      note: "The link is valid for 24 hours. If you did not ask for a Snippo account, ignore this email.",
+    },
+    reset: {
+      subject: "Reset your Snippo password",
+      intro: "We received a request to reset the password of your account. Choose a new one with the button below.",
+      button: "Choose a new password",
+      note: "The link is valid for 1 hour and works only once. If you did not ask for it, ignore this email: your password stays the same.",
+    },
+    passwordChanged: {
+      subject: "Your Snippo password has changed",
+      intro: "The password of your Snippo account has just been changed.",
+      button: "Open Snippo",
+      note: "If it was not you, use \"Forgot your password?\" on the sign-in page right away to choose a new one.",
+    },
+    deleted: {
+      subject: "Your Snippo account has been deleted",
+      intro: "Your Snippo account has been deleted, together with the projects you were the only owner of and their requests.",
+      note: "You can create a new account whenever you like.",
+    },
+  },
+};
 
-export function resetPasswordMessage(to: string, name: string, url: string): Email {
-  return actionEmail(to, "Reimposta la password di Snippo", {
-    name,
-    intro: "Abbiamo ricevuto una richiesta per reimpostare la password del tuo account. Scegli quella nuova con il pulsante qui sotto.",
-    button: "Scegli una nuova password",
-    url,
-    note: "Il link vale 1 ora e funziona una sola volta. Se non l'hai chiesto tu, ignora questa email: la password resta quella di prima.",
-  });
-}
-
-export function passwordChangedMessage(to: string, name: string, dashboardUrl: string): Email {
-  return actionEmail(to, "La password di Snippo è cambiata", {
-    name,
-    intro: "La password del tuo account Snippo è appena stata cambiata.",
-    button: "Apri Snippo",
-    url: dashboardUrl,
-    note: "Se non sei stato tu, usa subito \"Password dimenticata?\" nella pagina di accesso per sceglierne una nuova.",
-  });
-}
-
-export function accountDeletedMessage(to: string, name: string): Email {
-  const intro = "Il tuo account Snippo è stato eliminato, insieme ai progetti di cui eri l'unico titolare e alle loro richieste.";
-  const note = "Puoi creare un nuovo account quando vuoi.";
-  const text = [`Ciao ${name},`, "", intro, "", note].join("\n");
-  const html = emailLayout(`<p style="margin:0 0 12px">Ciao ${escapeHtml(name)},</p>
-<p style="margin:0 0 16px;line-height:1.5">${escapeHtml(intro)}</p>
-<p style="margin:0;font-size:13px;color:#64748b">${escapeHtml(note)}</p>`);
-  return { to, subject: "Il tuo account Snippo è stato eliminato", text, html };
+/** An account email: greeting, paragraph, an optional button and a closing note, in the user's language. */
+export function accountEmail(kind: AccountEmail, user: { email: string; name: string; locale?: unknown }, url?: string): Email {
+  const locale: Locale = isLocale(user.locale) ? user.locale : DEFAULT_LOCALE;
+  const copy = accountCopy[locale];
+  const { subject, intro, button, note } = copy[kind];
+  const hello = copy.hello(user.name);
+  const action = button && url;
+  const text = [hello, "", intro, ...(action ? ["", `${button}: ${url}`] : []), "", note].join("\n");
+  const html = emailLayout(`<p style="margin:0 0 12px">${escapeHtml(hello)}</p>
+<p style="margin:0 0 20px;line-height:1.5">${escapeHtml(intro)}</p>
+${action ? `<p style="margin:0 0 20px">${emailButton(url, button)}</p>` : ""}
+<p style="margin:0;font-size:13px;color:#64748b;line-height:1.5">${escapeHtml(note)}</p>
+${action ? `<p style="margin:12px 0 0;font-size:12px;color:#94a3b8;word-break:break-all">${escapeHtml(url)}</p>` : ""}`);
+  return { to: user.email, subject, text, html };
 }

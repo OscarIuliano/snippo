@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { canManageProjects, canManageTeam } from "@snippo/shared";
+import { canManageProjects, canManageTeam, isLocale } from "@snippo/shared";
+import { msg, useI18n } from "../i18n";
 import { authClient } from "../lib/auth";
 import { setActiveOrganization } from "../lib/organization";
-import { meQuery } from "../lib/queries";
+import { meQuery, sessionQuery } from "../lib/queries";
 import { Icon, Logo, type IconName } from "./Icon";
 import { Button, cx } from "./ui";
 
@@ -29,22 +30,22 @@ interface NavItem {
 
 const NAV: { title: string; items: NavItem[] }[] = [
   {
-    title: "Ogni giorno",
+    title: msg("Ogni giorno"),
     items: [
-      { to: "/progetti/$projectId/richieste", label: "Richieste", icon: "inbox" },
-      { to: "/progetti/$projectId/calendario", label: "Calendario", icon: "calendar" },
-      { to: "/progetti/$projectId/statistiche", label: "Statistiche", icon: "chart" },
+      { to: "/progetti/$projectId/richieste", label: msg("Richieste"), icon: "inbox" },
+      { to: "/progetti/$projectId/calendario", label: msg("Calendario"), icon: "calendar" },
+      { to: "/progetti/$projectId/statistiche", label: msg("Statistiche"), icon: "chart" },
     ],
   },
   {
-    title: "Impostazioni",
+    title: msg("Impostazioni"),
     items: [
-      { to: "/progetti/$projectId/orari", label: "Orari", icon: "clock", manage: true },
-      { to: "/progetti/$projectId/domande", label: "Domande", icon: "list", manage: true },
-      { to: "/progetti/$projectId/widget", label: "Widget", icon: "palette", manage: true },
-      { to: "/progetti/$projectId/notifiche", label: "Notifiche", icon: "bell", manage: true },
-      { to: "/progetti/$projectId/privacy", label: "Privacy", icon: "shield", manage: true },
-      { to: "/progetti/$projectId/installazione", label: "Installazione", icon: "code", manage: true },
+      { to: "/progetti/$projectId/orari", label: msg("Orari"), icon: "clock", manage: true },
+      { to: "/progetti/$projectId/domande", label: msg("Domande"), icon: "list", manage: true },
+      { to: "/progetti/$projectId/widget", label: msg("Widget"), icon: "palette", manage: true },
+      { to: "/progetti/$projectId/notifiche", label: msg("Notifiche"), icon: "bell", manage: true },
+      { to: "/progetti/$projectId/privacy", label: msg("Privacy"), icon: "shield", manage: true },
+      { to: "/progetti/$projectId/installazione", label: msg("Installazione"), icon: "code", manage: true },
     ],
   },
 ];
@@ -55,6 +56,8 @@ const navActive = { className: "bg-brand-50 font-medium text-brand-800 hover:bg-
 
 export function AppShell() {
   const me = useQuery(meQuery);
+  const session = useQuery(sessionQuery);
+  const { t, locale, setLocale } = useI18n();
   const params = useParams({ strict: false });
   const [menuOpen, setMenuOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -77,6 +80,14 @@ export function AppShell() {
       // Storage blocked: the menu just forgets it.
     }
   }, [params.projectId]);
+
+  // The language saved on the account wins over this browser's: same dashboard on every device.
+  const savedLocale = session.data?.user.locale;
+  useEffect(() => {
+    if (isLocale(savedLocale) && savedLocale !== locale) setLocale(savedLocale);
+    // Only when the saved one changes: switching from the account page updates both.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedLocale]);
 
   const projects = me.data?.projects ?? [];
   const projectId = params.projectId ?? (projects.some((p) => p.id === lastProject) ? lastProject : projects[0]?.id);
@@ -106,7 +117,7 @@ export function AppShell() {
 
       {me.data && me.data.organizations.length > 1 && (
         <label className="block px-1">
-          <span className="text-xs font-medium text-slate-500">Organizzazione</span>
+          <span className="text-xs font-medium text-slate-500">{t("Organizzazione")}</span>
           <select className={select} value={me.data.organization.id} onChange={(e) => void switchOrganization(e.target.value)}>
             {me.data.organizations.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
@@ -115,7 +126,7 @@ export function AppShell() {
 
       {projects.length > 0 && projectId && (
         <label className="block px-1">
-          <span className="text-xs font-medium text-slate-500">Progetto</span>
+          <span className="text-xs font-medium text-slate-500">{t("Progetto")}</span>
           <select
             className={select}
             value={projectId}
@@ -135,13 +146,13 @@ export function AppShell() {
           if (items.length === 0) return null;
           return (
             <div key={group.title}>
-              <p className="px-2.5 text-xs font-medium text-slate-400">{group.title}</p>
+              <p className="px-2.5 text-xs font-medium text-slate-400">{t(group.title)}</p>
               <ul className="mt-1 space-y-0.5">
                 {items.map((item) => (
                   <li key={item.to}>
                     <Link to={item.to} params={{ projectId }} onClick={close} className={navLink} activeProps={navActive}>
                       <Icon name={item.icon} className="size-4.5 shrink-0" />
-                      <span className="flex-1">{item.label}</span>
+                      <span className="flex-1">{t(item.label)}</span>
                       {item.to.endsWith("richieste") && current?.newSubmissions ? (
                         <span className="rounded-full bg-brand-600 px-1.5 text-xs font-medium text-white">{current.newSubmissions}</span>
                       ) : null}
@@ -154,29 +165,29 @@ export function AppShell() {
         })}
 
       <div>
-        <p className="px-2.5 text-xs font-medium text-slate-400">Account</p>
+        <p className="px-2.5 text-xs font-medium text-slate-400">{t("Account")}</p>
         <ul className="mt-1 space-y-0.5">
           <li>
             <Link to="/account" onClick={close} className={navLink} activeProps={navActive}>
-              <Icon name="user" className="size-4.5 shrink-0" /> Il tuo account
+              <Icon name="user" className="size-4.5 shrink-0" /> {t("Il tuo account")}
             </Link>
           </li>
           <li>
             <Link to="/team" onClick={close} className={navLink} activeProps={navActive}>
-              <Icon name="users" className="size-4.5 shrink-0" /> Team
+              <Icon name="users" className="size-4.5 shrink-0" /> {t("Team")}
             </Link>
           </li>
           {owner && (
             <li>
               <Link to="/piano" onClick={close} className={navLink} activeProps={navActive}>
-                <Icon name="card" className="size-4.5 shrink-0" /> Piano e fatturazione
+                <Icon name="card" className="size-4.5 shrink-0" /> {t("Piano e fatturazione")}
               </Link>
             </li>
           )}
           {manager && (
             <li>
               <Link to="/nuovo-progetto" onClick={close} className={navLink} activeProps={navActive}>
-                <Icon name="plus" className="size-4.5 shrink-0" /> Nuovo progetto
+                <Icon name="plus" className="size-4.5 shrink-0" /> {t("Nuovo progetto")}
               </Link>
             </li>
           )}
@@ -187,11 +198,11 @@ export function AppShell() {
         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-100 text-sm font-semibold text-brand-800">
           {me.data?.user.name.trim().charAt(0).toUpperCase()}
         </span>
-        <Link to="/account" onClick={close} className="min-w-0 flex-1 text-sm hover:text-brand-800" title="Il tuo account">
+        <Link to="/account" onClick={close} className="min-w-0 flex-1 text-sm hover:text-brand-800" title={t("Il tuo account")}>
           <p className="truncate font-medium">{me.data?.user.name}</p>
           <p className="truncate text-xs text-slate-500">{me.data?.user.email}</p>
         </Link>
-        <Button variant="ghost" className="px-2 py-1.5" title="Esci" aria-label="Esci" onClick={signOut}>
+        <Button variant="ghost" className="px-2 py-1.5" title={t("Esci")} aria-label={t("Esci")} onClick={signOut}>
           <Icon name="logout" className="size-4.5" />
         </Button>
       </div>
@@ -202,7 +213,7 @@ export function AppShell() {
     <div className="min-h-dvh lg:flex">
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
         <Link to="/"><Logo /></Link>
-        <Button variant="ghost" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "Chiudi" : "Menu"}</Button>
+        <Button variant="ghost" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? t("Chiudi") : t("Menu")}</Button>
       </header>
       <aside
         className={cx(

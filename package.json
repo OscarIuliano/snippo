@@ -7,7 +7,8 @@
     "dev:remote": "turbo run dev:remote",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
+    "test": "turbo run test && node scripts/check-i18n.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs",
     "db:setup": "pnpm --filter @snippo/api db:migrate:local && pnpm --filter @snippo/api db:seed:local",
     "db:generate": "pnpm --filter @snippo/db generate",
     "deploy:staging": "pnpm --filter @snippo/api deploy:staging && pnpm --filter @snippo/widget-chat deploy:staging && pnpm --filter @snippo/dashboard deploy:staging && pnpm --filter @snippo/web deploy:staging"

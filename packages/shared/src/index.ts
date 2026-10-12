@@ -4,6 +4,8 @@ export * from "./dashboard-api";
 export * from "./flow";
 export * from "./flow-editor";
 export * from "./format";
+export * from "./i18n-en";
+export * from "./locale";
 export * from "./notifications";
 export * from "./privacy";
 export * from "./rules";

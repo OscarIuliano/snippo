@@ -64,6 +64,13 @@
       "when": 1791812573705,
       "tag": "0008_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1791812835081,
+      "tag": "0009_user_locale",
+      "breakpoints": true
     }
   ]
 }

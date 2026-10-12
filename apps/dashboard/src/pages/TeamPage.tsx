@@ -37,6 +37,11 @@ function MembersCard({ team, isOwner }: { team: TeamResponse; isOwner: boolean }
     onSuccess: refresh,
   });
   const remove = useMutation({ mutationFn: (userId: string) => api(`/team/members/${userId}`, { method: "DELETE" }), onSuccess: refresh });
+  // The previous owner becomes an admin: the whole dashboard has to read the new role.
+  const transfer = useMutation({
+    mutationFn: (userId: string) => api("/team/owner", { method: "POST", body: { userId } }),
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
 
   return (
     <Card title="Persone">
@@ -50,7 +55,7 @@ function MembersCard({ team, isOwner }: { team: TeamResponse; isOwner: boolean }
               <p className="truncate text-slate-500">{m.email}</p>
             </div>
             {isOwner && m.role !== "owner" ? (
-              <>
+              <span className="ml-auto flex flex-wrap items-center justify-end gap-2">
                 <select
                   value={m.role}
                   aria-label={`Ruolo di ${m.name}`}
@@ -69,7 +74,17 @@ function MembersCard({ team, isOwner }: { team: TeamResponse; isOwner: boolean }
                 >
                   Rimuovi
                 </Button>
-              </>
+                <Button
+                  variant="ghost"
+                  className="px-2 py-1 text-xs"
+                  disabled={transfer.isPending}
+                  onClick={() =>
+                    confirm(`Rendere ${m.name} titolare? Potrà gestire il team e i pagamenti; tu resterai nel team come admin.`) && transfer.mutate(m.userId)
+                  }
+                >
+                  Rendi titolare
+                </Button>
+              </span>
             ) : (
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{roleInfo[m.role].label}</span>
             )}
@@ -83,7 +98,9 @@ function MembersCard({ team, isOwner }: { team: TeamResponse; isOwner: boolean }
           </div>
         ))}
       </dl>
-      {(changeRole.error || remove.error) && <div className="mt-3"><Alert>{(changeRole.error ?? remove.error)!.message}</Alert></div>}
+      {(changeRole.error || remove.error || transfer.error) && (
+        <div className="mt-3"><Alert>{(changeRole.error ?? remove.error ?? transfer.error)!.message}</Alert></div>
+      )}
     </Card>
   );
 }

@@ -12,6 +12,8 @@ export interface AuthSearch {
   error?: string;
   /** Password reset token, on the page that asks for the new password. */
   token?: string;
+  /** Set after deleting the account, for the goodbye message on the login page. */
+  eliminato?: string;
 }
 
 function AuthLayout({ title, subtitle, children, footer }: { title: string; subtitle: ReactNode; children: ReactNode; footer?: ReactNode }) {
@@ -73,7 +75,7 @@ function useAuthAction() {
 export function LoginPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { invito, error: linkError } = useSearch({ strict: false }) as AuthSearch;
+  const { invito, error: linkError, eliminato } = useSearch({ strict: false }) as AuthSearch;
   const { error, pending, run } = useAuthAction();
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -97,6 +99,7 @@ export function LoginPage() {
       footer={<>Non hai un account? <Link to="/registrati" search={{ invito }} className={linkClass}>Registrati</Link></>}
     >
       <form onSubmit={onSubmit} className="space-y-4">
+        {eliminato && !error && <Notice>Il tuo account è stato eliminato. Ci dispiace vederti andare.</Notice>}
         {linkError && !error && <Alert>Il link di conferma non è più valido. Accedi: te ne mandiamo uno nuovo.</Alert>}
         {error && <Alert>{error}</Alert>}
         <Field label="Email">

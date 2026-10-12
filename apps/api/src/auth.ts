@@ -1,9 +1,10 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
+import { AccountDeletionBlocked, prepareAccountDeletion } from "./account";
 import { v7 as uuidv7 } from "uuid";
 import { createDb, schema } from "@snippo/db";
-import { passwordChangedMessage, resetPasswordMessage, sendEmail, verifyEmailMessage } from "./email";
+import { accountDeletedMessage, passwordChangedMessage, resetPasswordMessage, sendEmail, verifyEmailMessage } from "./email";
 import type { AppEnv } from "./env";
 import { hashPassword, verifyPassword } from "./password";
 
@@ -46,8 +47,32 @@ export function createAuth(env: AppEnv["Bindings"]) {
     user: {
       // The new address must be confirmed: until then the old one stays.
       changeEmail: { enabled: true },
+      deleteUser: {
+        enabled: true,
+        // Organizations owned with other people block the deletion; the ones left empty go with the account.
+        beforeDelete: async (user) => {
+          try {
+            await prepareAccountDeletion(env.DB, user.id);
+          } catch (error) {
+            if (!(error instanceof AccountDeletionBlocked)) throw error;
+            throw new APIError("BAD_REQUEST", {
+              code: "OWNER_OF_TEAM",
+              message: `Sei titolare di ${error.organizations.map((o) => o.name).join(", ")}, con altre persone nel team: prima passa la titolarità.`,
+            });
+          }
+        },
+        afterDelete: async (user) => {
+          await sendEmail(env, accountDeletedMessage(user.email, user.name));
+        },
+      },
     },
     hooks: {
+      // Deleting the account always asks for the password, even from a fresh session.
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === "/delete-user" && !ctx.body?.password) {
+          throw new APIError("BAD_REQUEST", { code: "PASSWORD_REQUIRED", message: "Serve la password per eliminare l'account" });
+        }
+      }),
       // A password changed from the account page: the owner of the address hears about it,
       // in case it was not them.
       after: createAuthMiddleware(async (ctx) => {

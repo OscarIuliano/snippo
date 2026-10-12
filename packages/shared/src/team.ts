@@ -12,6 +12,17 @@ const invitableRole = z.enum(["admin", "operator"]);
 export const createInvitationSchema = z.object({ role: invitableRole });
 export const updateMemberSchema = z.object({ role: invitableRole });
 
+/** POST /team/owner: the owner hands the organization to another member and becomes an admin. */
+export const transferOwnershipSchema = z.object({ userId: z.string().min(1) });
+
+/** GET /account/deletion: what deleting the account would do. */
+export interface AccountDeletionPlan {
+  /** Organizations owned with other people: ownership has to move first. */
+  blocking: { id: string; name: string; members: number }[];
+  /** Organizations owned alone: deleted with their projects and requests. */
+  deleted: { id: string; name: string; projects: number }[];
+}
+
 /** Header with the organization the dashboard is working on, for users in more than one. */
 export const ORGANIZATION_HEADER = "X-Snippo-Organization";
 

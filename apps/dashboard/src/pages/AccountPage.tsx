@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Alert, Button, Card, Field, Input, Notice, PageHeader } from "../components/ui";
+import type { AccountDeletionPlan } from "@snippo/shared";
+import { api } from "../lib/api";
 import { authClient } from "../lib/auth";
+import { setActiveOrganization } from "../lib/organization";
 import { meQuery, sessionQuery } from "../lib/queries";
 import type { AuthSearch } from "./AuthPages";
 
@@ -21,6 +24,8 @@ function accountError(error: { message?: string; status?: number }): string {
   if (/password.*short/i.test(message)) return "La nuova password deve avere almeno 8 caratteri.";
   if (/already exists|already in use/i.test(message)) return "Questo indirizzo è già usato da un altro account.";
   if (/same/i.test(message)) return "È già il tuo indirizzo.";
+  // The API already explains which organizations need a new owner.
+  if (/titolarità/.test(message)) return message;
   if (error.status === 429) return "Troppi tentativi, riprova tra poco.";
   return "Qualcosa è andato storto, riprova.";
 }
@@ -38,6 +43,7 @@ export function AccountPage() {
       <EmailCard email={me.data.user.email} />
       <PasswordCard />
       <SessionsCard />
+      <DeleteAccountCard />
     </div>
   );
 }
@@ -205,6 +211,81 @@ function SessionsCard() {
         </Button>
       )}
       {(revoke.error || revokeOthers.error) && <div className="mt-3"><Alert>{(revoke.error ?? revokeOthers.error)!.message}</Alert></div>}
+    </Card>
+  );
+}
+
+function DeleteAccountCard() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const plan = useQuery({ queryKey: ["account-deletion"], queryFn: () => api<AccountDeletionPlan>("/account/deletion") });
+  const [understood, setUnderstood] = useState(false);
+  const remove = useMutation({
+    mutationFn: (password: string) => unwrap(authClient.deleteUser({ password })),
+    onSuccess: async () => {
+      queryClient.clear();
+      await navigate({ to: "/accedi", search: { eliminato: "1" } });
+    },
+  });
+
+  async function openTeam(organizationId: string) {
+    setActiveOrganization(organizationId);
+    queryClient.clear();
+    await navigate({ to: "/team" });
+  }
+
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    remove.mutate(String(new FormData(e.currentTarget).get("password")));
+  }
+
+  const blocking = plan.data?.blocking ?? [];
+  const deleted = plan.data?.deleted ?? [];
+
+  return (
+    <Card title="Elimina account" description="Cancella per sempre il tuo account e i tuoi dati. Non si può annullare.">
+      {plan.error && <Alert>{plan.error.message}</Alert>}
+      {plan.data && blocking.length > 0 && (
+        <div className="space-y-3 text-sm">
+          <p>Prima di eliminare l'account, passa la titolarità a un'altra persona del team, da Team → Rendi titolare:</p>
+          <ul className="divide-y divide-slate-100 rounded-lg ring-1 ring-slate-200">
+            {blocking.map((o) => (
+              <li key={o.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
+                <span className="min-w-40 flex-1">
+                  <span className="font-medium">{o.name}</span>
+                  <span className="text-slate-500"> · {o.members} persone</span>
+                </span>
+                <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => openTeam(o.id)}>Apri il team</Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {plan.data && blocking.length === 0 && (
+        <form onSubmit={onSubmit} className="space-y-4 text-sm">
+          <ul className="list-disc space-y-1 pl-5 text-slate-700">
+            <li>Escono tutti i tuoi dispositivi e il tuo profilo viene cancellato.</li>
+            {deleted.map((o) => (
+              <li key={o.id}>
+                L'organizzazione <strong className="font-medium">{o.name}</strong> viene eliminata con{" "}
+                {o.projects === 1 ? "il suo progetto" : `i suoi ${o.projects} progetti`}, le richieste ricevute e le statistiche. I widget smettono di funzionare sui siti.
+              </li>
+            ))}
+            <li>Dai team di altre persone esci soltanto: i loro progetti restano.</li>
+          </ul>
+          <Field label="Password">
+            <Input name="password" type="password" autoComplete="current-password" required />
+          </Field>
+          <label className="flex items-start gap-2 text-slate-700">
+            <input type="checkbox" checked={understood} onChange={(e) => setUnderstood(e.target.checked)} className="mt-0.5 accent-red-700" />
+            Ho capito che i dati non si possono recuperare.
+          </label>
+          <Button type="submit" variant="danger" disabled={!understood || remove.isPending}>
+            {remove.isPending ? "Eliminazione…" : "Elimina definitivamente"}
+          </Button>
+          {remove.error && <Alert>{remove.error.message}</Alert>}
+        </form>
+      )}
     </Card>
   );
 }

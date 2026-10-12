@@ -52,6 +52,8 @@ import {
   canManageTeam,
   createInvitationSchema,
   updateMemberSchema,
+  transferOwnershipSchema,
+  type AccountDeletionPlan,
   type AvailabilitySettings,
   type Role,
   type TeamResponse,
@@ -68,6 +70,7 @@ import {
   type TemplateId,
 } from "@snippo/shared";
 import type { z } from "zod";
+import { accountDeletionPlan } from "./account";
 import { nowIn, slotSteps } from "./availability";
 import { createAuth } from "./auth";
 import { createInvitationToken } from "./invitations";
@@ -712,7 +715,7 @@ dashboardRoutes.delete("/team/invitations/:id", async (c) => {
   return c.body(null, 204);
 });
 
-/** The owner's membership cannot be changed or removed (no transfer of ownership yet). */
+/** The owner's membership cannot be changed or removed: ownership moves only with POST /team/owner. */
 async function memberToManage(c: DashboardContext, userId: string) {
   const member = await c.var.db.query.memberships.findFirst({
     where: and(eq(memberships.organizationId, c.var.organizationId), eq(memberships.userId, userId)),
@@ -747,6 +750,36 @@ dashboardRoutes.delete("/team/members/:userId", async (c) => {
     .delete(memberships)
     .where(and(eq(memberships.organizationId, c.var.organizationId), eq(memberships.userId, c.req.param("userId"))));
   return c.body(null, 204);
+});
+
+/** The owner hands the organization to another member, and stays in the team as an admin. */
+dashboardRoutes.post("/team/owner", async (c) => {
+  const denied = ownerOnly(c);
+  if (denied) return denied;
+  const input = await parseBody(c, transferOwnershipSchema);
+  if (!input) return problem(c, 422, "Persona non valida");
+  if (input.userId === c.var.user.id) return problem(c, 422, "Sei già il titolare");
+  const { error } = await memberToManage(c, input.userId);
+  if (error) return error;
+
+  const now = new Date().toISOString();
+  const membership = (userId: string) => and(eq(memberships.organizationId, c.var.organizationId), eq(memberships.userId, userId));
+  await c.var.db.batch([
+    c.var.db.update(memberships).set({ role: "owner", updatedAt: now }).where(membership(input.userId)),
+    c.var.db.update(memberships).set({ role: "admin", updatedAt: now }).where(membership(c.var.user.id)),
+  ]);
+  return c.body(null, 204);
+});
+
+// --- Account: what deleting it would do (the deletion itself is Better Auth's /delete-user) ---
+
+dashboardRoutes.get("/account/deletion", async (c) => {
+  const plan = await accountDeletionPlan(c.env.DB, c.var.user.id);
+  const body: AccountDeletionPlan = {
+    blocking: plan.blocking.map(({ id, name, members }) => ({ id, name, members })),
+    deleted: plan.deleted.map(({ id, name, projects }) => ({ id, name, projects })),
+  };
+  return c.json(body);
 });
 
 // --- Privacy: retention period, access and erasure requests (owners and admins) ---

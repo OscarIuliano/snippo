@@ -77,3 +77,13 @@ export function passwordChangedMessage(to: string, name: string, dashboardUrl: s
     note: "Se non sei stato tu, usa subito \"Password dimenticata?\" nella pagina di accesso per sceglierne una nuova.",
   });
 }
+
+export function accountDeletedMessage(to: string, name: string): Email {
+  const intro = "Il tuo account Snippo è stato eliminato, insieme ai progetti di cui eri l'unico titolare e alle loro richieste.";
+  const note = "Puoi creare un nuovo account quando vuoi.";
+  const text = [`Ciao ${name},`, "", intro, "", note].join("\n");
+  const html = emailLayout(`<p style="margin:0 0 12px">Ciao ${escapeHtml(name)},</p>
+<p style="margin:0 0 16px;line-height:1.5">${escapeHtml(intro)}</p>
+<p style="margin:0;font-size:13px;color:#64748b">${escapeHtml(note)}</p>`);
+  return { to, subject: "Il tuo account Snippo è stato eliminato", text, html };
+}

@@ -22,7 +22,7 @@ const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({ c
 
 const authSearch = (search: Record<string, unknown>): AuthSearch => {
   const out: AuthSearch = {};
-  for (const key of ["invito", "error", "token"] as const) if (typeof search[key] === "string") out[key] = search[key];
+  for (const key of ["invito", "error", "token", "eliminato"] as const) if (typeof search[key] === "string") out[key] = search[key];
   return out;
 };
 

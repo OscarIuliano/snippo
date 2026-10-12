@@ -9,7 +9,7 @@ interface SentEmail {
   url: string;
 }
 
-// Without RESEND_API_KEY every email goes to the log: the tests read it from there.
+// Every email goes to the log for now: the tests read it from there.
 let sent: SentEmail[] = [];
 beforeEach(() => {
   sent = [];

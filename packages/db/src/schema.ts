@@ -285,7 +285,7 @@ export const invitations = sqliteTable(
     role: text("role", { enum: ["admin", "operator"] }).notNull(),
     /** SHA-256 of the token in the link, hex. */
     tokenHash: text("token_hash").notNull().unique(),
-    /** Optional: when set, only this email can accept (the email invite, once Resend is in place). */
+    /** Optional: when set, only this email can accept (the email invite, once emails are really sent). */
     email: text("email"),
     createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "cascade" }),
     expiresAt: text("expires_at").notNull(),

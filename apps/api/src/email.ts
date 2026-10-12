@@ -9,21 +9,13 @@ export interface Email {
 }
 
 /**
- * Sends an email through Resend when RESEND_API_KEY is set. Without it (development, tests)
- * the email is printed to the Worker log, links included, so every flow can be tried by hand.
+ * The one place every email leaves from. For now it prints the email to the Worker log, links
+ * included, so every flow can be tried by hand. Cloudflare Email Service takes over here once
+ * snippo.io is on Cloudflare: only this function changes.
  */
-export async function sendEmail(env: AppEnv["Bindings"], email: Email): Promise<{ id?: string }> {
-  if (!env.RESEND_API_KEY) {
-    console.log(`\n──── email → ${email.to} ────\nOggetto: ${email.subject}\n\n${email.text}\n────────────────────────────`);
-    return {};
-  }
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: env.EMAIL_FROM ?? "Snippo <notifiche@snippo.io>", to: [email.to], subject: email.subject, text: email.text, html: email.html }),
-  });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  return (await res.json()) as { id?: string };
+export async function sendEmail(_env: AppEnv["Bindings"], email: Email): Promise<{ id?: string }> {
+  console.log(`\n──── email → ${email.to} ────\nOggetto: ${email.subject}\n\n${email.text}\n────────────────────────────`);
+  return {};
 }
 
 export function escapeHtml(value: string): string {

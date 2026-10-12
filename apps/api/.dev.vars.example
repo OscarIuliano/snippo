@@ -1,7 +1,3 @@
 BETTER_AUTH_SECRET=genera-con-openssl-rand-hex-32
 # Chiave segreta di test di Cloudflare Turnstile: passa sempre.
 TURNSTILE_SECRET=1x0000000000000000000000000000000AA
-# Facoltativa. Senza, le email (conferma account, reset password, notifiche) finiscono nel log
-# del terminale di pnpm dev, con i link da aprire. Con una chiave di Resend partono davvero.
-# RESEND_API_KEY=re_...
-# EMAIL_FROM=Snippo <onboarding@resend.dev>

@@ -16,10 +16,6 @@ export interface Bindings {
   CHALLENGE_URL?: string;
   /** Secret: Turnstile secret key. When set, every submission needs a valid token. */
   TURNSTILE_SECRET?: string;
-  /** Secret: Resend API key. Unset = emails are printed to the Worker log instead of sent. */
-  RESEND_API_KEY?: string;
-  /** Sender of every email, e.g. "Snippo <notifiche@snippo.io>" (the domain must be verified on Resend). */
-  EMAIL_FROM?: string;
   /** Submissions per widget and IP (Workers rate limiting binding). */
   SUBMIT_LIMITER?: RateLimit;
   /** Usage events per widget and IP. */

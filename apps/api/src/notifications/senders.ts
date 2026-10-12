@@ -21,7 +21,7 @@ function logSender(type: ChannelType): Sender {
   };
 }
 
-/** Email goes through sendEmail: Resend when RESEND_API_KEY is set, the Worker log otherwise. */
+/** Email goes through sendEmail, like every other email of Snippo. */
 function emailSender(env: AppEnv["Bindings"]): Sender {
   return {
     async send(target, content) {

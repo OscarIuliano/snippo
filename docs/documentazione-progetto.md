@@ -180,7 +180,7 @@ flowchart TB
     Q[("Cloudflare Queues<br/>notifiche, webhook")]
     WK["Consumer della coda<br/>stesso Worker dell'API"]
     P["Paddle<br/>abbonamenti e fatture"]
-    RS["Resend<br/>email"]
+    RS["Cloudflare Email Service<br/>email"]
     WA["WhatsApp Cloud API<br/>notifiche"]
     WH["Webhook clienti<br/>fase 2"]
 
@@ -337,7 +337,7 @@ Ogni richiesta pubblica un messaggio su Cloudflare Queues per ciascun canale att
 
 | Canale | Servizio | Uso | Note | Fase |
 | --- | --- | --- | --- | --- |
-| Email transazionale | **Resend** (alternative: Postmark, Amazon SES) | Notifica all'azienda, conferma al visitatore, email di sistema | Template con React Email; dominio di invio con SPF, DKIM, DMARC | MVP |
+| Email transazionale | **Cloudflare Email Service** (in beta pubblica da aprile 2026; piano B: Resend) | Notifica all'azienda, conferma al visitatore, email di sistema | Binding nel Worker, senza chiavi API; SPF, DKIM e DMARC configurati da Cloudflare sul dominio. Tutto passa da `sendEmail` (`apps/api/src/email.ts`): cambiare servizio tocca solo quella funzione | MVP |
 | Webhook | Proprio | Integrazione con gestionali, Zapier, Make | Firma HMAC-SHA256 nell'header, retry, log consultabile | Fase 2 |
 | WhatsApp | WhatsApp Business Cloud API (Meta) | Notifica all'azienda e conferma al visitatore | Verifica azienda su Meta, template approvati, finestra di 24 h, costo per conversazione | MVP |
 | SMS | Twilio o Vonage | Conferma al visitatore senza email | A consumo | Fase 3 |
@@ -386,7 +386,7 @@ Tutto gira sull'account Cloudflare già attivo per l'altro progetto. Per lo svil
 | File (loghi, allegati) | R2 | | 0–2 € |
 | Anti-bot | Turnstile | | 0 € |
 | Analytics landing | Cloudflare Web Analytics | Senza cookie | 0 € |
-| Email transazionale | Resend | Fuori da Cloudflare | 0–20 € |
+| Email transazionale | Cloudflare Email Service | Serve Workers Paid; 3.000 email al mese incluse, poi 0,35 $ ogni 1.000 | 0–5 € |
 | Errori | Sentry | SDK per Workers | 0 € (piano Developer) |
 | Uptime | Better Stack | Pagina di stato | 0–10 € |
 | Pagamenti | Paddle | | Commissione per transazione |
@@ -467,6 +467,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 | Widget | Preact + `widget-core` condiviso | 3 KB, componenti riusabili tra widget; con Web Components puri l'interfaccia richiede più codice | Consigliato |
 | Dashboard | React + Vite (SPA) | Statica e gratuita su Cloudflare Pages; l'API è già separata, Next.js aggiungerebbe un server | Consigliato |
 | WhatsApp | Nell'MVP accanto all'email, da un numero condiviso di Snippo | Evita la verifica Meta per ogni cliente durante l'MVP | Consigliato |
+| Email | Cloudflare Email Service, non Resend (scelto il 12 ottobre 2026) | Stesso account, nessuna chiave da custodire, DNS automatici; è in beta, ma il cambio di servizio tocca una sola funzione | Deciso |
 | Prezzi | Ipotesi della sezione 7, poi 10 interviste prima del lancio (4 ristoranti, 4 saloni o studi, 2 agenzie) | Si validano insieme prezzo e settore di partenza | Consigliato |
 | Pagamenti | Paddle all'inizio, Stripe più avanti | Paddle è Merchant of Record: incassa e gestisce IVA UE e fatture al posto nostro. Stripe conviene quando i volumi giustificano commissioni più basse | Da verificare |
 | Fatturazione elettronica | Con Paddle si fattura solo a Paddle; con Stripe serve un collegamento SDI (es. Fatture in Cloud) | In Italia le fatture B2B passano dallo SDI | Da verificare |
@@ -475,7 +476,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 19 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano Resend, Paddle o Sentry.
+L'MVP ha 19 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -489,7 +490,7 @@ L'MVP ha 19 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da
 | 8 | Notifiche | Destinatari email e WhatsApp, coda, link Conferma/Rifiuta | Fatto | In sviluppo finiscono nel log |
 | 9 | Area privata | Calendario con mattina (fino alle 13:00) e sera | Fatto | |
 | 10 | Repository | Merge dei branch su `main` | Fatto | Allineato l'8 ottobre; da qui un branch e una PR per attività |
-| 11 | Notifiche | Email reali con Resend | In attesa di te | Codice pronto: basta il secret RESEND_API_KEY. Senza dominio verificato, Resend consegna solo all'indirizzo del suo account |
+| 11 | Notifiche | Email reali con Cloudflare Email Service | In attesa di te | Serve il dominio su Cloudflare (n. 13); poi si attiva l'invio e si collega `sendEmail`. Fino ad allora le email finiscono nel log del Worker |
 | 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Servono portfolio e app Meta con numero di test, poi il template approvato |
 | 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet |
 | 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
@@ -497,11 +498,11 @@ L'MVP ha 19 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da
 | 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
 | 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Fatto | Il deploy automatico parte quando aggiungi i secret Cloudflare su GitHub |
 | 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; per la produzione serve un widget Turnstile su `cdn.snippo.io` |
-| 19 | Area privata | Verifica email, password dimenticata e pagina Account (nome, email, password, dispositivi) | Fatto | Senza chiave Resend i link finiscono nel log del Worker; gli account creati prima restano attivi |
-| 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo Resend |
+| 19 | Area privata | Verifica email, password dimenticata e pagina Account (nome, email, password, dispositivi) | Fatto | Finché le email non partono (n. 11) i link finiscono nel log del Worker; gli account creati prima restano attivi |
+| 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo le email reali (n. 11) |
 | 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Fatto | Pagina Statistiche: aperture, conversione, dove ci si ferma |
 | 22 | Area privata | Export CSV delle richieste | Da fare | |
-| 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Fatto | Inviti con link (7 giorni, uso singolo); l'invio via email arriva con Resend |
+| 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Fatto | Inviti con link (7 giorni, uso singolo); l'invio via email arriva con le email reali (n. 11) |
 | 24 | Pagamenti | Piani e quote con Paddle | Da fare | |
 | 25 | Privacy | Retention dei dati e cancellazione automatica | Fatto | Cron ogni notte; pagina Privacy per accesso e cancellazione dei dati di una persona |
 | 26 | Infrastruttura | Monitoraggio errori (Sentry) e uptime | Da fare | |

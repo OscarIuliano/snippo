@@ -23,6 +23,7 @@ import {
   projects,
   sql,
   submissions,
+  subscriptions,
   users,
   widgetDailyStats,
   widgetStepStats,
@@ -53,6 +54,7 @@ import {
   createInvitationSchema,
   updateMemberSchema,
   transferOwnershipSchema,
+  type BillingOverview,
   type AccountDeletionPlan,
   type AvailabilitySettings,
   type Role,
@@ -769,6 +771,36 @@ dashboardRoutes.post("/team/owner", async (c) => {
     c.var.db.update(memberships).set({ role: "admin", updatedAt: now }).where(membership(c.var.user.id)),
   ]);
   return c.body(null, 204);
+});
+
+// --- Billing: plan and use of the month (owner only). Payments arrive with Paddle. ---
+
+dashboardRoutes.get("/billing", async (c) => {
+  const denied = ownerOnly(c);
+  if (denied) return denied;
+  const orgId = c.var.organizationId;
+  // Calendar month in UTC: close enough to the Italian one for a monthly quota.
+  const monthStart = `${new Date().toISOString().slice(0, 7)}-01T00:00:00.000Z`;
+  const row = await c.env.DB.prepare(
+    `SELECT
+       (SELECT count(*) FROM projects WHERE organization_id = ?1) AS projects,
+       (SELECT count(*) FROM submissions WHERE project_id IN (SELECT id FROM projects WHERE organization_id = ?1) AND created_at >= ?2) AS submissions,
+       (SELECT count(*) FROM memberships WHERE organization_id = ?1) AS members`,
+  )
+    .bind(orgId, monthStart)
+    .first<{ projects: number; submissions: number; members: number }>();
+  const subscription = await c.var.db.query.subscriptions.findFirst({ where: eq(subscriptions.organizationId, orgId) });
+
+  const body: BillingOverview = {
+    plan: subscription && subscription.status !== "canceled" ? subscription.plan : "free",
+    interval: subscription?.interval ?? null,
+    status: subscription?.status ?? null,
+    currentPeriodEnd: subscription?.currentPeriodEnd ?? null,
+    cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
+    usage: { projects: row!.projects, submissionsThisMonth: row!.submissions, members: row!.members },
+    checkoutAvailable: false,
+  };
+  return c.json(body);
 });
 
 // --- Account: what deleting it would do (the deletion itself is Better Auth's /delete-user) ---

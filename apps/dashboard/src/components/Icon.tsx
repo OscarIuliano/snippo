@@ -16,6 +16,8 @@ const paths = {
   chat: "M4 5h16v11H9l-5 4zM8 9h8M8 12h5",
   logout: "M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10",
   user: "M12 12a4 4 0 100-8 4 4 0 000 8zM4.5 20c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6",
+  card: "M3 6h18v12H3zM3 10h18M7 15h3",
+  check: "M5 12.5l4.5 4.5L19 7.5",
 };
 
 export type IconName = keyof typeof paths;

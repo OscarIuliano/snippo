@@ -295,3 +295,20 @@ export const invitations = sqliteTable(
   },
   (t) => [index("invitations_org_idx").on(t.organizationId)],
 );
+
+// --- Billing: one subscription per organization, kept in sync by the payment provider's webhooks.
+// No row = Free plan.
+
+export const subscriptions = sqliteTable("subscriptions", {
+  organizationId: text("organization_id").primaryKey().references(() => organizations.id, { onDelete: "cascade" }),
+  plan: text("plan", { enum: ["free", "starter", "pro", "agency"] }).notNull(),
+  interval: text("interval", { enum: ["month", "year"] }),
+  status: text("status", { enum: ["active", "trialing", "past_due", "paused", "canceled"] }).notNull(),
+  /** "paddle" for now; the column keeps a later move to Stripe possible. */
+  provider: text("provider").notNull(),
+  providerCustomerId: text("provider_customer_id"),
+  providerSubscriptionId: text("provider_subscription_id").unique(),
+  currentPeriodEnd: text("current_period_end"),
+  cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: "boolean" }).notNull().default(false),
+  ...timestamps,
+});

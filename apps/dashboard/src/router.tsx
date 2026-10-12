@@ -7,6 +7,7 @@ import { CalendarPage } from "./pages/CalendarPage";
 import { FlowEditorPage } from "./pages/FlowEditorPage";
 import { meQuery, sessionQuery } from "./lib/queries";
 import { AccountPage } from "./pages/AccountPage";
+import { BillingPage } from "./pages/BillingPage";
 import { ForgotPasswordPage, LoginPage, ResetPasswordPage, SignupPage, type AuthSearch } from "./pages/AuthPages";
 import { InboxPage } from "./pages/InboxPage";
 import { InvitePage } from "./pages/InvitePage";
@@ -67,6 +68,7 @@ function HomeRedirect() {
 const homeRoute = createRoute({ getParentRoute: () => appRoute, path: "/", component: HomeRedirect });
 const newProjectRoute = createRoute({ getParentRoute: () => appRoute, path: "/nuovo-progetto", component: NewProjectPage });
 const teamRoute = createRoute({ getParentRoute: () => appRoute, path: "/team", component: TeamPage });
+const billingRoute = createRoute({ getParentRoute: () => appRoute, path: "/piano", component: BillingPage });
 const accountRoute = createRoute({ getParentRoute: () => appRoute, path: "/account", validateSearch: authSearch, component: AccountPage });
 
 const projectRoute = createRoute({ getParentRoute: () => appRoute, path: "/progetti/$projectId" });
@@ -140,7 +142,7 @@ const routeTree = rootRoute.addChildren([
   forgotPasswordRoute,
   resetPasswordRoute,
   inviteRoute,
-  appRoute.addChildren([homeRoute, newProjectRoute, teamRoute, accountRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, statsRoute, questionsRoute, widgetRoute, notificationsRoute, privacyRoute, installRoute])]),
+  appRoute.addChildren([homeRoute, newProjectRoute, teamRoute, accountRoute, billingRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, statsRoute, questionsRoute, widgetRoute, notificationsRoute, privacyRoute, installRoute])]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {

@@ -53,6 +53,8 @@ export function deleteOrganizationStatements(db: D1Database, organizationId: str
     `DELETE FROM projects WHERE organization_id = ?1`,
     `DELETE FROM invitations WHERE organization_id = ?1`,
     `DELETE FROM memberships WHERE organization_id = ?1`,
+    // Once payments are live, a paid subscription has to be cancelled at the provider first.
+    `DELETE FROM subscriptions WHERE organization_id = ?1`,
     `DELETE FROM organizations WHERE id = ?1`,
   ].map((sql) => db.prepare(sql).bind(organizationId));
 }

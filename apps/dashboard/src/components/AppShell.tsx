@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { canManageProjects } from "@snippo/shared";
+import { canManageProjects, canManageTeam } from "@snippo/shared";
 import { authClient } from "../lib/auth";
 import { setActiveOrganization } from "../lib/organization";
 import { meQuery } from "../lib/queries";
@@ -82,6 +82,7 @@ export function AppShell() {
   const projectId = params.projectId ?? (projects.some((p) => p.id === lastProject) ? lastProject : projects[0]?.id);
   const current = projects.find((p) => p.id === projectId);
   const manager = me.data ? canManageProjects(me.data.organization.role) : false;
+  const owner = me.data ? canManageTeam(me.data.organization.role) : false;
 
   async function signOut() {
     await authClient.signOut();
@@ -165,6 +166,13 @@ export function AppShell() {
               <Icon name="users" className="size-4.5 shrink-0" /> Team
             </Link>
           </li>
+          {owner && (
+            <li>
+              <Link to="/piano" onClick={close} className={navLink} activeProps={navActive}>
+                <Icon name="card" className="size-4.5 shrink-0" /> Piano e fatturazione
+              </Link>
+            </li>
+          )}
           {manager && (
             <li>
               <Link to="/nuovo-progetto" onClick={close} className={navLink} activeProps={navActive}>

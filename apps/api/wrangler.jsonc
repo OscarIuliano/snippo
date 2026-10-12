@@ -50,7 +50,10 @@
         "PUBLIC_API_URL": "https://snippo-api-staging.oiuliano90.workers.dev",
         // Test site key until a real Turnstile widget exists for the CDN hostname.
         "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
-        "CHALLENGE_URL": "https://snippo-cdn-staging.oiuliano90.workers.dev/v1/challenge.html"
+        "CHALLENGE_URL": "https://snippo-cdn-staging.oiuliano90.workers.dev/v1/challenge.html",
+        // Resend's shared test sender, until snippo.io is verified on Resend. It only delivers to the
+        // address of the Resend account. Emails are sent once the RESEND_API_KEY secret is set.
+        "EMAIL_FROM": "Snippo <onboarding@resend.dev>"
       },
       "ratelimits": [
         { "name": "SUBMIT_LIMITER", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },

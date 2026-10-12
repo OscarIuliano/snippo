@@ -475,7 +475,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 18 attività fatte, 5 in attesa di un tuo passaggio e 5 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano Resend, Paddle o Sentry.
+L'MVP ha 19 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano Resend, Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -489,7 +489,7 @@ L'MVP ha 18 attività fatte, 5 in attesa di un tuo passaggio e 5 da fare. Le "Da
 | 8 | Notifiche | Destinatari email e WhatsApp, coda, link Conferma/Rifiuta | Fatto | In sviluppo finiscono nel log |
 | 9 | Area privata | Calendario con mattina (fino alle 13:00) e sera | Fatto | |
 | 10 | Repository | Merge dei branch su `main` | Fatto | Allineato l'8 ottobre; da qui un branch e una PR per attività |
-| 11 | Notifiche | Email reali con Resend | In attesa di te | Serve la chiave API; per inviare a tutti, anche il dominio |
+| 11 | Notifiche | Email reali con Resend | In attesa di te | Codice pronto: basta il secret RESEND_API_KEY. Senza dominio verificato, Resend consegna solo all'indirizzo del suo account |
 | 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Servono portfolio e app Meta con numero di test, poi il template approvato |
 | 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet |
 | 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
@@ -497,7 +497,7 @@ L'MVP ha 18 attività fatte, 5 in attesa di un tuo passaggio e 5 da fare. Le "Da
 | 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
 | 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Fatto | Il deploy automatico parte quando aggiungi i secret Cloudflare su GitHub |
 | 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; per la produzione serve un widget Turnstile su `cdn.snippo.io` |
-| 19 | Area privata | Verifica email e reset password | Da fare | Dopo Resend |
+| 19 | Area privata | Verifica email, password dimenticata e pagina Account (nome, email, password, dispositivi) | Fatto | Senza chiave Resend i link finiscono nel log del Worker; gli account creati prima restano attivi |
 | 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo Resend |
 | 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Fatto | Pagina Statistiche: aperture, conversione, dove ci si ferma |
 | 22 | Area privata | Export CSV delle richieste | Da fare | |

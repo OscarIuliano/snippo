@@ -6,7 +6,8 @@ import { AvailabilityPage } from "./pages/AvailabilityPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { FlowEditorPage } from "./pages/FlowEditorPage";
 import { meQuery, sessionQuery } from "./lib/queries";
-import { LoginPage, SignupPage } from "./pages/AuthPages";
+import { AccountPage } from "./pages/AccountPage";
+import { ForgotPasswordPage, LoginPage, ResetPasswordPage, SignupPage, type AuthSearch } from "./pages/AuthPages";
 import { InboxPage } from "./pages/InboxPage";
 import { InvitePage } from "./pages/InvitePage";
 import { InstallPage } from "./pages/InstallPage";
@@ -19,11 +20,11 @@ import { WidgetPage } from "./pages/WidgetPage";
 
 const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({ component: Outlet });
 
-interface AuthSearch {
-  /** Token of the invitation the user came from, to go back to it after signing in. */
-  invito?: string;
-}
-const authSearch = (search: Record<string, unknown>): AuthSearch => (typeof search.invito === "string" ? { invito: search.invito } : {});
+const authSearch = (search: Record<string, unknown>): AuthSearch => {
+  const out: AuthSearch = {};
+  for (const key of ["invito", "error", "token"] as const) if (typeof search[key] === "string") out[key] = search[key];
+  return out;
+};
 
 // Public pages: a signed-in user goes straight to the app (or back to the invitation).
 const guestOnly = async ({ context, search }: { context: { queryClient: QueryClient }; search: AuthSearch }) => {
@@ -33,6 +34,9 @@ const guestOnly = async ({ context, search }: { context: { queryClient: QueryCli
 
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: "/accedi", validateSearch: authSearch, beforeLoad: guestOnly, component: LoginPage });
 const signupRoute = createRoute({ getParentRoute: () => rootRoute, path: "/registrati", validateSearch: authSearch, beforeLoad: guestOnly, component: SignupPage });
+// Open to everyone: the reset link may be opened on a device that is still signed in.
+const forgotPasswordRoute = createRoute({ getParentRoute: () => rootRoute, path: "/password-dimenticata", component: ForgotPasswordPage });
+const resetPasswordRoute = createRoute({ getParentRoute: () => rootRoute, path: "/reimposta-password", validateSearch: authSearch, component: ResetPasswordPage });
 const inviteRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/invito/$token",
@@ -63,6 +67,7 @@ function HomeRedirect() {
 const homeRoute = createRoute({ getParentRoute: () => appRoute, path: "/", component: HomeRedirect });
 const newProjectRoute = createRoute({ getParentRoute: () => appRoute, path: "/nuovo-progetto", component: NewProjectPage });
 const teamRoute = createRoute({ getParentRoute: () => appRoute, path: "/team", component: TeamPage });
+const accountRoute = createRoute({ getParentRoute: () => appRoute, path: "/account", validateSearch: authSearch, component: AccountPage });
 
 const projectRoute = createRoute({ getParentRoute: () => appRoute, path: "/progetti/$projectId" });
 const inboxRoute = createRoute({
@@ -132,8 +137,10 @@ const installRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   loginRoute,
   signupRoute,
+  forgotPasswordRoute,
+  resetPasswordRoute,
   inviteRoute,
-  appRoute.addChildren([homeRoute, newProjectRoute, teamRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, statsRoute, questionsRoute, widgetRoute, notificationsRoute, privacyRoute, installRoute])]),
+  appRoute.addChildren([homeRoute, newProjectRoute, teamRoute, accountRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, statsRoute, questionsRoute, widgetRoute, notificationsRoute, privacyRoute, installRoute])]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {

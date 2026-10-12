@@ -156,6 +156,11 @@ export function AppShell() {
         <p className="px-2.5 text-xs font-medium text-slate-400">Account</p>
         <ul className="mt-1 space-y-0.5">
           <li>
+            <Link to="/account" onClick={close} className={navLink} activeProps={navActive}>
+              <Icon name="user" className="size-4.5 shrink-0" /> Il tuo account
+            </Link>
+          </li>
+          <li>
             <Link to="/team" onClick={close} className={navLink} activeProps={navActive}>
               <Icon name="users" className="size-4.5 shrink-0" /> Team
             </Link>
@@ -174,10 +179,10 @@ export function AppShell() {
         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-100 text-sm font-semibold text-brand-800">
           {me.data?.user.name.trim().charAt(0).toUpperCase()}
         </span>
-        <div className="min-w-0 flex-1 text-sm">
+        <Link to="/account" onClick={close} className="min-w-0 flex-1 text-sm hover:text-brand-800" title="Il tuo account">
           <p className="truncate font-medium">{me.data?.user.name}</p>
           <p className="truncate text-xs text-slate-500">{me.data?.user.email}</p>
-        </div>
+        </Link>
         <Button variant="ghost" className="px-2 py-1.5" title="Esci" aria-label="Esci" onClick={signOut}>
           <Icon name="logout" className="size-4.5" />
         </Button>

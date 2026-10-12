@@ -18,5 +18,13 @@ export default defineConfig({
   ],
   test: {
     setupFiles: ["./test/apply-migrations.ts"],
+    // Better Auth answers a failed sign-in or a redirect by throwing an APIError, and under
+    // workerd it also surfaces as an unhandled rejection even though the response is correct.
+    // Ignore exactly those: any other unhandled error still fails the run.
+    onUnhandledError(error) {
+      const isApiError = error.name === "APIError" || /^APIError/.test(String((error as { stack?: string }).stack ?? ""));
+      // false = ignore this error; undefined = default handling.
+      if (isApiError) return false;
+    },
   },
 });

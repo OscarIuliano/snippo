@@ -15,6 +15,7 @@ const paths = {
   phone: "M8 3h8a1 1 0 011 1v16a1 1 0 01-1 1H8a1 1 0 01-1-1V4a1 1 0 011-1zM11 18h2",
   chat: "M4 5h16v11H9l-5 4zM8 9h8M8 12h5",
   logout: "M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10",
+  user: "M12 12a4 4 0 100-8 4 4 0 000 8zM4.5 20c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6",
 };
 
 export type IconName = keyof typeof paths;

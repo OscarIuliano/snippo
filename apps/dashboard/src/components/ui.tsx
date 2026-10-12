@@ -65,6 +65,11 @@ export function Alert({ children }: { children: ReactNode }) {
   return <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800 ring-1 ring-red-200">{children}</p>;
 }
 
+/** A positive outcome or a piece of news: the green counterpart of Alert. */
+export function Notice({ children }: { children: ReactNode }) {
+  return <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900 ring-1 ring-emerald-200">{children}</p>;
+}
+
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: ReactNode }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">

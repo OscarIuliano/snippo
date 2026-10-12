@@ -1,4 +1,5 @@
 import type { ChannelType } from "@snippo/shared";
+import { sendEmail } from "../email";
 import type { AppEnv } from "../env";
 import type { NotificationContent } from "./content";
 
@@ -14,17 +15,23 @@ export interface Sender {
 function logSender(type: ChannelType): Sender {
   return {
     async send(target, content) {
-      const body = type === "email" ? `Oggetto: ${content.subject}\n\n${content.text}` : `${content.whatsappText}\n\n${content.text}`;
-      console.log(`\n──── notifica ${type} → ${target} ────\n${body}\n────────────────────────────`);
+      console.log(`\n──── notifica ${type} → ${target} ────\n${content.whatsappText}\n\n${content.text}\n────────────────────────────`);
       return {};
     },
   };
 }
 
-/**
- * One sender per channel type. The real providers (Resend for email, WhatsApp Cloud API)
- * replace the log sender once their credentials are configured.
- */
-export function createSenders(_env: AppEnv["Bindings"]): Record<ChannelType, Sender> {
-  return { email: logSender("email"), whatsapp: logSender("whatsapp") };
+/** Email goes through sendEmail: Resend when RESEND_API_KEY is set, the Worker log otherwise. */
+function emailSender(env: AppEnv["Bindings"]): Sender {
+  return {
+    async send(target, content) {
+      const { id } = await sendEmail(env, { to: target, subject: content.subject, text: content.text, html: content.html });
+      return { providerMessageId: id };
+    },
+  };
+}
+
+/** One sender per channel type. WhatsApp replaces the log sender once the Cloud API is configured. */
+export function createSenders(env: AppEnv["Bindings"]): Record<ChannelType, Sender> {
+  return { email: emailSender(env), whatsapp: logSender("whatsapp") };
 }

@@ -32,7 +32,7 @@ export const plans: Record<PlanId, Plan> = {
     monthly: 0,
     yearly: 0,
     limits: { projects: 1, submissionsPerMonth: 50, members: 1, whatsappPerMonth: 0 },
-    features: ["1 progetto", "50 richieste al mese", "Notifiche via email", "Avvisa il cliente con un tocco", 'Logo "Powered by Snippo" nel widget'],
+    features: ["1 progetto", "50 richieste al mese", "Notifiche via email", "Avvisa il cliente su WhatsApp con un tocco", 'Logo "Powered by Snippo" nel widget'],
   },
   starter: {
     id: "starter",

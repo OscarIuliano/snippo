@@ -142,7 +142,7 @@ Il modello è freemium con abbonamento mensile. I prezzi sono un'ipotesi inizial
 
 | Piano | Prezzo/mese | Progetti | Richieste/mese | Notifiche WhatsApp/mese | Extra |
 | --- | --- | --- | --- | --- | --- |
-| Free | 0 € | 1 | 50 | — | Notifiche email, "Avvisa il cliente" con un tocco, logo "Powered by" visibile |
+| Free | 0 € | 1 | 50 | — | Notifiche email, "Avvisa il cliente" su WhatsApp con un tocco (dal telefono dell'azienda), logo "Powered by" visibile |
 | Starter | 13 € | 1 | 500 | 100 | Email di esito e promemoria al cliente, testi personalizzabili, niente logo, statistiche, export CSV, team di 2 |
 | Pro | 23 € | 5 | 3.000 | 300 | Tutto lo Starter, team fino a 5 |
 | Agency | 53 € | 25 | 15.000 | 1.000 | White label, multi-cliente, team fino a 25 |

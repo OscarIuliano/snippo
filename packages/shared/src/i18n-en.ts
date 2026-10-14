@@ -47,7 +47,7 @@ export const sharedEn: Record<string, string> = {
   "Team fino a 5 persone": "Team of up to 5 people",
   "White label": "White label",
   "Più clienti in un solo account": "Several clients in one account",
-  "Avvisa il cliente con un tocco": "Let the customer know in one tap",
+  "Avvisa il cliente su WhatsApp con un tocco": "Let the customer know on WhatsApp in one tap",
   "100 notifiche WhatsApp al mese": "100 WhatsApp notifications a month",
   "300 notifiche WhatsApp al mese": "300 WhatsApp notifications a month",
   "1.000 notifiche WhatsApp al mese": "1,000 WhatsApp notifications a month",

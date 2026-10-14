@@ -16,6 +16,10 @@ export interface Bindings {
   CHALLENGE_URL?: string;
   /** Secret: Turnstile secret key. When set, every submission needs a valid token. */
   TURNSTILE_SECRET?: string;
+  /** Secret: WhatsApp Cloud API access token (system user of the Meta app). Unset = WhatsApp goes to the log. */
+  WHATSAPP_TOKEN?: string;
+  /** Phone number ID of Snippo's WhatsApp sender, from the Meta app (not the number itself). */
+  WHATSAPP_PHONE_NUMBER_ID?: string;
   /** Submissions per widget and IP (Workers rate limiting binding). */
   SUBMIT_LIMITER?: RateLimit;
   /** Usage events per widget and IP. */

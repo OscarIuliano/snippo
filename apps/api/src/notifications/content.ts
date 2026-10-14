@@ -1,5 +1,6 @@
 import { formatBooking, type FlowDefinition } from "@snippo/shared";
 import { emailButton, emailLayout, escapeHtml } from "../email";
+import type { WhatsAppMessage } from "./whatsapp";
 
 export { escapeHtml };
 
@@ -8,8 +9,10 @@ export interface NotificationContent {
   /** Plain text: email fallback and the development log. */
   text: string;
   html: string;
-  /** Short text for WhatsApp, where the action buttons come from the approved template. */
+  /** Short text for the development log, in place of the WhatsApp template. */
   whatsappText: string;
+  /** The approved template that carries this notification on WhatsApp. */
+  whatsapp: WhatsAppMessage;
 }
 
 interface SubmissionForNotification {
@@ -72,11 +75,14 @@ export function buildSubmissionNotification(
 <p style="margin:24px 0 0">${emailButton(links.confirm, "Conferma")} ${emailButton(links.reject, "Rifiuta", false)}</p>
 <p style="margin:24px 0 0;font-size:13px"><a href="${escapeHtml(links.dashboard)}" style="color:#4f46e5">Apri nella dashboard</a></p>`);
 
+  const details = [headline, ...rows.map(([label, value]) => (label === "Telefono" || label === "Email" ? value : `${label}: ${value}`))].join(" · ");
   return {
     subject: `Nuova richiesta: ${headline}`,
     text,
     html,
-    whatsappText: `Nuova richiesta per ${projectName}: ${headline}${submission.contactPhone ? ` · ${submission.contactPhone}` : ""}`,
+    whatsappText: `Nuova richiesta per ${projectName}: ${details}`,
+    // The buttons of the template hold ${PUBLIC_API_URL}/v1/actions/; only the token varies.
+    whatsapp: { template: "newSubmission", params: [projectName, details], buttonParams: [lastSegment(links.confirm), lastSegment(links.reject)] },
   };
 }
 
@@ -89,5 +95,8 @@ export function buildTestNotification(projectName: string, dashboardUrl: string)
       `<p style="margin:0 0 12px">Notifica di prova da Snippo per <strong>${escapeHtml(projectName)}</strong>.</p><p style="margin:0 0 20px">Se la ricevi, le nuove richieste arriveranno qui.</p><p style="margin:0">${emailButton(dashboardUrl, "Apri la dashboard")}</p>`,
     ),
     whatsappText: `Notifica di prova da Snippo per ${projectName}. Le nuove richieste arriveranno qui.`,
+    whatsapp: { template: "test", params: [projectName] },
   };
 }
+
+const lastSegment = (url: string) => new URL(url).pathname.split("/").pop() ?? "";

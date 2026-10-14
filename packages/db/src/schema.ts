@@ -102,6 +102,12 @@ export const submissions = sqliteTable(
     idempotencyKey: text("idempotency_key"),
     /** Made by "Invia prova" in Notifiche: shown with a label, never counted in stats, usage or capacity. */
     isTest: integer("is_test", { mode: "boolean" }).notNull().default(false),
+    /**
+     * "manual": a booking the business took by phone or in person and added from the calendar. It takes
+     * its place in the availability like any other, but it is not a widget request: no notification,
+     * not in stats or plan usage. consentAt is then the time it was added.
+     */
+    source: text("source", { enum: ["widget", "manual"] }).notNull().default("widget"),
     ...timestamps,
   },
   (t) => [

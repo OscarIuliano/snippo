@@ -4,7 +4,7 @@ import { useState } from "react";
 import { canManageProjects, formatBooking, submissionStatuses, type FlowDefinition, type ReplyOutcome, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
 import { Icon } from "../components/Icon";
 import { NotifyCustomer } from "../components/NotifyCustomer";
-import { TestBadge } from "../components/TestBadge";
+import { ManualBadge, TestBadge } from "../components/TestBadge";
 import { Alert, Button, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
 import { msg, useFormat, useI18n, useT } from "../i18n";
@@ -147,6 +147,7 @@ function SubmissionCard({
           <p className="font-semibold">
             {s.contactName ?? t("Senza nome")}
             {s.isTest && <TestBadge />}
+            {s.source === "manual" && <ManualBadge />}
             {s.partySize ? <span className="font-normal text-slate-500"> · {s.partySize === 1 ? t("1 persona") : t("{count} persone", { count: s.partySize })}</span> : null}
           </p>
           {s.bookingAt && <p className="mt-0.5 text-sm font-medium text-brand-700">{formatBooking(s.bookingAt, intl)}</p>}

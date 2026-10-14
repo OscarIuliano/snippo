@@ -43,6 +43,7 @@ import {
   flowDefinitionSchema,
   flowProblems,
   isIsoDate,
+  manualBookingSchema,
   privacyPolicySchema,
   retentionSchema,
   submissionStatuses,
@@ -81,6 +82,7 @@ import { createAuth } from "./auth";
 import { createInvitationToken } from "./invitations";
 import type { AppEnv } from "./env";
 import { problem } from "./problem";
+import { extractContactFields } from "./widget";
 
 interface DashboardEnv extends AppEnv {
   Variables: {
@@ -135,8 +137,10 @@ async function userOrganizations(db: Db, userId: string) {
 }
 
 // Operators handle requests and the calendar, but do not change project settings.
+// Adding a booking to the calendar is part of handling requests: it stays open to them.
 dashboardRoutes.on(["POST", "PUT", "PATCH", "DELETE"], ["/projects", "/projects/*"], async (c, next) => {
-  if (!canManageProjects(c.var.role)) return problem(c, 403, "Il tuo ruolo non può modificare le impostazioni");
+  const addsBooking = c.req.method === "POST" && /\/projects\/[^/]+\/bookings$/.test(c.req.path);
+  if (!addsBooking && !canManageProjects(c.var.role)) return problem(c, 403, "Il tuo ruolo non può modificare le impostazioni");
   await next();
 });
 
@@ -360,6 +364,7 @@ const toSubmissionRow = (s: typeof submissions.$inferSelect): SubmissionRow => (
   partySize: s.partySize,
   createdAt: s.createdAt,
   isTest: s.isTest,
+  source: s.source,
 });
 
 dashboardRoutes.get("/projects/:id/submissions", async (c) => {
@@ -423,17 +428,56 @@ dashboardRoutes.get("/projects/:id/calendar", async (c) => {
   return c.json(rows.map(toSubmissionRow));
 });
 
-/** Deletes one request (and its notification log). Owners and admins only. */
+/**
+ * A booking taken by phone or in person: confirmed at once, it takes its place in the availability
+ * so the widget stops offering it. No notification goes out. Operators can add them too.
+ */
+dashboardRoutes.post("/projects/:id/bookings", async (c) => {
+  const input = await parseBody(c, manualBookingSchema);
+  if (!input) return problem(c, 422, "Prenotazione non valida: servono giorno, ora e nome");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+  const widget = await projectWidget(c.var.db, project.id);
+  if (!widget?.activeFlowVersionId) return problem(c, 409, "Il progetto non ha ancora le domande del widget");
+
+  // The same answer keys as the templates, so the inbox, the calendar and "Avvisa il cliente" read it as usual.
+  const answers: Record<string, string> = { date: input.date, time: input.time, name: input.name };
+  if (input.phone) answers.phone = input.phone;
+  if (input.partySize) answers.party_size = String(input.partySize);
+  if (input.service) answers.service = input.service;
+  if (input.notes) answers.notes = input.notes;
+
+  const now = new Date().toISOString();
+  const row = {
+    id: uuidv7(),
+    projectId: project.id,
+    widgetId: widget.id,
+    flowVersionId: widget.activeFlowVersionId,
+    status: "confirmed" as const,
+    answers,
+    ...extractContactFields(answers),
+    locale: project.defaultLocale,
+    consentAt: now,
+    source: "manual" as const,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await c.var.db.insert(submissions).values(row);
+  const saved = await c.var.db.query.submissions.findFirst({ where: eq(submissions.id, row.id) });
+  return c.json(toSubmissionRow(saved!), 201);
+});
+
+/** Deletes one request (and its notification log). Owners and admins; operators only the bookings added by hand. */
 dashboardRoutes.delete("/submissions/:id", async (c) => {
-  if (!canManageProjects(c.var.role)) return problem(c, 403, "Il tuo ruolo non può eliminare richieste");
   const { db, organizationId } = c.var;
   const submission = await db
-    .select({ id: submissions.id })
+    .select({ id: submissions.id, source: submissions.source })
     .from(submissions)
     .innerJoin(projects, eq(projects.id, submissions.projectId))
     .where(and(eq(submissions.id, c.req.param("id")), eq(projects.organizationId, organizationId)))
     .get();
   if (!submission) return problem(c, 404, "Richiesta non trovata");
+  if (submission.source !== "manual" && !canManageProjects(c.var.role)) return problem(c, 403, "Il tuo ruolo non può eliminare richieste");
 
   await db.batch([
     db.delete(notificationDeliveries).where(eq(notificationDeliveries.submissionId, submission.id)),
@@ -648,7 +692,15 @@ dashboardRoutes.get("/projects/:id/stats", async (c) => {
     db
       .select({ createdAt: submissions.createdAt, status: submissions.status })
       .from(submissions)
-      .where(and(eq(submissions.projectId, project.id), eq(submissions.isTest, false), gte(submissions.createdAt, addDays(from, -1)))),
+      .where(
+        and(
+          eq(submissions.projectId, project.id),
+          eq(submissions.isTest, false),
+          // Bookings added by hand did not come through the widget: they would inflate its conversion.
+          eq(submissions.source, "widget"),
+          gte(submissions.createdAt, addDays(from, -1)),
+        ),
+      ),
     widget.activeFlowVersionId
       ? db.query.flowVersions.findFirst({ where: eq(flowVersions.id, widget.activeFlowVersionId) })
       : undefined,
@@ -808,7 +860,7 @@ dashboardRoutes.get("/billing", async (c) => {
   const row = await c.env.DB.prepare(
     `SELECT
        (SELECT count(*) FROM projects WHERE organization_id = ?1) AS projects,
-       (SELECT count(*) FROM submissions WHERE project_id IN (SELECT id FROM projects WHERE organization_id = ?1) AND created_at >= ?2 AND is_test = 0) AS submissions,
+       (SELECT count(*) FROM submissions WHERE project_id IN (SELECT id FROM projects WHERE organization_id = ?1) AND created_at >= ?2 AND is_test = 0 AND source = 'widget') AS submissions,
        (SELECT count(*) FROM memberships WHERE organization_id = ?1) AS members`,
   )
     .bind(orgId, monthStart)

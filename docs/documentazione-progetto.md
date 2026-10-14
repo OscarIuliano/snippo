@@ -478,7 +478,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 27 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
+L'MVP ha 28 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -521,5 +521,6 @@ L'MVP ha 27 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da
 | 37 | Pagamenti | Quota mensile di notifiche WhatsApp per piano, oltre la quota a consumo | Da fare | Con Paddle (n. 24) e WhatsApp reale (n. 12) |
 | 38 | Privacy | Link all'informativa privacy dell'azienda nel widget, accanto al consenso | Fatto | Si inserisce nella pagina Privacy; senza link la pagina avvisa che manca |
 | 39 | Supporto | Pagina Supporto sulla landing (contatto e risposte rapide) e voce Aiuto nella dashboard | Fatto | "Scrivi al supporto" apre l'email con account e progetti già scritti; l'indirizzo `supporto@snippo.io` funziona con il dominio (n. 13) |
+| 40 | Calendario | Prenotazioni aggiunte a mano dal calendario (telefono, di persona) | Fatto | Confermate subito, segnate Manuale; occupano i posti della fascia, quindi il widget non li offre più. Niente notifiche, fuori da statistiche e uso del piano. Anche gli operatori le aggiungono ed eliminano |
 
 Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

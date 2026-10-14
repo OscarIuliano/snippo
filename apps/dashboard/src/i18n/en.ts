@@ -478,4 +478,13 @@ export const en: Record<string, string> = {
   "Risposte rapide": "Quick answers",
   "Informativa privacy": "Privacy notice",
   "Accordo sul trattamento dei dati": "Data processing agreement",
+  // Manual bookings
+  "Manuale": "Manual",
+  "Aggiungi prenotazione": "Add booking",
+  "Eliminare questa prenotazione? Il posto torna libero nel widget.": "Delete this booking? The place becomes free again in the widget.",
+  "Per chi prenota al telefono o di persona. È subito confermata e occupa i posti di quell'orario: quando è pieno, il widget non lo offre più. La capienza si imposta in Orari.": "For people who book by phone or in person. It is confirmed at once and takes the places of that time: when it is full, the widget stops offering it. Capacity is set in Hours.",
+  "Ora": "Time",
+  "Servizio": "Service",
+  "Telefono (facoltativo)": "Phone (optional)",
+  "Note (facoltative)": "Notes (optional)",
 };

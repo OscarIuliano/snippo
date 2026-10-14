@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { addDays, formatBooking, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
-import { Alert, Button, PageHeader, cx } from "../components/ui";
+import { useMemo, useState, type FormEvent } from "react";
+import { addDays, formatBooking, type FlowDefinition, type ManualBookingInput, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
+import { Alert, Button, Field, Input, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
 import { msg, useFormat, useI18n, useT } from "../i18n";
 import { calendarQuery, projectQuery } from "../lib/queries";
-import { TestBadge } from "../components/TestBadge";
+import { ManualBadge, TestBadge } from "../components/TestBadge";
 import { statusInfo } from "../lib/templates";
 
 /** Formatters of this page in the user's language. */
@@ -110,7 +110,7 @@ export function CalendarPage({ projectId }: { projectId: string }) {
       />
       {calendar.error && <div className="mb-4"><Alert>{calendar.error.message}</Alert></div>}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section aria-label={formats.month.format(new Date(`${month}T00:00:00Z`))} className="rounded-xl bg-white ring-1 ring-slate-200">
           <h2 className="border-b border-slate-200 px-4 py-3 font-semibold capitalize">{formats.month.format(new Date(`${month}T00:00:00Z`))}</h2>
           <div className="grid grid-cols-7 border-b border-slate-200 text-center text-xs font-medium text-slate-500">
@@ -162,14 +162,27 @@ export function CalendarPage({ projectId }: { projectId: string }) {
           </p>
         </section>
 
-        <DayAgenda projectId={projectId} day={selected} items={byDay.get(selected) ?? []} loading={calendar.isPending} />
+        <DayAgenda projectId={projectId} day={selected} items={byDay.get(selected) ?? []} loading={calendar.isPending} flow={project.data?.widget.flow ?? null} />
       </div>
     </div>
   );
 }
 
-function DayAgenda({ projectId, day, items, loading }: { projectId: string; day: string; items: SubmissionRow[]; loading: boolean }) {
+function DayAgenda({
+  projectId,
+  day,
+  items,
+  loading,
+  flow,
+}: {
+  projectId: string;
+  day: string;
+  items: SubmissionRow[];
+  loading: boolean;
+  flow: FlowDefinition | null;
+}) {
   const { t, intl } = useI18n();
+  const [adding, setAdding] = useState(false);
   const formats = useFormat(calendarFormats);
   const countLabel = (group: SubmissionRow[]) => (people(group) ? t("{count} persone", { count: people(group) }) : t("{count} richieste", { count: group.length }));
   const byTime = useMemo(() => {
@@ -185,7 +198,15 @@ function DayAgenda({ projectId, day, items, loading }: { projectId: string; day:
 
   return (
     <section aria-label={t("Agenda di {day}", { day: formatBooking(day, intl) })} className="rounded-xl bg-white p-4 ring-1 ring-slate-200 sm:p-5">
-      <h2 className="font-semibold">{formats.longDay(day)}</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-semibold">{formats.longDay(day)}</h2>
+        {!adding && flow && (
+          <Button variant="secondary" className="shrink-0 px-2.5 py-1 text-xs" onClick={() => setAdding(true)}>
+            + {t("Aggiungi prenotazione")}
+          </Button>
+        )}
+      </div>
+      {adding && flow && <AddBooking key={day} projectId={projectId} day={day} flow={flow} onDone={() => setAdding(false)} />}
       {items.length > 0 && (
         <p className="mt-1 text-sm text-slate-500">
           {confirmed === 1 ? t("1 persona confermata") : t("{count} persone confermate", { count: confirmed })}
@@ -235,6 +256,11 @@ function AgendaItem({ projectId, submission: s }: { projectId: string; submissio
       ),
   });
 
+  const remove = useMutation({
+    mutationFn: () => api(`/submissions/${s.id}`, { method: "DELETE" }),
+    onSuccess: () => Promise.all([["calendar", projectId], ["submissions", projectId]].map((queryKey) => queryClient.invalidateQueries({ queryKey }))),
+  });
+
   return (
     <li className="rounded-lg p-2 text-sm ring-1 ring-slate-200">
       <div className="flex items-start justify-between gap-2">
@@ -244,20 +270,121 @@ function AgendaItem({ projectId, submission: s }: { projectId: string; submissio
             {s.isTest && <TestBadge />}
             {s.partySize ? <span className="font-normal text-slate-500"> · {t("{count} pers.", { count: s.partySize })}</span> : null}
           </p>
-          {s.contactPhone && (
-            <a href={`tel:${s.contactPhone.replace(/\s/g, "")}`} className="text-xs text-slate-500 hover:underline">{s.contactPhone}</a>
+          {(s.contactPhone || s.source === "manual") && (
+            <p className="flex items-center gap-1.5">
+              {s.source === "manual" && <ManualBadge className="ml-0" />}
+              {s.contactPhone && (
+                <a href={`tel:${s.contactPhone.replace(/\s/g, "")}`} className="text-xs text-slate-500 hover:underline">{s.contactPhone}</a>
+              )}
+            </p>
           )}
         </div>
         <span className={cx("shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ring-1", statusInfo[s.status].className)}>{t(statusInfo[s.status].label)}</span>
       </div>
       {s.answers.notes && <p className="mt-1 text-xs text-slate-600">{s.answers.notes}</p>}
+      {s.source === "manual" && (
+        <div className="mt-2">
+          <Button
+            variant="ghost"
+            className="px-2 py-1 text-xs text-slate-600"
+            disabled={remove.isPending}
+            onClick={() => {
+              if (confirm(t("Eliminare questa prenotazione? Il posto torna libero nel widget."))) remove.mutate();
+            }}
+          >
+            {t("Elimina")}
+          </Button>
+        </div>
+      )}
       {s.status === "new" && (
         <div className="mt-2 flex gap-2">
           <Button className="px-2.5 py-1 text-xs" disabled={update.isPending} onClick={() => update.mutate("confirmed")}>{t("Conferma")}</Button>
           <Button variant="danger" className="px-2.5 py-1 text-xs" disabled={update.isPending} onClick={() => update.mutate("rejected")}>{t("Rifiuta")}</Button>
         </div>
       )}
-      {update.error && <p className="mt-2 text-xs text-red-700">{update.error.message}</p>}
+      {(update.error ?? remove.error) && <p className="mt-2 text-xs text-red-700">{(update.error ?? remove.error)!.message}</p>}
     </li>
+  );
+}
+
+const selectClass = "block w-full rounded-lg border-0 bg-white px-3 py-2 text-sm text-slate-900 ring-1 ring-slate-300 focus:ring-2 focus:ring-brand-600 focus:outline-none";
+
+/**
+ * A booking taken by phone or in person. It is saved as confirmed and takes its place, so the widget
+ * stops offering that time once it is full. The fields follow the project's questions.
+ */
+function AddBooking({ projectId, day, flow, onDone }: { projectId: string; day: string; flow: FlowDefinition; onDone: () => void }) {
+  const t = useT();
+  const queryClient = useQueryClient();
+  const timeStep = flow.steps.find((s) => s.type === "time");
+  const timeOptions = timeStep?.type === "time" ? timeStep.options : null;
+  const askParty = flow.steps.some((s) => s.key === "party_size");
+  const serviceStep = flow.steps.find((s) => s.key === "service");
+  const services = serviceStep?.type === "choice" ? serviceStep.options : null;
+
+  const save = useMutation({
+    mutationFn: (input: ManualBookingInput) => api(`/projects/${projectId}/bookings`, { method: "POST", body: input }),
+    onSuccess: async () => {
+      await Promise.all([["calendar", projectId], ["submissions", projectId]].map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+      onDone();
+    },
+  });
+
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const text = (name: string) => String(form.get(name) ?? "").trim() || undefined;
+    save.mutate({
+      date: day,
+      time: String(form.get("time")),
+      name: String(form.get("name")).trim(),
+      phone: text("phone"),
+      partySize: askParty ? Number(form.get("partySize")) : undefined,
+      service: services ? text("service") : undefined,
+      notes: text("notes"),
+    });
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="mt-4 space-y-3 rounded-lg bg-slate-50 p-3 ring-1 ring-slate-200">
+      <p className="text-xs text-slate-600">{t("Per chi prenota al telefono o di persona. È subito confermata e occupa i posti di quell'orario: quando è pieno, il widget non lo offre più. La capienza si imposta in Orari.")}</p>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={t("Ora")}>
+          {timeOptions ? (
+            <select name="time" required className={selectClass} defaultValue={timeOptions[0]}>
+              {timeOptions.map((time) => <option key={time}>{time}</option>)}
+            </select>
+          ) : (
+            <Input name="time" type="time" required defaultValue="20:00" />
+          )}
+        </Field>
+        {askParty && (
+          <Field label={t("Persone")}>
+            <Input name="partySize" type="number" min={1} max={500} required defaultValue={2} inputMode="numeric" />
+          </Field>
+        )}
+        {services && (
+          <Field label={t("Servizio")}>
+            <select name="service" className={selectClass}>
+              {services.map((service) => <option key={service}>{service}</option>)}
+            </select>
+          </Field>
+        )}
+      </div>
+      <Field label={t("Nome")}>
+        <Input name="name" required maxLength={80} autoComplete="off" />
+      </Field>
+      <Field label={t("Telefono (facoltativo)")}>
+        <Input name="phone" type="tel" maxLength={40} autoComplete="off" />
+      </Field>
+      <Field label={t("Note (facoltative)")}>
+        <Input name="notes" maxLength={500} autoComplete="off" />
+      </Field>
+      {save.error && <Alert>{save.error.message}</Alert>}
+      <div className="flex gap-2">
+        <Button type="submit" disabled={save.isPending}>{save.isPending ? t("Salvataggio…") : t("Aggiungi")}</Button>
+        <Button type="button" variant="ghost" onClick={onDone}>{t("Annulla")}</Button>
+      </div>
+    </form>
   );
 }

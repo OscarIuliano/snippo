@@ -75,3 +75,12 @@ export async function submitBooking(api: Api, projectId: string, overrides: Reco
   expect(res.status).toBe(201);
   return (await res.json<{ id: string }>()).id;
 }
+
+/** Invites a new user as operator of the owner's organization and returns their client. */
+export async function inviteOperator(owner: Api, email: string): Promise<Api> {
+  const res = await owner("/team/invitations", { method: "POST", body: JSON.stringify({ role: "operator" }) });
+  const token = (await res.json<{ url: string }>()).url.split("/invito/")[1];
+  const operator = await signUp(email);
+  await operator(`/api/invitations/${token}/accept`, { method: "POST" });
+  return operator;
+}

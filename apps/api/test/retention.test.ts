@@ -2,19 +2,11 @@ import { env, exports } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import type { ChannelRow, PrivacyMatch, ProjectDetail, WidgetConfig } from "@snippo/shared";
 import { runRetention } from "../src/retention";
-import { PUBLIC_API, SITE_ORIGIN, createProject, signUp, submitBooking, type Api } from "./helpers";
+import { PUBLIC_API, SITE_ORIGIN, createProject, inviteOperator, signUp, submitBooking } from "./helpers";
 
 const ageSubmission = (id: string, months: number) =>
   env.DB.prepare(`UPDATE submissions SET created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-${months} months') WHERE id = ?`).bind(id).run();
 const exists = async (id: string) => (await env.DB.prepare("SELECT 1 FROM submissions WHERE id = ?").bind(id).first()) !== null;
-
-async function inviteOperator(owner: Api, email: string): Promise<Api> {
-  const res = await owner("/team/invitations", { method: "POST", body: JSON.stringify({ role: "operator" }) });
-  const token = (await res.json<{ url: string }>()).url.split("/invito/")[1];
-  const operator = await signUp(email);
-  await operator(`/api/invitations/${token}/accept`, { method: "POST" });
-  return operator;
-}
 
 describe("nightly retention", () => {
   it("deletes requests older than each project's period, with their notification log", async () => {

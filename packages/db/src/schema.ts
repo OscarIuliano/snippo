@@ -98,6 +98,8 @@ export const submissions = sqliteTable(
     ipHash: text("ip_hash"),
     consentAt: text("consent_at").notNull(),
     idempotencyKey: text("idempotency_key"),
+    /** Made by "Invia prova" in Notifiche: shown with a label, never counted in stats, usage or capacity. */
+    isTest: integer("is_test", { mode: "boolean" }).notNull().default(false),
     ...timestamps,
   },
   (t) => [

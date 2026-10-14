@@ -4,6 +4,7 @@ import { useState } from "react";
 import { canManageProjects, formatBooking, submissionStatuses, type FlowDefinition, type ReplyOutcome, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
 import { Icon } from "../components/Icon";
 import { NotifyCustomer } from "../components/NotifyCustomer";
+import { TestBadge } from "../components/TestBadge";
 import { Alert, Button, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
 import { msg, useFormat, useI18n, useT } from "../i18n";
@@ -59,6 +60,7 @@ export function InboxPage({ projectId }: { projectId: string }) {
               {handled.outcome === "confirmed"
                 ? t("Richiesta di {name} confermata.", { name: handled.submission.contactName ?? t("Senza nome") })
                 : t("Richiesta di {name} rifiutata.", { name: handled.submission.contactName ?? t("Senza nome") })}
+              {handled.submission.isTest && <TestBadge />}
               <span className="font-normal text-slate-500"> {t("Il cliente non lo sa ancora: avvisalo tu, il messaggio è già scritto.")}</span>
             </p>
             <button type="button" onClick={() => setHandled(null)} aria-label={t("Chiudi")} className="-m-1 rounded p-1 text-slate-400 hover:text-slate-700">
@@ -144,6 +146,7 @@ function SubmissionCard({
         <div className="min-w-0">
           <p className="font-semibold">
             {s.contactName ?? t("Senza nome")}
+            {s.isTest && <TestBadge />}
             {s.partySize ? <span className="font-normal text-slate-500"> · {s.partySize === 1 ? t("1 persona") : t("{count} persone", { count: s.partySize })}</span> : null}
           </p>
           {s.bookingAt && <p className="mt-0.5 text-sm font-medium text-brand-700">{formatBooking(s.bookingAt, intl)}</p>}

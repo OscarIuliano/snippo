@@ -476,7 +476,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 24 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
+L'MVP ha 25 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -513,5 +513,6 @@ L'MVP ha 24 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da
 | 31 | Dashboard | Lingue italiano e inglese (italiano di default) | Fatto | Preferenza sull'utente; errori dell'API ed email dell'account nella sua lingua; `pnpm test` controlla che ogni testo abbia l'inglese. Il widget per ora resta in italiano |
 | 32 | Dashboard | Impostazioni del progetto: rinomina ed eliminazione | Fatto | Titolare e amministratori; per eliminare si riscrive il nome del progetto. Si cancellano tutti i dati e il widget smette di comparire sui siti |
 | 33 | Area privata | "Avvisa il cliente" dopo Conferma o Rifiuta: WhatsApp, email o chiamata con il messaggio già scritto | Fatto | Il messaggio parte dal telefono o dalla casella dell'azienda (link `wa.me` e `mailto`), quindi niente costi e niente verifica Meta. Testi per ristorante, appuntamenti e richieste info, modificabili prima dell'invio. Anche nella pagina che si apre dalla notifica |
+| 34 | Notifiche | "Invia prova" crea una richiesta di prova, segnata come Prova in Richieste e Calendario, con la notifica vera (Conferma/Rifiuta) | Fatto | Il cliente di prova è l'azienda stessa (il suo numero WhatsApp e la sua email). Non conta in statistiche, uso del piano e posti disponibili; si cancella da sola dopo 7 giorni |
 
 Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

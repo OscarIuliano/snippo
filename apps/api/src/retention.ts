@@ -1,9 +1,10 @@
 // Nightly clean-up (Cron Trigger): personal data is kept only as long as each project chose,
 // plus expired sessions and invitations. Plain SQL: one statement per kind of data.
 
-/** Submissions past their project's retention period. */
+/** Submissions past their project's retention period, and test requests after a week. */
 const EXPIRED_SUBMISSIONS = `SELECT s.id FROM submissions s JOIN projects p ON p.id = s.project_id
-  WHERE s.created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-' || p.retention_months || ' months')`;
+  WHERE s.created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-' || p.retention_months || ' months')
+     OR (s.is_test = 1 AND s.created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-7 days'))`;
 
 export interface RetentionReport {
   submissions: number;

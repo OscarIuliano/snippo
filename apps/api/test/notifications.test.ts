@@ -83,18 +83,32 @@ describe("notification delivery", () => {
     expect(await deliveries(api, projectId)).toEqual([]);
   });
 
-  it("sends a test notification from the dashboard", async () => {
+  it("sends a test notification as a test request, shown in Richieste and kept out of the counts", async () => {
     const api = await signUp("test-send@example.com");
     const projectId = await createProject(api);
-    const [channel] = await (await api(`/projects/${projectId}/channels`)).json<ChannelRow[]>();
+    await api(`/projects/${projectId}/channels`, { method: "POST", body: JSON.stringify({ type: "whatsapp", target: "+393330000001" }) });
+    const [email] = await (await api(`/projects/${projectId}/channels`)).json<ChannelRow[]>();
+    const log = vi.spyOn(console, "log");
 
-    const res = await api(`/projects/${projectId}/channels/${channel!.id}/test`, { method: "POST" });
+    const res = await api(`/projects/${projectId}/channels/${email!.id}/test`, { method: "POST" });
     expect(res.status).toBe(202);
-    const { deliveryId } = await res.json<{ deliveryId: string }>();
-    expect((await deliveries(api, projectId))[0]).toMatchObject({ id: deliveryId, submissionId: null });
-
+    const { deliveryId, submissionId } = await res.json<{ deliveryId: string; submissionId: string }>();
     await consume({ kind: "test", deliveryId });
-    expect((await deliveries(api, projectId))[0]).toMatchObject({ id: deliveryId, status: "sent" });
+
+    // Only the tested channel is notified, with the real Conferma / Rifiuta links.
+    expect(await deliveries(api, projectId)).toEqual([expect.objectContaining({ id: deliveryId, submissionId, isTest: true, channelType: "email", status: "sent" })]);
+    const output = log.mock.calls.flat().join("\n");
+    expect(output).toContain("[Prova] Nuova richiesta: Anna Rossi");
+    expect(output).toContain("Richiesta di prova per Trattoria da Mario");
+    expect(output).toContain("/v1/actions/");
+    log.mockRestore();
+
+    // The customer is the business itself: its own WhatsApp number and email.
+    const [request] = (await (await api(`/projects/${projectId}/submissions`)).json<SubmissionsPage>()).items;
+    expect(request).toMatchObject({ id: submissionId, isTest: true, status: "new", contactName: "Anna Rossi", contactPhone: "+39 333 000 0001", contactEmail: "test-send@example.com", partySize: 2 });
+
+    const billing = await (await api("/billing")).json<{ usage: { submissionsThisMonth: number } }>();
+    expect(billing.usage.submissionsThisMonth).toBe(0);
   });
 });
 

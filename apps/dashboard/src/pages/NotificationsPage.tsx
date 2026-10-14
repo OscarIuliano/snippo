@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { normalizePhone, type ChannelRow, type ChannelType, type DeliveryRow } from "@snippo/shared";
 import { Icon, type IconName } from "../components/Icon";
@@ -18,7 +19,7 @@ const formatTarget = (target: string) => {
   return it ? `+39 ${it[1]} ${it[2]} ${it[3]}` : target;
 };
 
-const requestLabel = (t: Translate, d: DeliveryRow) => (d.submissionId ? (d.contactName ?? t("Senza nome")) : t("Prova"));
+const requestLabel = (t: Translate, d: DeliveryRow) => (d.isTest ? t("Prova") : (d.contactName ?? t("Senza nome")));
 
 const deliveryStatus: Record<DeliveryRow["status"], { label: string; className: string }> = {
   pending: { label: msg("In invio"), className: "bg-amber-50 text-amber-800 ring-amber-200" },
@@ -64,7 +65,10 @@ function ChannelsCard({ projectId }: { projectId: string }) {
     onSuccess: refresh,
   });
   const remove = useMutation({ mutationFn: (id: string) => api(`/projects/${projectId}/channels/${id}`, { method: "DELETE" }), onSuccess: refresh });
-  const test = useMutation({ mutationFn: (id: string) => api(`/projects/${projectId}/channels/${id}/test`, { method: "POST" }), onSuccess: refresh });
+  const test = useMutation({
+    mutationFn: (id: string) => api<{ submissionId: string | null }>(`/projects/${projectId}/channels/${id}/test`, { method: "POST" }),
+    onSuccess: () => Promise.all([refresh(), queryClient.invalidateQueries({ queryKey: ["submissions", projectId] }), queryClient.invalidateQueries({ queryKey: ["me"] })]),
+  });
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -103,6 +107,15 @@ function ChannelsCard({ projectId }: { projectId: string }) {
           </li>
         ))}
       </ul>
+
+      {test.data?.submissionId && (
+        <p role="status" className="mt-3 rounded-lg bg-violet-50 px-3 py-2 text-sm text-violet-900 ring-1 ring-violet-200">
+          {t("Notifica di prova inviata. La richiesta di prova è anche in Richieste, segnata come Prova: provala con Conferma o Rifiuta.")}{" "}
+          <Link to="/progetti/$projectId/richieste" params={{ projectId }} className="font-medium underline">
+            {t("Apri le richieste")}
+          </Link>
+        </p>
+      )}
 
       <form onSubmit={onSubmit} className="mt-4 flex flex-wrap gap-2">
         <select

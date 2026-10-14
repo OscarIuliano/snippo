@@ -74,6 +74,7 @@ import {
 } from "@snippo/shared";
 import type { z } from "zod";
 import { accountDeletionPlan, deleteProjectStatements } from "./account";
+import { createTestRequest } from "./notifications/test-request";
 import { nowIn, slotSteps } from "./availability";
 import { createAuth } from "./auth";
 import { createInvitationToken } from "./invitations";
@@ -357,6 +358,7 @@ const toSubmissionRow = (s: typeof submissions.$inferSelect): SubmissionRow => (
   bookingAt: s.bookingAt,
   partySize: s.partySize,
   createdAt: s.createdAt,
+  isTest: s.isTest,
 });
 
 dashboardRoutes.get("/projects/:id/submissions", async (c) => {
@@ -524,10 +526,12 @@ dashboardRoutes.post("/projects/:id/channels/:channelId/test", async (c) => {
   const owned = await ownedChannel(c, c.req.param("id"), c.req.param("channelId"));
   if (!owned) return problem(c, 404, "Canale non trovato");
 
+  // The test arrives as a real request, marked as a test, so Conferma / Rifiuta can be tried too.
+  const submissionId = await createTestRequest(c.var.db, owned.project, owned.channel, c.var.user.email);
   const deliveryId = uuidv7();
-  await c.var.db.insert(notificationDeliveries).values({ id: deliveryId, channelId: owned.channel.id });
+  await c.var.db.insert(notificationDeliveries).values({ id: deliveryId, channelId: owned.channel.id, submissionId });
   await c.env.NOTIFICATIONS.send({ kind: "test", deliveryId });
-  return c.json({ deliveryId }, 202);
+  return c.json({ deliveryId, submissionId }, 202);
 });
 
 dashboardRoutes.get("/projects/:id/deliveries", async (c) => {
@@ -535,7 +539,7 @@ dashboardRoutes.get("/projects/:id/deliveries", async (c) => {
   if (!project) return problem(c, 404, "Progetto non trovato");
 
   const rows = await c.var.db
-    .select({ delivery: notificationDeliveries, channel: notificationChannels, contactName: submissions.contactName })
+    .select({ delivery: notificationDeliveries, channel: notificationChannels, contactName: submissions.contactName, isTest: submissions.isTest })
     .from(notificationDeliveries)
     .innerJoin(notificationChannels, eq(notificationChannels.id, notificationDeliveries.channelId))
     .leftJoin(submissions, eq(submissions.id, notificationDeliveries.submissionId))
@@ -543,12 +547,13 @@ dashboardRoutes.get("/projects/:id/deliveries", async (c) => {
     .orderBy(desc(notificationDeliveries.id))
     .limit(20);
 
-  const body: DeliveryRow[] = rows.map(({ delivery, channel, contactName }) => ({
+  const body: DeliveryRow[] = rows.map(({ delivery, channel, contactName, isTest }) => ({
     id: delivery.id,
     channelType: channel.type,
     target: channel.target,
     submissionId: delivery.submissionId,
     contactName,
+    isTest: !delivery.submissionId || Boolean(isTest),
     status: delivery.status,
     attempts: delivery.attempts,
     lastError: delivery.lastError,
@@ -642,7 +647,7 @@ dashboardRoutes.get("/projects/:id/stats", async (c) => {
     db
       .select({ createdAt: submissions.createdAt, status: submissions.status })
       .from(submissions)
-      .where(and(eq(submissions.projectId, project.id), gte(submissions.createdAt, addDays(from, -1)))),
+      .where(and(eq(submissions.projectId, project.id), eq(submissions.isTest, false), gte(submissions.createdAt, addDays(from, -1)))),
     widget.activeFlowVersionId
       ? db.query.flowVersions.findFirst({ where: eq(flowVersions.id, widget.activeFlowVersionId) })
       : undefined,
@@ -802,7 +807,7 @@ dashboardRoutes.get("/billing", async (c) => {
   const row = await c.env.DB.prepare(
     `SELECT
        (SELECT count(*) FROM projects WHERE organization_id = ?1) AS projects,
-       (SELECT count(*) FROM submissions WHERE project_id IN (SELECT id FROM projects WHERE organization_id = ?1) AND created_at >= ?2) AS submissions,
+       (SELECT count(*) FROM submissions WHERE project_id IN (SELECT id FROM projects WHERE organization_id = ?1) AND created_at >= ?2 AND is_test = 0) AS submissions,
        (SELECT count(*) FROM memberships WHERE organization_id = ?1) AS members`,
   )
     .bind(orgId, monthStart)

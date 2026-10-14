@@ -5,6 +5,7 @@ import { Alert, Button, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
 import { msg, useFormat, useI18n, useT } from "../i18n";
 import { calendarQuery, projectQuery } from "../lib/queries";
+import { TestBadge } from "../components/TestBadge";
 import { statusInfo } from "../lib/templates";
 
 /** Formatters of this page in the user's language. */
@@ -240,6 +241,7 @@ function AgendaItem({ projectId, submission: s }: { projectId: string; submissio
         <div className="min-w-0">
           <p className="truncate font-medium">
             {s.contactName ?? t("Senza nome")}
+            {s.isTest && <TestBadge />}
             {s.partySize ? <span className="font-normal text-slate-500"> · {t("{count} pers.", { count: s.partySize })}</span> : null}
           </p>
           {s.contactPhone && (

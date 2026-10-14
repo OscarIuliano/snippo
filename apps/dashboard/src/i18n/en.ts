@@ -445,4 +445,7 @@ export const en: Record<string, string> = {
   "Richiesta di {name} confermata.": "{name}'s request confirmed.",
   "Richiesta di {name} rifiutata.": "{name}'s request declined.",
   "Il cliente non lo sa ancora: avvisalo tu, il messaggio è già scritto.": "The customer doesn't know yet: let them know, the message is already written.",
+  // Test request
+  "Notifica di prova inviata. La richiesta di prova è anche in Richieste, segnata come Prova: provala con Conferma o Rifiuta.": "Test notification sent. The test request is also in Requests, marked as Test: try it with Confirm or Decline.",
+  "Apri le richieste": "Open requests",
 };

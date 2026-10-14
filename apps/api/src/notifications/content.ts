@@ -22,6 +22,8 @@ interface SubmissionForNotification {
   bookingAt: string | null;
   partySize: number | null;
   answers: Record<string, string>;
+  /** Made by "Invia prova": said in the subject and the first line. */
+  isTest?: boolean;
 }
 
 interface Links {
@@ -49,6 +51,7 @@ export function buildSubmissionNotification(
   links: Links,
 ): NotificationContent {
   const headline = submissionHeadline(submission);
+  const intro = submission.isTest ? `Richiesta di prova per ${projectName}` : `Nuova richiesta per ${projectName}`;
   const prompt = (key: string) => flow?.steps.find((s) => s.key === key)?.prompt ?? key;
   const rows: [string, string][] = [
     ["Telefono", submission.contactPhone],
@@ -57,7 +60,7 @@ export function buildSubmissionNotification(
   ].filter((row): row is [string, string] => Boolean(row[1]));
 
   const text = [
-    `Nuova richiesta per ${projectName}`,
+    intro,
     "",
     headline,
     ...rows.map(([label, value]) => `${label}: ${value}`),
@@ -67,7 +70,7 @@ export function buildSubmissionNotification(
     `Apri nella dashboard: ${links.dashboard}`,
   ].join("\n");
 
-  const html = emailLayout(`<p style="margin:0;color:#64748b;font-size:14px">Nuova richiesta per ${escapeHtml(projectName)}</p>
+  const html = emailLayout(`<p style="margin:0;color:#64748b;font-size:14px">${escapeHtml(intro)}</p>
 <h1 style="margin:8px 0 16px;font-size:20px">${escapeHtml(headline)}</h1>
 <table style="width:100%;border-collapse:collapse;font-size:14px">${rows
     .map(([label, value]) => `<tr><td style="padding:4px 12px 4px 0;color:#64748b;vertical-align:top">${escapeHtml(label)}</td><td style="padding:4px 0">${escapeHtml(value)}</td></tr>`)
@@ -77,12 +80,12 @@ export function buildSubmissionNotification(
 
   const details = [headline, ...rows.map(([label, value]) => (label === "Telefono" || label === "Email" ? value : `${label}: ${value}`))].join(" · ");
   return {
-    subject: `Nuova richiesta: ${headline}`,
+    subject: `${submission.isTest ? "[Prova] " : ""}Nuova richiesta: ${headline}`,
     text,
     html,
-    whatsappText: `Nuova richiesta per ${projectName}: ${details}`,
+    whatsappText: `${intro}: ${details}`,
     // The buttons of the template hold ${PUBLIC_API_URL}/v1/actions/; only the token varies.
-    whatsapp: { template: "newSubmission", params: [projectName, details], buttonParams: [lastSegment(links.confirm), lastSegment(links.reject)] },
+    whatsapp: { template: "newSubmission", params: [submission.isTest ? `${projectName} (prova)` : projectName, details], buttonParams: [lastSegment(links.confirm), lastSegment(links.reject)] },
   };
 }
 

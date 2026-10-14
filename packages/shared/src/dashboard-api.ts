@@ -78,6 +78,8 @@ export interface SubmissionRow {
   bookingAt: string | null;
   partySize: number | null;
   createdAt: string;
+  /** Made by "Invia prova" in Notifiche. */
+  isTest: boolean;
 }
 
 export interface SubmissionsPage {

@@ -28,6 +28,7 @@ header {
 .error { background: #fef2f2; color: #b91c1c; align-self: stretch; max-width: none; }
 .review { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; font-size: 13px; }
 .review label { display: flex; gap: 8px; align-items: flex-start; }
+.review label a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .choices, .composer { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border-top: 1px solid #e5e7eb; }
 .choices button { border: 1px solid var(--snippo-primary); color: var(--snippo-primary); background: #fff; border-radius: 999px; padding: 6px 14px; }
 .composer input { flex: 1; min-width: 0; padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 10px; font: inherit; }

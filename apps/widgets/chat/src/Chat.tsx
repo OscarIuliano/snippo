@@ -157,7 +157,13 @@ export function Chat({ api, config, onClose, onSubmitted, track }: Props) {
           <div class="review">
             <label>
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.currentTarget.checked)} />
-              Acconsento al trattamento dei dati per gestire la richiesta.
+              {config.privacyUrl ? (
+                <span>
+                  Ho letto l'<a href={config.privacyUrl} target="_blank" rel="noopener noreferrer">informativa privacy</a> e acconsento al trattamento dei dati per gestire la richiesta.
+                </span>
+              ) : (
+                "Acconsento al trattamento dei dati per gestire la richiesta."
+              )}
             </label>
             <button class="primary" disabled={!consent || phase === "sending" || (needsToken && !token)} onClick={send}>
               {phase === "sending" ? "Invio…" : needsToken && !token ? "Verifica anti-spam…" : "Invia richiesta"}

@@ -80,6 +80,7 @@ widgetRoutes.get("/config", async (c) => {
     theme: widget.theme as WidgetConfig["theme"],
     flowVersionId: flowVersion.id,
     flow: flowDefinitionSchema.parse(flowVersion.definition),
+    ...(project.privacyUrl ? { privacyUrl: project.privacyUrl } : {}),
     ...(c.env.TURNSTILE_SITE_KEY && c.env.CHALLENGE_URL
       ? { challenge: { url: c.env.CHALLENGE_URL, siteKey: c.env.TURNSTILE_SITE_KEY } }
       : {}),

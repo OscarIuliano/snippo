@@ -193,6 +193,11 @@ export function AppShell() {
               </Link>
             </li>
           )}
+          <li>
+            <Link to="/aiuto" onClick={close} className={navLink} activeProps={navActive}>
+              <Icon name="help" className="size-4.5 shrink-0" /> {t("Aiuto")}
+            </Link>
+          </li>
         </ul>
       </div>
 

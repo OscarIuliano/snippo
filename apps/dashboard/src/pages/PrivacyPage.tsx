@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
-import type { PrivacyMatch, SubmissionStatus } from "@snippo/shared";
-import { Alert, Button, Card, Input, PageHeader } from "../components/ui";
+import { normalizeUrl, type PrivacyMatch, type SubmissionStatus } from "@snippo/shared";
+import { Alert, Button, Card, Field, Input, PageHeader } from "../components/ui";
 import { api } from "../lib/api";
 import { statusInfo } from "../lib/templates";
 import { useFormat, useT } from "../i18n";
@@ -13,16 +13,85 @@ export function PrivacyPage({ projectId }: { projectId: string }) {
   return (
     <div className="max-w-3xl space-y-6">
       <PageHeader title={t("Privacy")} description={t("Per quanto tempo conservi le richieste, e cosa fare quando una persona chiede i suoi dati o la cancellazione.")} />
+      <PolicyCard projectId={projectId} />
       <RetentionCard projectId={projectId} />
       <PersonCard projectId={projectId} />
     </div>
   );
 }
 
+type PrivacySettings = { retentionMonths: number; privacyUrl: string | null };
+const privacyQuery = (projectId: string) => ({
+  queryKey: ["privacy", projectId],
+  queryFn: () => api<PrivacySettings>(`/projects/${projectId}/privacy`),
+});
+
+/** The business's own privacy notice: the widget links it next to the consent box. */
+function PolicyCard({ projectId }: { projectId: string }) {
+  const t = useT();
+  const queryClient = useQueryClient();
+  const current = useQuery(privacyQuery(projectId));
+  const [url, setUrl] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (current.data && url === null) setUrl(current.data.privacyUrl ?? "");
+  }, [current.data, url]);
+
+  const next = normalizeUrl(url ?? "") || null;
+  const save = useMutation({
+    mutationFn: () => api(`/projects/${projectId}/privacy-policy`, { method: "PUT", body: { privacyUrl: next } }),
+    onSuccess: async () => {
+      setUrl(next ?? "");
+      setSaved(true);
+      await queryClient.invalidateQueries({ queryKey: ["privacy", projectId] });
+    },
+  });
+  const missing = current.data && !current.data.privacyUrl;
+
+  return (
+    <Card
+      title={t("La tua informativa privacy")}
+      description={t("I dati che arrivano dalla chat sono dei tuoi clienti e il titolare sei tu: chi scrive deve poter leggere come li usi. Il widget mostra il link accanto alla casella del consenso.")}
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          save.mutate();
+        }}
+        className="flex flex-wrap items-end gap-3"
+      >
+        <div className="min-w-56 flex-1">
+          <Field label={t("Indirizzo della pagina")}>
+            <Input
+              value={url ?? ""}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setSaved(false);
+              }}
+              placeholder="https://www.tuosito.it/privacy"
+              inputMode="url"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </Field>
+        </div>
+        <Button type="submit" disabled={save.isPending || url === null || next === (current.data?.privacyUrl ?? null)}>{t("Salva")}</Button>
+      </form>
+      {saved && <p className="mt-3 text-sm text-emerald-700">{next ? t("Salvato: il link compare nel widget entro un minuto.") : t("Link rimosso.")}</p>}
+      {missing && !saved && (
+        <p className="mt-3 text-sm text-amber-800">
+          {t("Manca il link: il widget chiede il consenso, ma chi scrive non può leggere la tua informativa. Se il tuo sito non ne ha una, chiedila a chi lo gestisce o al tuo consulente.")}
+        </p>
+      )}
+      {(current.error || save.error) && <div className="mt-3"><Alert>{(current.error ?? save.error)!.message}</Alert></div>}
+    </Card>
+  );
+}
+
 function RetentionCard({ projectId }: { projectId: string }) {
   const t = useT();
   const queryClient = useQueryClient();
-  const current = useQuery({ queryKey: ["privacy", projectId], queryFn: () => api<{ retentionMonths: number }>(`/projects/${projectId}/privacy`) });
+  const current = useQuery(privacyQuery(projectId));
   const [months, setMonths] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
   useEffect(() => {

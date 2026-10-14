@@ -12,6 +12,7 @@ export const apiEn: Record<string, string> = {
   "Dominio non valido": "Invalid domain",
   "Errore interno": "Internal error",
   "Il periodo va da 1 a 60 mesi": "The period goes from 1 to 60 months",
+  "Indirizzo della pagina non valido": "Page address not valid",
   "Il ruolo del titolare non si può cambiare": "The owner's role cannot change",
   "Il tuo ruolo non può accedere ai dati personali in blocco": "Your role cannot access personal data in bulk",
   "Il tuo ruolo non può eliminare richieste": "Your role cannot delete requests",

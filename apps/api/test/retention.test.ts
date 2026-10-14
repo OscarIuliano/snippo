@@ -1,8 +1,8 @@
-import { env } from "cloudflare:workers";
+import { env, exports } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-import type { ChannelRow, PrivacyMatch } from "@snippo/shared";
+import type { ChannelRow, PrivacyMatch, ProjectDetail, WidgetConfig } from "@snippo/shared";
 import { runRetention } from "../src/retention";
-import { createProject, signUp, submitBooking, type Api } from "./helpers";
+import { PUBLIC_API, SITE_ORIGIN, createProject, signUp, submitBooking, type Api } from "./helpers";
 
 const ageSubmission = (id: string, months: number) =>
   env.DB.prepare(`UPDATE submissions SET created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-${months} months') WHERE id = ?`).bind(id).run();
@@ -91,5 +91,32 @@ describe("privacy requests", () => {
     expect((await owner(`/projects/${projectId}/privacy`, { method: "PUT", body: JSON.stringify({ retentionMonths: 0 }) })).status).toBe(422);
     expect((await owner(`/submissions/${submissionId}`, { method: "DELETE" })).status).toBe(204);
     expect(await exists(submissionId)).toBe(false);
+  });
+});
+
+describe("privacy notice link", () => {
+  it("is saved by owners and shown in the widget config", async () => {
+    const api = await signUp("privacy-link@example.com");
+    const projectId = await createProject(api);
+    const key = (await (await api(`/projects/${projectId}`)).json<ProjectDetail>()).widget.publicKey;
+    const config = async () =>
+      (await exports.default.fetch(`${PUBLIC_API}/v1/widget/config?key=${key}`, { headers: { Origin: SITE_ORIGIN } })).json<WidgetConfig>();
+    const put = (privacyUrl: unknown, client = api) =>
+      client(`/projects/${projectId}/privacy-policy`, { method: "PUT", body: JSON.stringify({ privacyUrl }) });
+
+    expect((await config()).privacyUrl).toBeUndefined();
+    expect((await put("https://trattoria-mario.it/privacy")).status).toBe(204);
+    expect((await (await api(`/projects/${projectId}/privacy`)).json<{ privacyUrl: string }>()).privacyUrl).toBe("https://trattoria-mario.it/privacy");
+    expect((await config()).privacyUrl).toBe("https://trattoria-mario.it/privacy");
+
+    // Only web pages: a script link would run on the business's site.
+    expect((await put("javascript:alert(1)")).status).toBe(422);
+    expect((await put("trattoria-mario.it/privacy")).status).toBe(422);
+
+    const operator = await inviteOperator(api, "privacy-link-operator@example.com");
+    expect((await put(null, operator)).status).toBe(403);
+
+    expect((await put(null)).status).toBe(204);
+    expect((await config()).privacyUrl).toBeUndefined();
   });
 });

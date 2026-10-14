@@ -478,7 +478,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 25 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
+L'MVP ha 27 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -494,7 +494,7 @@ L'MVP ha 25 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da
 | 10 | Repository | Merge dei branch su `main` | Fatto | Allineato l'8 ottobre; da qui un branch e una PR per attività |
 | 11 | Notifiche | Email reali con Cloudflare Email Service | In attesa di te | Serve il dominio su Cloudflare (n. 13); poi si attiva l'invio e si collega `sendEmail`. Fino ad allora le email finiscono nel log del Worker |
 | 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Codice pronto: invio con template e script per crearli. L'account Meta è bloccato (errore 131031): va sbloccato, poi servono il token su staging e l'approvazione dei template |
-| 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet |
+| 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet. Con il dominio su Cloudflare, attivare Email Routing per `supporto@` e `privacy@` verso la tua casella |
 | 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
 | 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Bozze pubblicate sulla landing (`/privacy`, `/termini`, `/dpa`) e accettate all'iscrizione. Da completare titolare, indirizzo e foro (`apps/web/src/legal.ts`); revisione legale con i primi clienti paganti |
 | 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
@@ -519,5 +519,7 @@ L'MVP ha 25 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da
 | 35 | Notifiche | Testi di "Avvisa il cliente" personalizzabili per progetto | Da fare | Piani a pagamento |
 | 36 | Notifiche | Promemoria al cliente il giorno prima | Da fare | Dopo le email reali (n. 11); riduce chi prenota e non si presenta |
 | 37 | Pagamenti | Quota mensile di notifiche WhatsApp per piano, oltre la quota a consumo | Da fare | Con Paddle (n. 24) e WhatsApp reale (n. 12) |
+| 38 | Privacy | Link all'informativa privacy dell'azienda nel widget, accanto al consenso | Fatto | Si inserisce nella pagina Privacy; senza link la pagina avvisa che manca |
+| 39 | Supporto | Pagina Supporto sulla landing (contatto e risposte rapide) e voce Aiuto nella dashboard | Fatto | "Scrivi al supporto" apre l'email con account e progetti già scritti; l'indirizzo `supporto@snippo.io` funziona con il dominio (n. 13) |
 
 Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

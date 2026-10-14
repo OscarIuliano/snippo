@@ -6,9 +6,7 @@ import { Icon, Logo } from "../components/Icon";
 import { Alert, Button, Field, Input, Notice, cx } from "../components/ui";
 import { fill, useI18n, useT, type Translate } from "../i18n";
 import { authClient } from "../lib/auth";
-
-/** The public site, where the legal pages live. */
-const SITE_URL = import.meta.env.VITE_SITE_URL ?? "https://snippo.io";
+import { SITE_URL } from "../lib/site";
 
 export interface AuthSearch {
   /** Token of the invitation the user came from, to go back to it after signing in. */

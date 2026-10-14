@@ -29,6 +29,8 @@ export const projects = sqliteTable(
     slotCapacity: integer("slot_capacity"),
     /** Requests older than this are deleted every night (GDPR storage limitation). */
     retentionMonths: integer("retention_months").notNull().default(24),
+    /** The business's own privacy notice, linked next to the consent box in the widget. */
+    privacyUrl: text("privacy_url"),
     ...timestamps,
   },
   (t) => [index("projects_org_idx").on(t.organizationId)],

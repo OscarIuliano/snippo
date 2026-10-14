@@ -6,9 +6,11 @@ import Layout from "./Layout.astro";
 interface Props {
   title: string;
   description: string;
+  /** Legal texts show their date; the support page does not. */
+  dated?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, dated = true } = Astro.props;
 const appUrl = import.meta.env.PUBLIC_APP_URL ?? "https://app.snippo.io";
 ---
 
@@ -27,14 +29,14 @@ const appUrl = import.meta.env.PUBLIC_APP_URL ?? "https://app.snippo.io";
 
   <main class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
     <h1 class="text-3xl font-bold tracking-tight text-ink sm:text-4xl">{title}</h1>
-    <p class="mt-2 text-sm text-ink/55">Ultimo aggiornamento: {lastUpdated}</p>
+    {dated && <p class="mt-2 text-sm text-ink/55">Ultimo aggiornamento: {lastUpdated}</p>}
     <article class="legal mt-10">
       <slot />
     </article>
   </main>
 
   <footer class="border-t border-ink/5">
-    <nav class="mx-auto flex max-w-3xl flex-wrap gap-x-6 gap-y-2 px-4 py-8 text-sm text-ink/55 sm:px-6" aria-label="Documenti legali">
+    <nav class="mx-auto flex max-w-3xl flex-wrap gap-x-6 gap-y-2 px-4 py-8 text-sm text-ink/55 sm:px-6" aria-label="Link utili">
       {legalPages.map((page) => <a href={page.href} class="transition hover:text-ink">{page.title}</a>)}
       <a href="/" class="transition hover:text-ink">Torna a Snippo</a>
     </nav>
@@ -54,4 +56,8 @@ const appUrl = import.meta.env.PUBLIC_APP_URL ?? "https://app.snippo.io";
   .legal table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
   .legal th, .legal td { border-top: 1px solid color-mix(in oklab, var(--color-ink) 10%, transparent); padding: 0.5rem 0.75rem 0.5rem 0; text-align: left; vertical-align: top; }
   .legal th { font-weight: 600; color: var(--color-ink); }
+  .legal details { margin-top: 0.75rem; border-radius: 0.75rem; background: white; padding: 0.75rem 1rem; box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-ink) 8%, transparent); }
+  .legal summary { cursor: pointer; font-weight: 600; color: var(--color-ink); }
+  .legal details[open] summary { margin-bottom: 0.25rem; }
+  .legal ol { list-style: decimal; padding-left: 1.25rem; margin-top: 0.75rem; }
 </style>

@@ -1,0 +1,79 @@
+---
+import LegalLayout from "../layouts/LegalLayout.astro";
+import { supportEmail } from "../legal";
+
+const appUrl = import.meta.env.PUBLIC_APP_URL ?? "https://app.snippo.io";
+---
+
+<LegalLayout title="Supporto" dated={false} description="Come contattare Snippo e le risposte rapide ai problemi più comuni: widget, notifiche, domande, dati dei clienti.">
+  <h2 class="!mt-0">Scrivici</h2>
+  <p>
+    Scrivi a <a href={`mailto:${supportEmail}`}>{supportEmail}</a> con l'email del tuo account e il nome del progetto. Rispondiamo entro un giorno lavorativo,
+    di solito prima. Se sei già dentro Snippo, usa <strong>Aiuto</strong> nel menu: il messaggio parte con questi dati già scritti.
+  </p>
+
+  <h2>Risposte rapide</h2>
+
+  <details id="widget">
+    <summary>Il widget non compare sul mio sito</summary>
+    <ol>
+      <li>Controlla di aver incollato il codice della pagina <a href={appUrl}>Installazione</a> su tutte le pagine, prima di <code>&lt;/body&gt;</code>.</li>
+      <li>Nella pagina Widget controlla i domini: il widget risponde solo su quelli indicati e sui loro sottodomini. Se il sito ha un altro indirizzo, aggiungilo.</li>
+      <li>Ricarica la pagina svuotando la cache del browser. Se usi un plugin di cache (WordPress), svuota anche quello.</li>
+    </ol>
+  </details>
+
+  <details id="notifiche">
+    <summary>Non mi arrivano le notifiche</summary>
+    <ol>
+      <li>Nella pagina Notifiche controlla che il canale sia attivo e che l'indirizzo sia giusto.</li>
+      <li>Premi <strong>Invia prova</strong>: arriva una notifica e in Richieste compare una richiesta segnata come Prova.</li>
+      <li>Se l'email non arriva, guarda nello spam e aggiungi Snippo ai contatti.</li>
+    </ol>
+    <p>Le richieste restano comunque sempre in Richieste, anche se una notifica non arriva.</p>
+  </details>
+
+  <details id="domande">
+    <summary>Voglio cambiare le domande della chat</summary>
+    <p>
+      Nella pagina Domande aggiungi, modifichi, sposti o togli le domande, poi premi <strong>Salva le domande</strong>. Il widget usa le nuove domande entro un minuto;
+      le richieste già ricevute restano com'erano.
+    </p>
+  </details>
+
+  <details id="cliente">
+    <summary>Come rispondo al cliente dopo aver confermato o rifiutato?</summary>
+    <p>
+      In Richieste, sotto ogni richiesta gestita, trovi <strong>Avvisa il cliente</strong>: apre WhatsApp, l'email o una chiamata dal tuo telefono con il messaggio già
+      scritto. Prima di inviarlo puoi modificarlo.
+    </p>
+  </details>
+
+  <details id="privacy">
+    <summary>Un cliente chiede di vedere o cancellare i suoi dati</summary>
+    <p>
+      Nella pagina Privacy cerca il cliente per nome, telefono o email: puoi scaricare le sue richieste o cancellarle. Nella stessa pagina scegli per quanto tempo
+      conservare le richieste e inserisci il link alla tua informativa privacy, che il widget mostra accanto al consenso.
+    </p>
+  </details>
+
+  <details id="team">
+    <summary>Voglio far usare Snippo a un collega</summary>
+    <p>
+      Nella pagina Team crea un invito e mandagli il link. Scegli il ruolo: l'operatore vede richieste e calendario senza toccare le impostazioni.
+    </p>
+  </details>
+
+  <details id="eliminare">
+    <summary>Voglio eliminare un progetto o il mio account</summary>
+    <p>
+      Il progetto si elimina dalla pagina Progetto, l'account dalla pagina Account. La cancellazione è immediata e non si può annullare.
+      Se nel team ci sono altre persone, prima passi la proprietà a una di loro.
+    </p>
+  </details>
+
+  <h2>Documenti</h2>
+  <p>
+    <a href="/privacy">Informativa privacy</a> · <a href="/termini">Termini di servizio</a> · <a href="/dpa">Accordo sul trattamento dei dati</a>
+  </p>
+</LegalLayout>

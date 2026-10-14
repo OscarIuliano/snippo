@@ -8,9 +8,13 @@ export const provider = {
   court: "[Città del foro competente]",
 };
 
+/** Where customers write for help. Like privacy@, it works once snippo.io forwards it (Email Routing). */
+export const supportEmail = "supporto@snippo.io";
+
 export const lastUpdated = "14 ottobre 2026";
 
 export const legalPages = [
+  { href: "/supporto", title: "Supporto" },
   { href: "/privacy", title: "Privacy" },
   { href: "/termini", title: "Termini di servizio" },
   { href: "/dpa", title: "Trattamento dei dati (DPA)" },

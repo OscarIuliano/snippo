@@ -43,6 +43,7 @@ import {
   flowDefinitionSchema,
   flowProblems,
   isIsoDate,
+  privacyPolicySchema,
   retentionSchema,
   submissionStatuses,
   templates,
@@ -842,7 +843,17 @@ dashboardRoutes.get("/account/deletion", async (c) => {
 dashboardRoutes.get("/projects/:id/privacy", async (c) => {
   const project = await ownedProject(c, c.req.param("id"));
   if (!project) return problem(c, 404, "Progetto non trovato");
-  return c.json({ retentionMonths: project.retentionMonths });
+  return c.json({ retentionMonths: project.retentionMonths, privacyUrl: project.privacyUrl });
+});
+
+dashboardRoutes.put("/projects/:id/privacy-policy", async (c) => {
+  const input = await parseBody(c, privacyPolicySchema);
+  if (!input) return problem(c, 422, "Indirizzo della pagina non valido");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+
+  await c.var.db.update(projects).set({ privacyUrl: input.privacyUrl, updatedAt: new Date().toISOString() }).where(eq(projects.id, project.id));
+  return c.body(null, 204);
 });
 
 dashboardRoutes.put("/projects/:id/privacy", async (c) => {

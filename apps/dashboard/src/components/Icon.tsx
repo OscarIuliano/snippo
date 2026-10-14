@@ -33,7 +33,7 @@ export function Icon({ name, className = "size-5" }: { name: IconName; className
   );
 }
 
-/** The Snippo mark: the chat bubble on an indigo tile, as on the landing page. */
+/** The Snippo mark: the chat bubble on an orange tile, as on the landing page. */
 export function Logo({ className = "" }: { className?: string }) {
   return (
     <span className={`flex items-center gap-2 text-lg font-bold tracking-tight text-slate-900 ${className}`}>

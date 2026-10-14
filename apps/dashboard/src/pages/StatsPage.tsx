@@ -6,8 +6,8 @@ import { useFormat, useI18n, useT } from "../i18n";
 import { statsQuery } from "../lib/queries";
 
 // Emphasis form: the requests (the point) in the brand colour, the opens (context) in gray.
-// Both validated: contrast >= 3:1 on white, worst colour-blind ΔE 11.7 (tritan).
-const COLOR_REQUESTS = "#4f46e5";
+// Both validated: contrast >= 3:1 on white, worst colour-blind ΔE 15.6 (protan).
+const COLOR_REQUESTS = "#c94a0a";
 const COLOR_OPENS = "#64748b";
 const PERIODS = [7, 30, 90] as const;
 

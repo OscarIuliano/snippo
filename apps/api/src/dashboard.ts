@@ -227,7 +227,7 @@ dashboardRoutes.post("/projects", async (c) => {
       type: "chat",
       name: "Chat",
       publicKey: newPublicKey(),
-      theme: { title: input.name, primaryColor: "#4f46e5", position: "right" },
+      theme: { title: input.name, primaryColor: "#c94a0a", position: "right" },
     }),
   ]);
   await publishTemplate(db, widgetId, input.template);

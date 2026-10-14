@@ -76,7 +76,7 @@ export function buildSubmissionNotification(
     .map(([label, value]) => `<tr><td style="padding:4px 12px 4px 0;color:#64748b;vertical-align:top">${escapeHtml(label)}</td><td style="padding:4px 0">${escapeHtml(value)}</td></tr>`)
     .join("")}</table>
 <p style="margin:24px 0 0">${emailButton(links.confirm, "Conferma")} ${emailButton(links.reject, "Rifiuta", false)}</p>
-<p style="margin:24px 0 0;font-size:13px"><a href="${escapeHtml(links.dashboard)}" style="color:#4f46e5">Apri nella dashboard</a></p>`);
+<p style="margin:24px 0 0;font-size:13px"><a href="${escapeHtml(links.dashboard)}" style="color:#c94a0a">Apri nella dashboard</a></p>`);
 
   const details = [headline, ...rows.map(([label, value]) => (label === "Telefono" || label === "Email" ? value : `${label}: ${value}`))].join(" · ");
   return {

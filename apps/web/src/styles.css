@@ -1,26 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  /* Snippo indigo, with a fuchsia accent and a sky glow (chosen on 8 October 2026). */
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-200: #c7d2fe;
-  --color-brand-300: #a5b4fc;
-  --color-brand-400: #818cf8;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-brand-800: #3730a3;
-  --color-brand-900: #312e81;
+  /* Snippo orange, with yellow shades for accent and glow (chosen on 14 October 2026). 600 is the darkest
+     that still reads as orange with white text on it (4.7:1). */
+  --color-brand-50: #fff8ed;
+  --color-brand-100: #ffefd3;
+  --color-brand-200: #fedba6;
+  --color-brand-300: #fdc06d;
+  --color-brand-400: #fb9a3c;
+  --color-brand-500: #f7761a;
+  --color-brand-600: #c94a0a;
+  --color-brand-700: #ad3c0c;
+  --color-brand-800: #8a3110;
+  --color-brand-900: #6f2a11;
   /* Second hue (gradients, blobs) and a third glow, so the palette is more than one color. */
-  --color-accent-200: #f5d0fe;
-  --color-accent-400: #e879f9;
-  --color-accent-500: #d946ef;
-  --color-glow-200: #bae6fd;
-  --color-glow-400: #38bdf8;
-  /* Cool off-white page and deep indigo ink: less clinical than pure white and gray. */
-  --color-cream: #f8f8ff;
-  --color-ink: #15132b;
+  --color-accent-200: #fef3a0;
+  --color-accent-400: #fcd34d;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-glow-200: #ffe7b0;
+  --color-glow-400: #fbbf24;
+  /* Warm off-white page and deep brown ink: less clinical than pure white and gray. */
+  --color-cream: #fffaf2;
+  --color-ink: #21160d;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   --animate-float: float 6s ease-in-out infinite;
@@ -45,7 +47,7 @@
 html { scroll-behavior: smooth; }
 
 .text-gradient {
-  background: linear-gradient(100deg, var(--color-brand-700), var(--color-brand-500) 55%, var(--color-accent-500));
+  background: linear-gradient(100deg, var(--color-brand-700), var(--color-brand-600) 55%, var(--color-accent-600));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

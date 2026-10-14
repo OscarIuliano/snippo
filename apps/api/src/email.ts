@@ -23,18 +23,18 @@ export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
-/** The shared look of every Snippo email: white card on a light page, indigo buttons. */
+/** The shared look of every Snippo email: white card on a warm light page, orange buttons. */
 export function emailLayout(body: string): string {
-  return `<!doctype html><html lang="it"><body style="margin:0;padding:24px;background:#f8f8ff;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f172a">
+  return `<!doctype html><html lang="it"><body style="margin:0;padding:24px;background:#fffaf2;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#0f172a">
 <div style="max-width:520px;margin:0 auto">
-<p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#3730a3">snippo</p>
+<p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#8a3110">snippo</p>
 <div style="background:#ffffff;border-radius:16px;padding:24px;border:1px solid #e2e8f0">${body}</div>
 </div></body></html>`;
 }
 
 export function emailButton(href: string, label: string, primary = true): string {
   return `<a href="${escapeHtml(href)}" style="display:inline-block;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;${
-    primary ? "background:#4f46e5;color:#ffffff" : "background:#ffffff;color:#334155;border:1px solid #cbd5e1"
+    primary ? "background:#c94a0a;color:#ffffff" : "background:#ffffff;color:#334155;border:1px solid #cbd5e1"
   }">${escapeHtml(label)}</a>`;
 }
 

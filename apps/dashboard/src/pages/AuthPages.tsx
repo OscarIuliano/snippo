@@ -44,7 +44,7 @@ function AuthLayout({ title, subtitle, children, footer }: { title: string; subt
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-12">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 -right-24 size-[30rem] rounded-full bg-brand-200/50 blur-3xl" />
-        <div className="absolute -bottom-40 -left-32 size-[26rem] rounded-full bg-fuchsia-200/40 blur-3xl" />
+        <div className="absolute -bottom-40 -left-32 size-[26rem] rounded-full bg-yellow-200/40 blur-3xl" />
       </div>
       <LanguageSwitch />
       <div className="w-full max-w-sm">

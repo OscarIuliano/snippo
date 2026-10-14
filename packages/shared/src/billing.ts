@@ -18,7 +18,8 @@ export interface Plan {
     submissionsPerMonth: number;
     /** People in the organization, the owner included. */
     members: number;
-    whatsapp: boolean;
+    /** WhatsApp notifications included; beyond it they are billed by use (Meta charges per message). */
+    whatsappPerMonth: number;
   };
   /** What the plan adds, for the comparison on the billing page. */
   features: string[];
@@ -30,32 +31,40 @@ export const plans: Record<PlanId, Plan> = {
     name: "Free",
     monthly: 0,
     yearly: 0,
-    limits: { projects: 1, submissionsPerMonth: 50, members: 1, whatsapp: false },
-    features: ["1 progetto", "50 richieste al mese", "Notifiche via email", "Logo \"Powered by Snippo\" nel widget"],
+    limits: { projects: 1, submissionsPerMonth: 50, members: 1, whatsappPerMonth: 0 },
+    features: ["1 progetto", "50 richieste al mese", "Notifiche via email", "Avvisa il cliente con un tocco", 'Logo "Powered by Snippo" nel widget'],
   },
   starter: {
     id: "starter",
     name: "Starter",
-    monthly: 9,
-    yearly: 90,
-    limits: { projects: 1, submissionsPerMonth: 500, members: 2, whatsapp: false },
-    features: ["1 progetto", "500 richieste al mese", "Email a più destinatari", "Senza logo Snippo", "Statistiche ed export CSV"],
+    monthly: 13,
+    yearly: 130,
+    limits: { projects: 1, submissionsPerMonth: 500, members: 2, whatsappPerMonth: 100 },
+    features: [
+      "1 progetto",
+      "500 richieste al mese",
+      "100 notifiche WhatsApp al mese",
+      "Email di esito e promemoria al cliente",
+      "Testi dei messaggi personalizzabili",
+      "Senza logo Snippo",
+      "Statistiche ed export CSV",
+    ],
   },
   pro: {
     id: "pro",
     name: "Pro",
-    monthly: 29,
-    yearly: 290,
-    limits: { projects: 5, submissionsPerMonth: 3000, members: 5, whatsapp: true },
-    features: ["5 progetti", "3.000 richieste al mese", "Notifiche WhatsApp", "Team fino a 5 persone"],
+    monthly: 23,
+    yearly: 230,
+    limits: { projects: 5, submissionsPerMonth: 3000, members: 5, whatsappPerMonth: 300 },
+    features: ["5 progetti", "3.000 richieste al mese", "300 notifiche WhatsApp al mese", "Team fino a 5 persone", "Tutto quello dello Starter"],
   },
   agency: {
     id: "agency",
     name: "Agency",
-    monthly: 79,
-    yearly: 790,
-    limits: { projects: 25, submissionsPerMonth: 15000, members: 25, whatsapp: true },
-    features: ["25 progetti", "15.000 richieste al mese", "White label", "Più clienti in un solo account"],
+    monthly: 53,
+    yearly: 530,
+    limits: { projects: 25, submissionsPerMonth: 15000, members: 25, whatsappPerMonth: 1000 },
+    features: ["25 progetti", "15.000 richieste al mese", "1.000 notifiche WhatsApp al mese", "Team fino a 25 persone", "White label", "Più clienti in un solo account"],
   },
 };
 

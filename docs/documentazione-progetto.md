@@ -140,14 +140,16 @@ Sono tre i flussi da far funzionare per l'MVP: l'onboarding dell'azienda, la ric
 
 Il modello è freemium con abbonamento mensile. I prezzi sono un'ipotesi iniziale da validare con i primi clienti.
 
-| Piano | Prezzo/mese | Progetti | Richieste/mese | Canali notifica | Extra |
+| Piano | Prezzo/mese | Progetti | Richieste/mese | Notifiche WhatsApp/mese | Extra |
 | --- | --- | --- | --- | --- | --- |
-| Free | 0 € | 1 | 50 | Email | Logo "Powered by" visibile |
-| Starter | 9 € | 1 | 500 | Email a più destinatari | Niente logo, statistiche, export CSV |
-| Pro | 29 € | 5 | 3.000 | + WhatsApp, webhook | Team fino a 5, AI FAQ (fase 3) |
-| Agency | 79 € | 25 | 15.000 | Tutti | White label, multi-cliente, API |
+| Free | 0 € | 1 | 50 | — | Notifiche email, "Avvisa il cliente" con un tocco, logo "Powered by" visibile |
+| Starter | 13 € | 1 | 500 | 100 | Email di esito e promemoria al cliente, testi personalizzabili, niente logo, statistiche, export CSV, team di 2 |
+| Pro | 23 € | 5 | 3.000 | 300 | Tutto lo Starter, team fino a 5 |
+| Agency | 53 € | 25 | 15.000 | 1.000 | White label, multi-cliente, team fino a 25 |
 
-I messaggi WhatsApp hanno un costo per conversazione applicato da Meta. Vanno inclusi in una quota o rifatturati a consumo. Lo sconto annuale proposto è di 2 mesi gratis. I limiti valgono per l'account, non per singolo widget: aggiungere un secondo widget non cambia piano finché si resta nelle quote.
+Il Free è il giro manuale: l'azienda riceve la richiesta per email e avvisa il cliente con un tocco dal proprio WhatsApp, quindi a Snippo costa quasi nulla. I piani a pagamento aggiungono l'automatico: notifiche WhatsApp, email di esito e promemoria al cliente. Starter e Pro hanno le stesse funzioni e cambiano per numero di progetti, team e volumi.
+
+Meta fa pagare ogni messaggio WhatsApp, pochi centesimi per i messaggi di servizio in Italia (da verificare sul listino). Per questo ogni piano include una quota, e oltre la quota si paga a consumo con Paddle. Lo sconto annuale è di 2 mesi gratis (130, 230 e 530 € l'anno). I limiti valgono per l'account, non per singolo widget. I prezzi restano da validare con le interviste (n. 14).
 
 ## 8. Roadmap
 
@@ -476,7 +478,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 25 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
+L'MVP ha 25 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -514,5 +516,8 @@ L'MVP ha 25 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da
 | 32 | Dashboard | Impostazioni del progetto: rinomina ed eliminazione | Fatto | Titolare e amministratori; per eliminare si riscrive il nome del progetto. Si cancellano tutti i dati e il widget smette di comparire sui siti |
 | 33 | Area privata | "Avvisa il cliente" dopo Conferma o Rifiuta: WhatsApp, email o chiamata con il messaggio già scritto | Fatto | Il messaggio parte dal telefono o dalla casella dell'azienda (link `wa.me` e `mailto`), quindi niente costi e niente verifica Meta. Testi per ristorante, appuntamenti e richieste info, modificabili prima dell'invio. Anche nella pagina che si apre dalla notifica |
 | 34 | Notifiche | "Invia prova" crea una richiesta di prova, segnata come Prova in Richieste e Calendario, con la notifica vera (Conferma/Rifiuta) | Fatto | Il cliente di prova è l'azienda stessa (il suo numero WhatsApp e la sua email). Non conta in statistiche, uso del piano e posti disponibili; si cancella da sola dopo 7 giorni |
+| 35 | Notifiche | Testi di "Avvisa il cliente" personalizzabili per progetto | Da fare | Piani a pagamento |
+| 36 | Notifiche | Promemoria al cliente il giorno prima | Da fare | Dopo le email reali (n. 11); riduce chi prenota e non si presenta |
+| 37 | Pagamenti | Quota mensile di notifiche WhatsApp per piano, oltre la quota a consumo | Da fare | Con Paddle (n. 24) e WhatsApp reale (n. 12) |
 
 Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

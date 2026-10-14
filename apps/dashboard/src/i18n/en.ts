@@ -448,4 +448,8 @@ export const en: Record<string, string> = {
   // Test request
   "Notifica di prova inviata. La richiesta di prova è anche in Richieste, segnata come Prova: provala con Conferma o Rifiuta.": "Test notification sent. The test request is also in Requests, marked as Test: try it with Confirm or Decline.",
   "Apri le richieste": "Open requests",
+  "Creando l'account accetti i {terms} e l'{dpa}, e confermi di aver letto l'{privacy}.": "By creating an account you accept the {terms} and the {dpa}, and confirm you have read the {privacy}.",
+  "Termini di servizio": "Terms of service",
+  "accordo sul trattamento dei dati": "data processing agreement",
+  "informativa privacy": "privacy notice",
 };

@@ -1,0 +1,114 @@
+---
+import Provider from "../components/Provider.astro";
+import LegalLayout from "../layouts/LegalLayout.astro";
+---
+
+<LegalLayout title="Informativa privacy" description="Come Snippo tratta i dati di chi usa il servizio e di chi visita questo sito, e cosa succede ai dati di chi scrive a un'azienda tramite il widget.">
+  <p>
+    Questa informativa spiega quali dati trattiamo, perché e per quanto tempo. Vale per chi crea un account su Snippo e per chi visita questo sito.
+    Se hai scritto a un'azienda tramite la chat di Snippo, leggi prima la sezione <a href="#visitatori">Hai scritto a un'azienda?</a>
+  </p>
+
+  <h2>1. Chi è il titolare</h2>
+  <p>
+    Il titolare del trattamento è <Provider field="name" />, <Provider field="address" />, partita IVA <Provider field="vatNumber" />.
+    Per qualsiasi domanda sui tuoi dati scrivi a <a href="mailto:privacy@snippo.io">privacy@snippo.io</a>.
+  </p>
+
+  <h2 id="visitatori">2. Hai scritto a un'azienda tramite Snippo?</h2>
+  <p>
+    Quando invii una prenotazione o una richiesta dalla chat sul sito di un'azienda, il titolare dei tuoi dati è <strong>quell'azienda</strong>.
+    Snippo li conserva e li inoltra solo per suo conto, come responsabile del trattamento (art. 28 GDPR), e non li usa per altri scopi.
+  </p>
+  <p>
+    Per accedere ai tuoi dati, correggerli o cancellarli rivolgiti all'azienda: dalla sua area riservata può trovarli, scaricarli e cancellarli in pochi secondi.
+    Se scrivi a noi, inoltriamo la tua richiesta all'azienda.
+  </p>
+
+  <h2>3. Quali dati trattiamo e perché</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Dati</th><th>Perché</th><th>Base giuridica</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Nome, email e password dell'account (la password è salvata solo in forma cifrata e non leggibile)</td>
+          <td>Creare l'account, farti accedere, mandarti le email del servizio (conferma dell'indirizzo, recupero password, notifiche)</td>
+          <td>Esecuzione del contratto</td>
+        </tr>
+        <tr>
+          <td>Indirizzo IP e browser delle sessioni attive</td>
+          <td>Tenerti collegato, mostrarti i dispositivi connessi, proteggere l'account</td>
+          <td>Esecuzione del contratto e legittimo interesse alla sicurezza</td>
+        </tr>
+        <tr>
+          <td>Dati dell'attività: nome dei progetti, orari, domande, domini, membri del team</td>
+          <td>Far funzionare il servizio</td>
+          <td>Esecuzione del contratto</td>
+        </tr>
+        <tr>
+          <td>Numero WhatsApp o email su cui ricevi le notifiche</td>
+          <td>Avvisarti delle nuove richieste</td>
+          <td>Esecuzione del contratto</td>
+        </tr>
+        <tr>
+          <td>Dati di pagamento, quando attiveremo i piani a pagamento</td>
+          <td>Incassare l'abbonamento ed emettere fattura</td>
+          <td>Esecuzione del contratto e obblighi di legge</td>
+        </tr>
+        <tr>
+          <td>Log tecnici (richieste al server, errori)</td>
+          <td>Sicurezza, prevenzione degli abusi, correzione dei problemi</td>
+          <td>Legittimo interesse</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Non vendiamo dati, non facciamo pubblicità e non profiliamo nessuno.</p>
+
+  <h2>4. Per quanto tempo</h2>
+  <ul>
+    <li>I dati dell'account restano finché l'account esiste. Quando lo elimini dalla pagina Account li cancelliamo subito, insieme ai progetti in cui lavori da solo. Se nel team ci sono altre persone, prima passi la proprietà a una di loro.</li>
+    <li>Le sessioni scadute e gli inviti non usati si cancellano da soli ogni notte.</li>
+    <li>Le copie di backup del database si sovrascrivono entro 30 giorni.</li>
+    <li>I dati di fatturazione, quando ci saranno, si conservano per 10 anni come richiesto dalla legge.</li>
+  </ul>
+
+  <h2>5. A chi li affidiamo</h2>
+  <p>Usiamo pochi fornitori, ciascuno vincolato da un contratto sul trattamento dei dati:</p>
+  <ul>
+    <li><strong>Cloudflare, Inc.</strong>: hosting, database, invio delle email e protezione anti-spam (Turnstile). Il database si trova nell'Unione Europea.</li>
+    <li><strong>Meta Platforms Ireland Ltd.</strong>: invio delle notifiche WhatsApp, solo se le attivi.</li>
+    <li><strong>Paddle.com Market Ltd.</strong>: pagamenti, quando attiveremo i piani a pagamento. Paddle vende l'abbonamento per nostro conto e tratta i dati di pagamento come titolare autonomo.</li>
+  </ul>
+  <p>
+    Il traffico passa dalla rete globale di Cloudflare, che può elaborarlo in data center fuori dall'Unione Europea. Questi trasferimenti sono coperti dal
+    EU-US Data Privacy Framework e dalle clausole contrattuali standard della Commissione europea.
+  </p>
+
+  <h2>6. Cookie e memoria del browser</h2>
+  <ul>
+    <li><strong>Questo sito</strong> non usa cookie di profilazione né strumenti di analisi.</li>
+    <li><strong>L'area riservata</strong> usa un solo cookie tecnico per tenerti collegato. Non richiede consenso.</li>
+    <li>
+      <strong>La chat di Snippo</strong> sui siti delle aziende non usa cookie. Salva nella memoria della scheda (sessionStorage) quali passaggi hai già visto,
+      per contare le aperture una sola volta. Le statistiche sono solo totali giornalieri, mai legati a una persona.
+    </li>
+    <li>La protezione anti-spam di Cloudflare Turnstile può leggere informazioni tecniche del browser per distinguere le persone dai programmi automatici.</li>
+  </ul>
+
+  <h2>7. I tuoi diritti</h2>
+  <p>
+    Puoi chiedere di accedere ai tuoi dati, correggerli, cancellarli, limitarne il trattamento, riceverli in un formato leggibile o opporti al trattamento basato
+    sul legittimo interesse. Molte di queste cose le fai da solo dalla pagina Account; per il resto scrivi a <a href="mailto:privacy@snippo.io">privacy@snippo.io</a>.
+    Rispondiamo entro 30 giorni.
+  </p>
+  <p>
+    Se pensi che trattiamo i tuoi dati in modo scorretto puoi presentare reclamo al
+    <a href="https://www.garanteprivacy.it" rel="noreferrer">Garante per la protezione dei dati personali</a>.
+  </p>
+
+  <h2>8. Modifiche</h2>
+  <p>Se cambiamo questa informativa in modo rilevante te lo diciamo via email o nell'area riservata prima che le modifiche valgano.</p>
+</LegalLayout>

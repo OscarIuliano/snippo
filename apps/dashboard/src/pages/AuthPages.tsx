@@ -7,6 +7,9 @@ import { Alert, Button, Field, Input, Notice, cx } from "../components/ui";
 import { fill, useI18n, useT, type Translate } from "../i18n";
 import { authClient } from "../lib/auth";
 
+/** The public site, where the legal pages live. */
+const SITE_URL = import.meta.env.VITE_SITE_URL ?? "https://snippo.io";
+
 export interface AuthSearch {
   /** Token of the invitation the user came from, to go back to it after signing in. */
   invito?: string;
@@ -185,6 +188,13 @@ export function SignupPage() {
           <Input name="password" type="password" autoComplete="new-password" required minLength={8} />
         </Field>
         <Button type="submit" className="w-full" disabled={pending}>{pending ? t("Creazione…") : t("Crea account")}</Button>
+        <p className="text-xs text-slate-500">
+          {fill(t("Creando l'account accetti i {terms} e l'{dpa}, e confermi di aver letto l'{privacy}."), {
+            terms: <a href={`${SITE_URL}/termini`} target="_blank" rel="noreferrer" className={linkClass}>{t("Termini di servizio")}</a>,
+            dpa: <a href={`${SITE_URL}/dpa`} target="_blank" rel="noreferrer" className={linkClass}>{t("accordo sul trattamento dei dati")}</a>,
+            privacy: <a href={`${SITE_URL}/privacy`} target="_blank" rel="noreferrer" className={linkClass}>{t("informativa privacy")}</a>,
+          })}
+        </p>
       </form>
     </AuthLayout>
   );

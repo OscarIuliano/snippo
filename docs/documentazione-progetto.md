@@ -496,7 +496,7 @@ L'MVP ha 25 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da
 | 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Codice pronto: invio con template e script per crearli. L'account Meta è bloccato (errore 131031): va sbloccato, poi servono il token su staging e l'approvazione dei template |
 | 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet |
 | 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
-| 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Prima dei clienti paganti |
+| 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Bozze pubblicate sulla landing (`/privacy`, `/termini`, `/dpa`) e accettate all'iscrizione. Da completare titolare, indirizzo e foro (`apps/web/src/legal.ts`); revisione legale con i primi clienti paganti |
 | 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
 | 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Fatto | Il deploy automatico parte quando aggiungi i secret Cloudflare su GitHub |
 | 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; per la produzione serve un widget Turnstile su `cdn.snippo.io` |

@@ -1,0 +1,11 @@
+---
+import { isPlaceholder, provider } from "../legal";
+
+interface Props {
+  field: keyof typeof provider;
+}
+
+const value = provider[Astro.props.field];
+---
+
+{isPlaceholder(value) ? <mark class="rounded bg-amber-100 px-1 text-amber-900">{value}</mark> : value}

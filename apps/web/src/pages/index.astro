@@ -1,6 +1,7 @@
 ---
 import Icon from "../components/Icon.astro";
 import Layout from "../layouts/Layout.astro";
+import { legalPages } from "../legal";
 
 const appUrl = import.meta.env.PUBLIC_APP_URL ?? "https://app.snippo.io";
 const signupUrl = `${appUrl}/registrati`;
@@ -312,7 +313,10 @@ const snippet = `<script src="https://cdn.snippo.io/v1/snippo.js"\n        data-
   <footer class="border-t border-ink/5">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-ink/55 sm:px-6">
       <p class="flex items-center gap-2"><Icon name="shield" class="size-4 text-brand-600" /> © {new Date().getFullYear()} Snippo · Dati ospitati in Unione Europea</p>
-      <a href={loginUrl} class="transition hover:text-ink">Area clienti</a>
+      <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Link utili">
+        {legalPages.map((page) => <a href={page.href} class="transition hover:text-ink">{page.title}</a>)}
+        <a href={loginUrl} class="transition hover:text-ink">Area clienti</a>
+      </nav>
     </div>
   </footer>
 

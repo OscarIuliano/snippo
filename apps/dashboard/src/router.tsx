@@ -12,6 +12,7 @@ import { ForgotPasswordPage, LoginPage, ResetPasswordPage, SignupPage, type Auth
 import { InboxPage } from "./pages/InboxPage";
 import { InvitePage } from "./pages/InvitePage";
 import { InstallPage } from "./pages/InstallPage";
+import { ProjectSettingsPage } from "./pages/ProjectSettingsPage";
 import { NewProjectPage } from "./pages/NewProjectPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
@@ -136,13 +137,21 @@ const installRoute = createRoute({
   },
 });
 
+const projectSettingsRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "/impostazioni",
+  component: function ProjectSettings() {
+    return <ProjectSettingsPage projectId={projectSettingsRoute.useParams().projectId} />;
+  },
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   signupRoute,
   forgotPasswordRoute,
   resetPasswordRoute,
   inviteRoute,
-  appRoute.addChildren([homeRoute, newProjectRoute, teamRoute, accountRoute, billingRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, statsRoute, questionsRoute, widgetRoute, notificationsRoute, privacyRoute, installRoute])]),
+  appRoute.addChildren([homeRoute, newProjectRoute, teamRoute, accountRoute, billingRoute, projectRoute.addChildren([inboxRoute, calendarRoute, availabilityRoute, statsRoute, questionsRoute, widgetRoute, notificationsRoute, privacyRoute, installRoute, projectSettingsRoute])]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {

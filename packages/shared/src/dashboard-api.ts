@@ -28,6 +28,8 @@ export const createProjectSchema = z.object({
   domain: domainSchema,
 });
 
+export const updateProjectSchema = createProjectSchema.pick({ name: true });
+
 export const updateWidgetSchema = z.object({
   title: z.string().trim().min(1).max(60),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),

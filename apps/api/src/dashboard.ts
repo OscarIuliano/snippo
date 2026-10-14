@@ -47,6 +47,7 @@ import {
   submissionStatuses,
   templates,
   updateSubmissionSchema,
+  updateProjectSchema,
   updateWidgetSchema,
   ORGANIZATION_HEADER,
   canManageProjects,
@@ -72,7 +73,7 @@ import {
   type TemplateId,
 } from "@snippo/shared";
 import type { z } from "zod";
-import { accountDeletionPlan } from "./account";
+import { accountDeletionPlan, deleteProjectStatements } from "./account";
 import { nowIn, slotSteps } from "./availability";
 import { createAuth } from "./auth";
 import { createInvitationToken } from "./invitations";
@@ -262,6 +263,23 @@ dashboardRoutes.get("/projects/:id", async (c) => {
     domains: domains.map((d) => ({ id: d.id, domain: d.domain })),
   };
   return c.json(body);
+});
+
+dashboardRoutes.patch("/projects/:id", async (c) => {
+  const input = await parseBody(c, updateProjectSchema);
+  if (!input) return problem(c, 422, "Nome del progetto non valido");
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+  await c.var.db.update(projects).set({ name: input.name, updatedAt: new Date().toISOString() }).where(eq(projects.id, project.id));
+  return c.body(null, 204);
+});
+
+/** Deletes the project with all its data: the widget stops showing on the sites it is installed on. */
+dashboardRoutes.delete("/projects/:id", async (c) => {
+  const project = await ownedProject(c, c.req.param("id"));
+  if (!project) return problem(c, 404, "Progetto non trovato");
+  await c.env.DB.batch(deleteProjectStatements(c.env.DB, project.id));
+  return c.body(null, 204);
 });
 
 dashboardRoutes.patch("/projects/:id/widget", async (c) => {

@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { canManageProjects, formatBooking, submissionStatuses, type FlowDefinition, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
+import { canManageProjects, formatBooking, submissionStatuses, type FlowDefinition, type ReplyOutcome, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
+import { Icon } from "../components/Icon";
+import { NotifyCustomer } from "../components/NotifyCustomer";
 import { Alert, Button, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
 import { msg, useFormat, useI18n, useT } from "../i18n";
@@ -25,6 +27,8 @@ export function InboxPage({ projectId }: { projectId: string }) {
   const project = useQuery(projectQuery(projectId));
   const submissions = useQuery(submissionsQuery(projectId, status));
   const counts = submissions.data?.counts;
+  // The request just confirmed or rejected leaves the "Nuove" tab: this keeps "Avvisa il cliente" in view.
+  const [handled, setHandled] = useState<{ submission: SubmissionRow; outcome: ReplyOutcome } | null>(null);
 
   return (
     <div>
@@ -48,6 +52,23 @@ export function InboxPage({ projectId }: { projectId: string }) {
         ))}
       </div>
 
+      {handled && project.data && (
+        <div role="status" className="mb-4 rounded-xl bg-white p-4 ring-1 ring-slate-200">
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-medium">
+              {handled.outcome === "confirmed"
+                ? t("Richiesta di {name} confermata.", { name: handled.submission.contactName ?? t("Senza nome") })
+                : t("Richiesta di {name} rifiutata.", { name: handled.submission.contactName ?? t("Senza nome") })}
+              <span className="font-normal text-slate-500"> {t("Il cliente non lo sa ancora: avvisalo tu, il messaggio è già scritto.")}</span>
+            </p>
+            <button type="button" onClick={() => setHandled(null)} aria-label={t("Chiudi")} className="-m-1 rounded p-1 text-slate-400 hover:text-slate-700">
+              <Icon name="close" className="size-4" />
+            </button>
+          </div>
+          <NotifyCustomer key={handled.submission.id} submission={handled.submission} project={project.data} outcome={handled.outcome} className="mt-3" />
+        </div>
+      )}
+
       {submissions.error && <Alert>{submissions.error.message}</Alert>}
       {submissions.isPending && <p className="py-12 text-center text-sm text-slate-500">{t("Caricamento…")}</p>}
       {submissions.data?.items.length === 0 && (
@@ -64,25 +85,44 @@ export function InboxPage({ projectId }: { projectId: string }) {
 
       <ul className="space-y-3">
         {submissions.data?.items.map((s) => (
-          <SubmissionCard key={s.id} submission={s} projectId={projectId} flow={project.data?.widget.flow ?? null} />
+          <SubmissionCard
+            key={s.id}
+            submission={s}
+            projectId={projectId}
+            project={project.data}
+            onHandled={(outcome) => setHandled({ submission: s, outcome })}
+          />
         ))}
       </ul>
     </div>
   );
 }
 
-function SubmissionCard({ submission: s, projectId, flow }: { submission: SubmissionRow; projectId: string; flow: FlowDefinition | null }) {
+function SubmissionCard({
+  submission: s,
+  projectId,
+  project,
+  onHandled,
+}: {
+  submission: SubmissionRow;
+  projectId: string;
+  project: { name: string; industry: string; widget: { flow: FlowDefinition | null } } | undefined;
+  onHandled: (outcome: ReplyOutcome) => void;
+}) {
+  const flow = project?.widget.flow ?? null;
   const { t, intl } = useI18n();
   const receivedFormat = useFormat((intl) => new Intl.DateTimeFormat(intl, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
   const queryClient = useQueryClient();
   const update = useMutation({
     mutationFn: (status: SubmissionStatus) => api(`/submissions/${s.id}`, { method: "PATCH", body: { status } }),
-    onSuccess: () =>
-      Promise.all([
+    onSuccess: (_, status) => {
+      if (status === "confirmed" || status === "rejected") onHandled(status);
+      return Promise.all([
         queryClient.invalidateQueries({ queryKey: ["submissions", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["calendar", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["me"] }),
-      ]),
+      ]);
+    },
   });
 
   const me = useQuery(meQuery);
@@ -126,6 +166,10 @@ function SubmissionCard({ submission: s, projectId, flow }: { submission: Submis
             </div>
           ))}
         </dl>
+      )}
+
+      {project && (s.status === "confirmed" || s.status === "rejected") && (
+        <NotifyCustomer submission={s} project={project} outcome={s.status} className="mt-3 border-t border-slate-100 pt-3" />
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-2">

@@ -18,6 +18,8 @@ const paths = {
   user: "M12 12a4 4 0 100-8 4 4 0 000 8zM4.5 20c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6",
   card: "M3 6h18v12H3zM3 10h18M7 15h3",
   check: "M5 12.5l4.5 4.5L19 7.5",
+  close: "M6 6l12 12M18 6L6 18",
+  sliders: "M4 7h9M17 7h3M15 5v4M4 17h3M11 17h9M9 15v4",
 };
 
 export type IconName = keyof typeof paths;

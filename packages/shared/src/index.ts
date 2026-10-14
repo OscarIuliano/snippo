@@ -8,6 +8,7 @@ export * from "./i18n-en";
 export * from "./locale";
 export * from "./notifications";
 export * from "./privacy";
+export * from "./reply";
 export * from "./rules";
 export * from "./stats";
 export * from "./team";

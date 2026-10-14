@@ -8,21 +8,20 @@ const buttonStyles: Record<ButtonVariant, string> = {
   primary: "bg-brand-700 text-white hover:bg-brand-800 disabled:bg-brand-700/50",
   secondary: "bg-white text-slate-800 ring-1 ring-slate-300 hover:bg-slate-50",
   ghost: "text-slate-600 hover:bg-slate-100",
-  danger: "bg-white text-red-700 ring-1 ring-red-200 hover:bg-red-50",
+  danger: "bg-white text-red-700 ring-1 ring-red-200 hover:bg-red-50 disabled:opacity-50 disabled:hover:bg-white",
 };
 
-export function Button({ variant = "primary", className, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
-  return (
-    <button
-      className={cx(
-        "inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:cursor-not-allowed",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
-        buttonStyles[variant],
-        className,
-      )}
-      {...props}
-    />
+/** Button look, also for links that act as buttons. */
+export const buttonClass = (variant: ButtonVariant = "primary", className?: string) =>
+  cx(
+    "inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:cursor-not-allowed",
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
+    buttonStyles[variant],
+    className,
   );
+
+export function Button({ variant = "primary", className, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
+  return <button className={buttonClass(variant, className)} {...props} />;
 }
 
 export function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string | null; children: ReactNode }) {

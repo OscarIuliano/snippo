@@ -5,7 +5,7 @@ import { nowIn } from "../src/availability";
 
 export const DASHBOARD = "http://localhost:5174";
 export const SITE_ORIGIN = "https://trattoria-mario.it";
-const PUBLIC_API = "https://api.snippo.test";
+export const PUBLIC_API = "https://api.snippo.test";
 
 /** Dates relative to today (Europe/Rome), so the tests never fall into the past. */
 export const TODAY = nowIn("Europe/Rome").date;

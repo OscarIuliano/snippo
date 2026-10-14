@@ -1,5 +1,6 @@
-// Deleting an account. Better Auth removes the user, sessions, credentials and memberships;
-// this module decides what happens to the organizations the user owns, before that.
+// Deleting an account, and the projects and organizations in it. Better Auth removes the user,
+// sessions, credentials and memberships; this module decides what happens to the organizations
+// the user owns, before that.
 
 export interface OwnedOrganization {
   id: string;
@@ -33,30 +34,45 @@ export async function accountDeletionPlan(db: D1Database, userId: string) {
   return { blocking: owned.filter((o) => o.members > 1), deleted: owned.filter((o) => o.members <= 1) };
 }
 
-const PROJECTS = "SELECT id FROM projects WHERE organization_id = ?1";
-const WIDGETS = `SELECT id FROM widgets WHERE project_id IN (${PROJECTS})`;
+/**
+ * Deletes the projects selected by `projectIds` (SQL with ?1) with everything in them,
+ * children before parents (D1 enforces foreign keys).
+ */
+function projectDeletionStatements(db: D1Database, projectIds: string, id: string): D1PreparedStatement[] {
+  const widgetIds = `SELECT id FROM widgets WHERE project_id IN (${projectIds})`;
+  return [
+    `DELETE FROM notification_deliveries WHERE channel_id IN (SELECT id FROM notification_channels WHERE project_id IN (${projectIds}))
+       OR submission_id IN (SELECT id FROM submissions WHERE project_id IN (${projectIds}))`,
+    `DELETE FROM notification_channels WHERE project_id IN (${projectIds})`,
+    `DELETE FROM submissions WHERE project_id IN (${projectIds})`,
+    `DELETE FROM widget_daily_stats WHERE widget_id IN (${widgetIds})`,
+    `DELETE FROM widget_step_stats WHERE widget_id IN (${widgetIds})`,
+    `DELETE FROM flow_versions WHERE widget_id IN (${widgetIds})`,
+    `DELETE FROM widgets WHERE project_id IN (${projectIds})`,
+    `DELETE FROM project_domains WHERE project_id IN (${projectIds})`,
+    `DELETE FROM business_hours WHERE project_id IN (${projectIds})`,
+    `DELETE FROM closures WHERE project_id IN (${projectIds})`,
+    `DELETE FROM projects WHERE id IN (${projectIds})`,
+  ].map((sql) => db.prepare(sql).bind(id));
+}
 
-/** Deletes an organization and everything in it, children before parents (D1 enforces foreign keys). */
+/** Deletes one project: requests, widget, questions, opening hours, domains, notifications, statistics. */
+export function deleteProjectStatements(db: D1Database, projectId: string): D1PreparedStatement[] {
+  return projectDeletionStatements(db, "?1", projectId);
+}
+
+/** Deletes an organization and everything in it. */
 export function deleteOrganizationStatements(db: D1Database, organizationId: string): D1PreparedStatement[] {
   return [
-    `DELETE FROM notification_deliveries WHERE channel_id IN (SELECT id FROM notification_channels WHERE project_id IN (${PROJECTS}))
-       OR submission_id IN (SELECT id FROM submissions WHERE project_id IN (${PROJECTS}))`,
-    `DELETE FROM notification_channels WHERE project_id IN (${PROJECTS})`,
-    `DELETE FROM submissions WHERE project_id IN (${PROJECTS})`,
-    `DELETE FROM widget_daily_stats WHERE widget_id IN (${WIDGETS})`,
-    `DELETE FROM widget_step_stats WHERE widget_id IN (${WIDGETS})`,
-    `DELETE FROM flow_versions WHERE widget_id IN (${WIDGETS})`,
-    `DELETE FROM widgets WHERE project_id IN (${PROJECTS})`,
-    `DELETE FROM project_domains WHERE project_id IN (${PROJECTS})`,
-    `DELETE FROM business_hours WHERE project_id IN (${PROJECTS})`,
-    `DELETE FROM closures WHERE project_id IN (${PROJECTS})`,
-    `DELETE FROM projects WHERE organization_id = ?1`,
-    `DELETE FROM invitations WHERE organization_id = ?1`,
-    `DELETE FROM memberships WHERE organization_id = ?1`,
-    // Once payments are live, a paid subscription has to be cancelled at the provider first.
-    `DELETE FROM subscriptions WHERE organization_id = ?1`,
-    `DELETE FROM organizations WHERE id = ?1`,
-  ].map((sql) => db.prepare(sql).bind(organizationId));
+    ...projectDeletionStatements(db, "SELECT id FROM projects WHERE organization_id = ?1", organizationId),
+    ...[
+      `DELETE FROM invitations WHERE organization_id = ?1`,
+      `DELETE FROM memberships WHERE organization_id = ?1`,
+      // Once payments are live, a paid subscription has to be cancelled at the provider first.
+      `DELETE FROM subscriptions WHERE organization_id = ?1`,
+      `DELETE FROM organizations WHERE id = ?1`,
+    ].map((sql) => db.prepare(sql).bind(organizationId)),
+  ];
 }
 
 export class AccountDeletionBlocked extends Error {

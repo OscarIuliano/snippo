@@ -7,6 +7,7 @@ export const apiEn: Record<string, string> = {
   "Canale non trovato": "Channel not found",
   "Date di chiusura non valide": "Invalid closing dates",
   "Dati del progetto non validi": "Invalid project data",
+  "Nome del progetto non valido": "Invalid project name",
   "Domande non valide": "Invalid questions",
   "Dominio non valido": "Invalid domain",
   "Errore interno": "Internal error",

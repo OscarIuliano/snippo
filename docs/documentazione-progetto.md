@@ -317,7 +317,7 @@ Il database è **Cloudflare D1** (SQLite), creato con giurisdizione UE. È multi
 | Notifiche | `notification_channels` | id, project_id, type (email, whatsapp), target (email o numero E.164), is_active | |
 | Notifiche | `notification_deliveries` | id, channel_id, submission_id, status, attempts, last_error, sent_at | Retry e log |
 | Billing | `plans` | id, code, name, price_cents, limits jsonb (progetti, richieste, canali) | |
-| Billing | `subscriptions` | id, organization_id, plan_id, stripe_customer_id, stripe_subscription_id, status, current_period_end | Sincronizzata dai webhook Stripe |
+| Billing | `subscriptions` | organization_id, plan, interval, status, provider, provider_customer_id, provider_subscription_id, current_period_end, cancel_at_period_end | Una per organizzazione, senza riga = Free; sincronizzata dai webhook del provider (Paddle) |
 | Billing | `usage_counters` | organization_id, period (YYYY-MM), submissions_count, whatsapp_count | Controllo delle quote |
 | Sistema | `audit_logs` | id, organization_id, actor_user_id, action, entity, entity_id, diff jsonb, ip | Azioni amministrative |
 
@@ -476,7 +476,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 19 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
+L'MVP ha 24 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -491,7 +491,7 @@ L'MVP ha 19 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da
 | 9 | Area privata | Calendario con mattina (fino alle 13:00) e sera | Fatto | |
 | 10 | Repository | Merge dei branch su `main` | Fatto | Allineato l'8 ottobre; da qui un branch e una PR per attività |
 | 11 | Notifiche | Email reali con Cloudflare Email Service | In attesa di te | Serve il dominio su Cloudflare (n. 13); poi si attiva l'invio e si collega `sendEmail`. Fino ad allora le email finiscono nel log del Worker |
-| 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Servono portfolio e app Meta con numero di test, poi il template approvato |
+| 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Codice pronto: invio con template e script per crearli. L'account Meta è bloccato (errore 131031): va sbloccato, poi servono il token su staging e l'approvazione dei template |
 | 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet |
 | 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
 | 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Prima dei clienti paganti |
@@ -499,7 +499,7 @@ L'MVP ha 19 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da
 | 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Fatto | Il deploy automatico parte quando aggiungi i secret Cloudflare su GitHub |
 | 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; per la produzione serve un widget Turnstile su `cdn.snippo.io` |
 | 19 | Area privata | Verifica email, password dimenticata e pagina Account (nome, email, password, dispositivi) | Fatto | Finché le email non partono (n. 11) i link finiscono nel log del Worker; gli account creati prima restano attivi |
-| 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo le email reali (n. 11) |
+| 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo le email reali (n. 11). Intanto l'azienda avvisa il cliente con un tocco (n. 33) |
 | 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Fatto | Pagina Statistiche: aperture, conversione, dove ci si ferma |
 | 22 | Area privata | Export CSV delle richieste | Da fare | |
 | 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Fatto | Inviti con link (7 giorni, uso singolo); l'invio via email arriva con le email reali (n. 11) |
@@ -508,5 +508,10 @@ L'MVP ha 19 attività fatte, 5 in attesa di un tuo passaggio e 4 da fare. Le "Da
 | 26 | Infrastruttura | Monitoraggio errori (Sentry) e uptime | Da fare | |
 | 27 | Widget | Editor delle domande: partire da un template, aggiungere, modificare, riordinare e togliere domande | Fatto | Pagina Domande; le domande speciali (nome, telefono, giorno…) tengono il loro tipo |
 | 28 | Dashboard | Rifinitura grafica della dashboard: palette indaco, menu con icone e gruppi, versione mobile | Fatto | Sidebar con progetto e organizzazione, pagine verificate su desktop e su telefono (390px) |
+| 29 | Area privata | Elimina account e passaggio di titolarità | Fatto | Con la password; le organizzazioni senza altre persone vengono cancellate con tutti i dati, quelle con un team richiedono prima "Rendi titolare" |
+| 30 | Pagamenti | Pagina Piano e fatturazione: piano attuale, uso del mese, confronto piani, metodo di pagamento e fatture | Fatto | Tabella `subscriptions` pronta per Paddle; i limiti si vedono ma non bloccano finché i pagamenti non sono attivi (n. 24) |
+| 31 | Dashboard | Lingue italiano e inglese (italiano di default) | Fatto | Preferenza sull'utente; errori dell'API ed email dell'account nella sua lingua; `pnpm test` controlla che ogni testo abbia l'inglese. Il widget per ora resta in italiano |
+| 32 | Dashboard | Impostazioni del progetto: rinomina ed eliminazione | Fatto | Titolare e amministratori; per eliminare si riscrive il nome del progetto. Si cancellano tutti i dati e il widget smette di comparire sui siti |
+| 33 | Area privata | "Avvisa il cliente" dopo Conferma o Rifiuta: WhatsApp, email o chiamata con il messaggio già scritto | Fatto | Il messaggio parte dal telefono o dalla casella dell'azienda (link `wa.me` e `mailto`), quindi niente costi e niente verifica Meta. Testi per ristorante, appuntamenti e richieste info, modificabili prima dell'invio. Anche nella pagina che si apre dalla notifica |
 
 Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

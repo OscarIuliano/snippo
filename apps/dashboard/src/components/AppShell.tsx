@@ -18,7 +18,8 @@ type ProjectPath =
   | "/progetti/$projectId/widget"
   | "/progetti/$projectId/notifiche"
   | "/progetti/$projectId/privacy"
-  | "/progetti/$projectId/installazione";
+  | "/progetti/$projectId/installazione"
+  | "/progetti/$projectId/impostazioni";
 
 interface NavItem {
   to: ProjectPath;
@@ -46,6 +47,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
       { to: "/progetti/$projectId/notifiche", label: msg("Notifiche"), icon: "bell", manage: true },
       { to: "/progetti/$projectId/privacy", label: msg("Privacy"), icon: "shield", manage: true },
       { to: "/progetti/$projectId/installazione", label: msg("Installazione"), icon: "code", manage: true },
+      { to: "/progetti/$projectId/impostazioni", label: msg("Progetto"), icon: "sliders", manage: true },
     ],
   },
 ];

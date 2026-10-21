@@ -1,6 +1,6 @@
 # Snippo — Documentazione di progetto
 
-Ultimo aggiornamento: 8 ottobre 2026
+Ultimo aggiornamento: 21 ottobre 2026
 
 # Parte 1 — Documentazione funzionale
 
@@ -106,7 +106,7 @@ La landing ha un obiettivo misurabile: portare il visitatore alla registrazione 
 
 - Italiano ed inglese, SEO tecnica (sitemap, meta, Open Graph, dati strutturati), Core Web Vitals verdi.
 - Analytics rispettosi della privacy, senza cookie banner invasivi (Plausible o Umami).
-- Il widget della landing è il prodotto stesso: le richieste arrivano nella nostra dashboard.
+- Il widget della landing è il prodotto stesso: le richieste arrivano nella nostra dashboard. Su snippo.io la chat usa un vero progetto demo nell'account del titolare (chiave `pk_live_fc7c5772e99ab35544298e03`, sito autorizzato `snippo.io`): le prenotazioni di prova finiscono in quel progetto.
 
 ## 6. Flussi utente principali
 
@@ -396,11 +396,22 @@ Tutto gira sull'account Cloudflare già attivo per l'altro progetto. Per lo svil
 
 **Domini e sottodomini**
 
-- `snippo.io`: landing e docs (dominio da verificare; alternativa `snippo.app`)
+- `snippo.io`: landing e docs (comprato il 21 ottobre 2026 su Cloudflare Registrar)
 - `app.snippo.io`: dashboard
 - `api.snippo.io`: API
 - `cdn.snippo.io`: script dei widget
 - `status.snippo.io`: pagina di stato
+
+**Produzione (online dal 21 ottobre 2026)**
+
+- Landing: `https://snippo.io` e `www.snippo.io` (Worker `snippo-web-production`).
+- Dashboard: `https://app.snippo.io` (`snippo-dashboard-production`).
+- API: `https://api.snippo.io` (`snippo-api-production`).
+- Widget: `https://cdn.snippo.io/v1/snippo.js` (`snippo-cdn-production`).
+- Database D1 `snippo-prod` in UE (giurisdizione `eu`); code `snippo-notifications-prod` e `snippo-notifications-dlq-prod`.
+- Rilascio con `corepack pnpm deploy:production`, sempre da `main` (`feat/account` è stato unito a `main`).
+- Secret su Cloudflare: `BETTER_AUTH_SECRET` e `TURNSTILE_SECRET`. Turnstile: widget vero "Snippo widget" su `cdn.snippo.io`.
+- Piano Workers Paid attivo (serve per l'invio delle email).
 
 **Account condiviso:** tutte le risorse hanno il prefisso `snippo-` e la CI usa un token API dedicato con permessi limitati. Il piano gratuito ammette 10 database D1 per account, condivisi con l'altro progetto. Se Snippo diventa un'attività separata, le risorse si spostano su un account suo.
 
@@ -439,7 +450,7 @@ snippo/
 | Locale | Sviluppo | `wrangler dev`: D1 simulato da Miniflare dentro `node_modules`, senza Docker; oppure `--remote` sul D1 di dev | — |
 | Dev / preview | Test di ogni pull request | D1 `snippo-dev` (UE) | Preview URL dei Workers sulla PR |
 | Staging | Test prima del rilascio, su `*.oiuliano90.workers.dev` | D1 `snippo-staging` (UE) | Automatico su `main` (job `deploy-staging` della CI) |
-| Produzione | Clienti | D1 `snippo-prod` (UE) con Time Travel | Tag di release o approvazione manuale |
+| Produzione | Clienti | D1 `snippo-prod` (UE) con Time Travel | Manuale con `corepack pnpm deploy:production`, sempre da `main` |
 
 **Pipeline CI/CD (GitHub Actions)**
 
@@ -475,6 +486,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 | Fatturazione elettronica | Con Paddle si fattura solo a Paddle; con Stripe serve un collegamento SDI (es. Fatture in Cloud) | In Italia le fatture B2B passano dallo SDI | Da verificare |
 | Forma giuridica | Partita IVA in regime forfettario per partire, SRL quando i ricavi crescono | Costi fissi bassi durante la validazione | Da verificare |
 | Dominio e marchio | snippo.io, comprato su Cloudflare Registrar il 21 ottobre 2026; ricerca marchio su TMview fatta | Nessun 'Snippo' attivo su TMview; da valutare presto il deposito all'UIBM, classi 9 e 42 | Deciso |
+| Deploy in produzione | Solo da main | Main corrisponde a quello che è online | Deciso |
 
 ## 19. Backlog
 
@@ -496,10 +508,10 @@ L'MVP ha 30 attività fatte, 3 in attesa di un tuo passaggio e 7 da fare. Le "Da
 | 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Codice pronto: invio con template e script per crearli. L'account Meta è bloccato (errore 131031): va sbloccato, poi servono il token su staging e l'approvazione dei template |
 | 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | Fatto | snippo.io comprato su Cloudflare Registrar il 21-10-2026 (scade 21-10-2027, rinnovo automatico). Email Routing attivo: supporto@ e privacy@ inoltrano alla casella del titolare. Ricerca TMview: nessun 'Snippo' attivo; da tenere d'occhio SNIPPORT (Benelux, classi 9 e 42, depositato 30-09-2026) e snippod (registrazione internazionale, classe 38). Valutare presto il deposito del marchio all'UIBM, classi 9 e 42. |
 | 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
-| 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Bozze pubblicate sulla landing (`/privacy`, `/termini`, `/dpa`) e accettate all'iscrizione. Da completare titolare, indirizzo e foro (`apps/web/src/legal.ts`); revisione legale con i primi clienti paganti |
+| 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Bozze pubblicate sulla landing (`/privacy`, `/termini`, `/dpa`) e accettate all'iscrizione. Ora che il sito è pubblico vanno compilati subito titolare, indirizzo, partita IVA e foro (`apps/web/src/legal.ts`); revisione legale con i primi clienti paganti |
 | 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
 | 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Fatto | Il deploy automatico parte quando aggiungi i secret Cloudflare su GitHub |
-| 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; per la produzione serve un widget Turnstile su `cdn.snippo.io` |
+| 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; in produzione c'è il widget vero "Snippo widget" su cdn.snippo.io |
 | 19 | Area privata | Verifica email, password dimenticata e pagina Account (nome, email, password, dispositivi) | Fatto | I link di verifica e di reset arrivano per email (n. 11); gli account creati prima restano attivi |
 | 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Sbloccato: le email reali sono attive (n. 11). Intanto l'azienda avvisa il cliente con un tocco (n. 33) |
 | 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Fatto | Pagina Statistiche: aperture, conversione, dove ci si ferma |

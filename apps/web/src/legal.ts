@@ -1,14 +1,11 @@
-// Who runs Snippo, as the legal pages name it. Values in square brackets are still missing:
-// the pages highlight them, and they must be filled in before the first real customer.
+// Who runs Snippo, as the legal pages name it. A value in square brackets is still missing:
+// the pages highlight it.
 export const provider = {
-  name: "[Nome e cognome del titolare]",
-  address: "[Indirizzo]",
-  vatNumber: "[Partita IVA, quando aperta]",
+  name: "Snippo (snippo.io)",
   email: "privacy@snippo.io",
-  court: "[Città del foro competente]",
 };
 
-/** Where customers write for help. Like privacy@, it works once snippo.io forwards it (Email Routing). */
+/** Where customers write for help. Like privacy@, Email Routing forwards it to the owner's mailbox. */
 export const supportEmail = "supporto@snippo.io";
 
 export const lastUpdated = "14 ottobre 2026";

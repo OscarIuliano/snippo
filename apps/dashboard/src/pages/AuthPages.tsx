@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, type FormEvent, type ReactNode } from "react";
-import { locales } from "@snippo/shared";
+import { locales, signupSourceFromParams } from "@snippo/shared";
 import { Icon, Logo } from "../components/Icon";
 import { Alert, Button, Field, Input, Notice, cx } from "../components/ui";
 import { fill, useI18n, useT, type Translate } from "../i18n";
@@ -17,6 +17,10 @@ export interface AuthSearch {
   token?: string;
   /** Set after deleting the account, for the goodbye message on the login page. */
   eliminato?: string;
+  /** Campaign of the link from the landing page, stored with the new account. */
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
 }
 
 /** IT · EN in the corner of the sign-in pages; once signed in, the language is saved on the account. */
@@ -101,7 +105,10 @@ export function LoginPage() {
   const t = useT();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { invito, error: linkError, eliminato } = useSearch({ strict: false }) as AuthSearch;
+  const search = useSearch({ strict: false }) as AuthSearch;
+  const { invito, error: linkError, eliminato } = search;
+  // A visitor from a campaign link who opens sign-in first keeps the campaign on the way to sign-up.
+  const campaign = { utm_source: search.utm_source, utm_medium: search.utm_medium, utm_campaign: search.utm_campaign };
   const { error, pending, run } = useAuthAction();
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -122,7 +129,7 @@ export function LoginPage() {
     <AuthLayout
       title={t("Accedi")}
       subtitle={invito ? t("Accedi per unirti al team che ti ha invitato.") : t("Gestisci le richieste che arrivano dal tuo sito.")}
-      footer={<>{t("Non hai un account?")} <Link to="/registrati" search={{ invito }} className={linkClass}>{t("Registrati")}</Link></>}
+      footer={<>{t("Non hai un account?")} <Link to="/registrati" search={{ invito, ...campaign }} className={linkClass}>{t("Registrati")}</Link></>}
     >
       <form onSubmit={onSubmit} className="space-y-4">
         {eliminato && !error && <Notice>{t("Il tuo account è stato eliminato. Ci dispiace vederti andare.")}</Notice>}
@@ -145,7 +152,9 @@ export function LoginPage() {
 
 export function SignupPage() {
   const { t, locale } = useI18n();
-  const { invito } = useSearch({ strict: false }) as AuthSearch;
+  const search = useSearch({ strict: false }) as AuthSearch;
+  const { invito } = search;
+  const signupSource = signupSourceFromParams({ get: (name) => search[name as keyof AuthSearch] });
   const { error, pending, run } = useAuthAction();
   const [sentTo, setSentTo] = useState<string | null>(null);
 
@@ -160,6 +169,7 @@ export function SignupPage() {
         password: String(form.get("password")),
         // The language chosen on this page: dashboard and emails start in it.
         locale,
+        signupSource,
         callbackURL: afterVerification(invito),
       }),
     );

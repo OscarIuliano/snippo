@@ -5,6 +5,10 @@ import { inferAdditionalFields } from "better-auth/client/plugins";
 export const authClient = createAuthClient({
   baseURL: window.location.origin,
   basePath: "/api/auth",
-  // The user's language, stored by the API next to name and email.
-  plugins: [inferAdditionalFields({ user: { locale: { type: "string", required: false } } })],
+  // The user's language, stored by the API next to name and email, and the campaign of the sign-up link.
+  plugins: [
+    inferAdditionalFields({
+      user: { locale: { type: "string", required: false }, signupSource: { type: "string", required: false } },
+    }),
+  ],
 });

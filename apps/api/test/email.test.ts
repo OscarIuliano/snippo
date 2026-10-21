@@ -47,6 +47,17 @@ describe("signupNoticeEmail", () => {
     expect(notice.html).toContain("Account in totale: 42");
   });
 
+  it("says where the account came from, or that it came directly", () => {
+    const user = { name: "Giulia Bianchi", email: "giulia@example.com", createdAt: new Date() };
+    const sourced = signupNoticeEmail("owner@example.com", { ...user, signupSource: "instagram / paid / ristoranti-test" }, 3);
+    expect(sourced.text).toContain("Provenienza: instagram / paid / ristoranti-test");
+    expect(sourced.html).toContain("Provenienza: instagram / paid / ristoranti-test");
+    for (const signupSource of [undefined, null]) {
+      const direct = signupNoticeEmail("owner@example.com", { ...user, signupSource }, 3);
+      expect(direct.text).toContain("Provenienza: diretta (nessun link di campagna)");
+    }
+  });
+
   it("escapes the name in the html", () => {
     const notice = signupNoticeEmail("owner@example.com", { name: "<b>X</b>", email: "x@example.com", createdAt: new Date() }, 1);
     expect(notice.html).not.toContain("<b>X</b>");

@@ -1,0 +1,18 @@
+---
+// The real widget on the demo restaurant project; any [data-open-demo] button opens it.
+import { demo } from "../site";
+---
+
+{/* Like a customer's site, a classic script; only the dev server's source needs a module. */}
+<script is:inline type={import.meta.env.DEV ? "module" : undefined} src={demo.src} data-key={demo.key} data-api={demo.api} async></script>
+<script>
+  document.querySelectorAll("[data-open-demo]").forEach((button) =>
+    button.addEventListener("click", () => window.Snippo?.open()),
+  );
+
+  declare global {
+    interface Window {
+      Snippo?: { open(): void };
+    }
+  }
+</script>

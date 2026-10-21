@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { Navigate, Outlet, createRootRouteWithContext, createRoute, createRouter, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { utmParams } from "@snippo/shared";
 import { AppShell } from "./components/AppShell";
 import { AvailabilityPage } from "./pages/AvailabilityPage";
 import { CalendarPage } from "./pages/CalendarPage";
@@ -25,7 +26,7 @@ const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({ c
 
 const authSearch = (search: Record<string, unknown>): AuthSearch => {
   const out: AuthSearch = {};
-  for (const key of ["invito", "error", "token", "eliminato"] as const) if (typeof search[key] === "string") out[key] = search[key];
+  for (const key of ["invito", "error", "token", "eliminato", ...utmParams] as const) if (typeof search[key] === "string") out[key] = search[key];
   return out;
 };
 

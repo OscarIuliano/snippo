@@ -10,6 +10,7 @@ export * from "./notifications";
 export * from "./privacy";
 export * from "./reply";
 export * from "./rules";
+export * from "./signup-source";
 export * from "./stats";
 export * from "./team";
 export * from "./templates";

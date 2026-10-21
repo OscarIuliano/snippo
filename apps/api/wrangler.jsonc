@@ -93,8 +93,8 @@
         "AUTH_BASE_URL": "https://app.snippo.io",
         "DASHBOARD_ORIGIN": "https://app.snippo.io",
         "PUBLIC_API_URL": "https://api.snippo.io",
-        // Site key of the Turnstile widget for cdn.snippo.io, created in the Cloudflare dashboard before launch.
-        "TURNSTILE_SITE_KEY": "TODO_TURNSTILE_SITE_KEY",
+        // Turnstile widget "Snippo widget", hostname cdn.snippo.io. Its secret is TURNSTILE_SECRET.
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAFe3wT6BG6ObZUDZ",
         "CHALLENGE_URL": "https://cdn.snippo.io/v1/challenge.html",
         "EMAIL_FROM": "noreply@snippo.io",
         "EMAIL_REPLY_TO": "supporto@snippo.io"

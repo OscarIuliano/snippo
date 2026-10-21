@@ -124,9 +124,19 @@ ${action ? `<p style="margin:12px 0 0;font-size:12px;color:#94a3b8;word-break:br
 }
 
 /** For the owner of Snippo, in Italian: someone has just created an account. */
-export function signupNoticeEmail(to: string, user: { email: string; name: string; createdAt: Date }, totalUsers: number): Email {
+export function signupNoticeEmail(
+  to: string,
+  user: { email: string; name: string; createdAt: Date; signupSource?: string | null },
+  totalUsers: number,
+): Email {
   const when = new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Rome" }).format(user.createdAt);
-  const lines = [`Nome: ${user.name}`, `Email: ${user.email}`, `Quando: ${when}`, `Account in totale: ${totalUsers}`];
+  const lines = [
+    `Nome: ${user.name}`,
+    `Email: ${user.email}`,
+    `Quando: ${when}`,
+    `Provenienza: ${user.signupSource ?? "diretta (nessun link di campagna)"}`,
+    `Account in totale: ${totalUsers}`,
+  ];
   const html = emailLayout(`<p style="margin:0 0 12px;font-weight:600">Nuova registrazione su Snippo</p>
 <p style="margin:0;line-height:1.6">${lines.map(escapeHtml).join("<br>")}</p>`);
   return { to, subject: `Nuova registrazione: ${user.name}`, text: ["Nuova registrazione su Snippo", "", ...lines].join("\n"), html };

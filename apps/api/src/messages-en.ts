@@ -43,6 +43,8 @@ export const apiEn: Record<string, string> = {
   "Valore non valido": "Invalid value",
   "Widget non trovato": "Widget not found",
   "Lingua non supportata": "Language not supported",
+  "Provenienza non valida": "Invalid source",
+  "La provenienza non si può modificare": "The source cannot be changed",
   "Serve la password per eliminare l'account": "The password is needed to delete the account",
   "Sei titolare di {organizations}, con altre persone nel team: prima passa la titolarità.":
     "You own {organizations}, with other people in the team: hand over the ownership first.",

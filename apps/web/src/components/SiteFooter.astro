@@ -1,0 +1,15 @@
+---
+import { legalPages } from "../legal";
+import { loginUrl } from "../site";
+import Icon from "./Icon.astro";
+---
+
+<footer class="border-t border-ink/5">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-ink/55 sm:px-6">
+    <p class="flex items-center gap-2"><Icon name="shield" class="size-4 text-brand-600" /> © {new Date().getFullYear()} Snippo · Dati ospitati in Unione Europea</p>
+    <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Link utili">
+      {legalPages.map((page) => <a href={page.href} class="transition hover:text-ink">{page.title}</a>)}
+      <a href={loginUrl} class="transition hover:text-ink">Area clienti</a>
+    </nav>
+  </div>
+</footer>

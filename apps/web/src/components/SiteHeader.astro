@@ -1,0 +1,25 @@
+---
+import { loginUrl, signupUrl } from "../site";
+import Icon from "./Icon.astro";
+---
+
+<header class="sticky top-0 z-20 border-b border-brand-900/5 bg-cream/80 backdrop-blur-md">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <a href="/" class="flex items-center gap-2 text-xl font-bold tracking-tight text-ink">
+      <span class="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-sm shadow-brand-700/30">
+        <Icon name="chat" class="size-4.5" />
+      </span>
+      snippo
+    </a>
+    <nav class="hidden gap-7 text-sm text-ink/70 md:flex" aria-label="Sezioni">
+      <a href="/#come-funziona" class="transition hover:text-ink">Come funziona</a>
+      <a href="/#settori" class="transition hover:text-ink">Settori</a>
+      <a href="/#prezzi" class="transition hover:text-ink">Prezzi</a>
+      <a href="/#faq" class="transition hover:text-ink">FAQ</a>
+    </nav>
+    <div class="flex items-center gap-2 text-sm">
+      <a href={loginUrl} class="rounded-lg px-3 py-2 font-medium text-ink/80 transition hover:bg-brand-900/5 hover:text-ink">Accedi</a>
+      <a href={signupUrl} class="rounded-lg bg-ink px-3.5 py-2 font-medium text-white transition hover:bg-brand-900">Prova gratis</a>
+    </div>
+  </div>
+</header>

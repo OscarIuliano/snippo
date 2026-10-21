@@ -4,7 +4,7 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 import { AccountDeletionBlocked, prepareAccountDeletion } from "./account";
 import { v7 as uuidv7 } from "uuid";
 import { count, createDb, schema } from "@snippo/db";
-import { isLocale } from "@snippo/shared";
+import { isLocale, isSignupSource } from "@snippo/shared";
 import { accountEmail, sendEmail, signupNoticeEmail } from "./email";
 import type { AppEnv } from "./env";
 import { hashPassword, verifyPassword } from "./password";
@@ -49,6 +49,8 @@ export function createAuth(env: AppEnv["Bindings"]) {
       // Language of the dashboard and of these emails; set at sign-up and from the account page.
       additionalFields: {
         locale: { type: "string", required: false, defaultValue: "it", input: true },
+        // Campaign of the link the user arrived from, sent once with the sign-up (see the before hook).
+        signupSource: { type: "string", required: false, input: true },
       },
       // The new address must be confirmed: until then the old one stays.
       changeEmail: { enabled: true },
@@ -78,6 +80,13 @@ export function createAuth(env: AppEnv["Bindings"]) {
         if ((ctx.path === "/sign-up/email" || ctx.path === "/update-user") && ctx.body?.locale !== undefined && !isLocale(ctx.body.locale)) {
           throw new APIError("BAD_REQUEST", { code: "INVALID_LOCALE", message: "Lingua non supportata" });
         }
+        if (ctx.path === "/sign-up/email" && ctx.body?.signupSource !== undefined && !isSignupSource(ctx.body.signupSource)) {
+          throw new APIError("BAD_REQUEST", { code: "INVALID_SIGNUP_SOURCE", message: "Provenienza non valida" });
+        }
+        // Set at sign-up only: it says where the account came from, so it never changes later.
+        if (ctx.path === "/update-user" && ctx.body?.signupSource !== undefined) {
+          throw new APIError("BAD_REQUEST", { code: "SIGNUP_SOURCE_READ_ONLY", message: "La provenienza non si può modificare" });
+        }
         if (ctx.path === "/delete-user" && !ctx.body?.password) {
           throw new APIError("BAD_REQUEST", { code: "PASSWORD_REQUIRED", message: "Serve la password per eliminare l'account" });
         }
@@ -101,7 +110,7 @@ export function createAuth(env: AppEnv["Bindings"]) {
             if (!env.SIGNUP_NOTIFY_TO) return;
             try {
               const [row] = await db.select({ total: count() }).from(schema.users);
-              await sendEmail(env, signupNoticeEmail(env.SIGNUP_NOTIFY_TO, user, row?.total ?? 0));
+              await sendEmail(env, signupNoticeEmail(env.SIGNUP_NOTIFY_TO, user as typeof user & { signupSource?: string | null }, row?.total ?? 0));
             } catch (error) {
               console.error("[signup notice]", error);
             }

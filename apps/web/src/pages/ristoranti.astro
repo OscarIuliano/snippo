@@ -1,0 +1,152 @@
+---
+// Landing page for restaurants: where the Instagram and Facebook ads for this sector point.
+import ChatMock from "../components/ChatMock.astro";
+import DemoWidget from "../components/DemoWidget.astro";
+import Icon from "../components/Icon.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import Layout from "../layouts/Layout.astro";
+import { signupUrl } from "../site";
+
+const benefits = [
+  { icon: "bell", title: "Niente telefono durante il servizio", text: "Il cliente prenota dalla chat sul sito anche alle 21 di sabato. Tu guardi la richiesta quando hai un minuto." },
+  { icon: "clock", title: "Solo orari con posto libero", text: "Imposti le fasce di apertura e quante persone accetti per orario: la chat propone solo gli orari in cui c'è ancora posto." },
+  { icon: "utensils", title: "Allergie e richieste già nelle note", text: "Seggiolone, tavolo fuori, celiachia: la chat lo chiede prima, così non lo scopri al tavolo." },
+  { icon: "check", title: "Confermi con un tocco", text: "La prenotazione arriva completa, per email. Confermi o rifiuti, e avvisi il cliente su WhatsApp con il messaggio già scritto." },
+] as const;
+
+const steps = [
+  { title: "Crea l'account", text: "Gratis, senza carta di credito. Scegli il template Ristorante." },
+  { title: "Imposta orari e coperti", text: "Le fasce di apertura di ogni giorno e quante persone accetti per orario." },
+  { title: "Incolla una riga sul sito", text: "Funziona su WordPress, Wix, Shopify e sui siti su misura. Oppure la mandi a chi ti segue il sito." },
+] as const;
+
+const faqs = [
+  { q: "Quanto costa?", a: "Il piano Free è gratis per sempre, fino a 50 prenotazioni al mese. Se ne ricevi di più, Starter costa 13 € al mese. Nessuna commissione a coperto." },
+  { q: "Uso già un portale di prenotazioni. Serve lo stesso?", a: "Sì, convivono: Snippo è il tuo canale diretto, sul tuo sito, senza commissioni. Chi ti trova su Google prenota da te." },
+  { q: "Serve uno sviluppatore?", a: "No. Copi una riga di codice nelle impostazioni del sito. Se preferisci, dalla dashboard la mandi a chi ti gestisce il sito con un clic." },
+  { q: "E se siamo pieni o chiusi?", a: "Quando un orario ha raggiunto i coperti, la chat non lo propone più. Ferie e giorni di chiusura li segni dalla dashboard e spariscono subito dalla chat." },
+  { q: "Dove finiscono i dati dei miei clienti?", a: "In un database in Unione Europea. La chat chiede il consenso privacy prima dell'invio e non usa cookie di tracciamento." },
+];
+---
+
+<Layout title="Snippo per ristoranti · Prenotazioni dal tuo sito" description="Una chat sul sito del tuo ristorante che raccoglie prenotazioni complete: giorno, orario, persone, telefono e allergie. Gratis fino a 50 al mese.">
+  <SiteHeader />
+
+  <main>
+    <!-- Hero -->
+    <section class="relative overflow-hidden">
+      <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+        <div class="animate-blob absolute -top-32 -right-24 size-[34rem] rounded-full bg-brand-300/40 blur-3xl"></div>
+        <div class="animate-blob absolute top-40 -left-40 size-[28rem] rounded-full bg-accent-200/50 blur-3xl [animation-delay:-6s]"></div>
+      </div>
+
+      <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 pt-16 pb-20 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:pt-24 lg:pb-28">
+        <div data-reveal>
+          <p class="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-sm font-medium text-brand-800 shadow-sm ring-1 ring-brand-200 backdrop-blur">
+            <Icon name="utensils" class="size-4 text-brand-600" />
+            Per ristoranti, trattorie e pizzerie
+          </p>
+          <h1 class="mt-6 text-4xl leading-[1.05] font-bold tracking-tight text-balance sm:text-6xl">
+            Prenotazioni dal tuo sito, <span class="text-gradient">anche quando non rispondi al telefono.</span>
+          </h1>
+          <p class="mt-6 max-w-xl text-lg leading-relaxed text-ink/70">
+            Una chat sul sito chiede al cliente giorno, orario, persone e telefono, e propone solo gli orari con posto libero. Tu ricevi la prenotazione completa e confermi con un tocco.
+          </p>
+          <div class="mt-9 flex flex-wrap gap-3">
+            <a
+              href={signupUrl}
+              class="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-5 py-3 font-semibold text-white shadow-lg shadow-brand-600/30 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-600/40"
+            >
+              Prova gratis
+              <Icon name="arrow" class="size-4 transition group-hover:translate-x-0.5" />
+            </a>
+            <button type="button" data-open-demo class="rounded-xl bg-white/80 px-5 py-3 font-semibold text-ink shadow-sm ring-1 ring-ink/10 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white">
+              Prova a prenotare
+            </button>
+          </div>
+          <p class="mt-6 text-sm text-ink/60">Gratis fino a 50 prenotazioni al mese · Nessuna commissione · Dati in Unione Europea</p>
+        </div>
+
+        <ChatMock />
+      </div>
+    </section>
+
+    <!-- Benefits -->
+    <section class="bg-gradient-to-b from-brand-50/70 to-cream py-20 sm:py-28">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div data-reveal class="max-w-2xl">
+          <p class="text-sm font-semibold tracking-wide text-brand-700 uppercase">Perché Snippo</p>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Meno telefonate, prenotazioni complete</h2>
+        </div>
+        <div class="mt-12 grid gap-6 sm:grid-cols-2">
+          {benefits.map((b, i) => (
+            <div data-reveal style={`--reveal-delay: ${i * 100}ms`} class="rounded-2xl bg-white p-6 ring-1 ring-ink/5">
+              <span class="grid size-12 place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100">
+                <Icon name={b.icon} class="size-5.5" />
+              </span>
+              <h3 class="mt-5 text-lg font-semibold">{b.title}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-ink/65">{b.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="py-20 sm:py-28">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div data-reveal class="max-w-2xl">
+          <p class="text-sm font-semibold tracking-wide text-brand-700 uppercase">Come funziona</p>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Online in cinque minuti</h2>
+        </div>
+        <ol class="mt-12 grid gap-6 md:grid-cols-3">
+          {steps.map((step, i) => (
+            <li data-reveal style={`--reveal-delay: ${i * 120}ms`} class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-ink/5">
+              <span class="grid size-10 place-items-center rounded-full bg-ink text-sm font-bold text-white">{i + 1}</span>
+              <h3 class="mt-5 text-lg font-semibold">{step.title}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-ink/65">{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="bg-gradient-to-b from-cream to-brand-50/60 py-20 sm:py-28">
+      <div class="mx-auto max-w-3xl px-4 sm:px-6">
+        <div data-reveal class="text-center">
+          <p class="text-sm font-semibold tracking-wide text-brand-700 uppercase">FAQ</p>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Domande frequenti</h2>
+        </div>
+        <div data-reveal class="mt-10 space-y-3">
+          {faqs.map((f) => (
+            <details class="group rounded-2xl bg-white px-5 shadow-sm ring-1 ring-ink/5 transition open:shadow-md open:ring-brand-200">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-medium">
+                {f.q}
+                <span class="grid size-7 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700 transition group-open:rotate-45 group-open:bg-brand-600 group-open:text-white">
+                  <Icon name="plus" class="size-4" />
+                </span>
+              </summary>
+              <p class="pb-5 text-sm leading-relaxed text-ink/70">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- Final call to action -->
+    <section class="px-4 py-20 sm:px-6 sm:py-28">
+      <div data-reveal class="relative mx-auto max-w-5xl overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-600 to-accent-500 px-6 py-16 text-center text-white shadow-2xl shadow-brand-700/30 sm:px-12">
+        <h2 class="relative text-3xl font-bold tracking-tight text-balance sm:text-4xl">Il prossimo sabato sera, le prenotazioni le prende la chat</h2>
+        <p class="relative mt-4 text-white/85">Crea l'account, imposta orari e coperti, incolla il codice.</p>
+        <a href={signupUrl} class="relative mt-9 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-brand-800 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl">
+          Prova gratis <Icon name="arrow" class="size-4" />
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+  <DemoWidget />
+</Layout>

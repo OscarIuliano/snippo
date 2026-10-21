@@ -46,6 +46,20 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         { rootMargin: "0px 0px -10% 0px" },
       );
       sections.forEach((el) => observer.observe(el));
+
+      // A campaign link (utm_*) is carried to the other pages of this site and to the sign-up and
+      // sign-in pages, where the new account stores it. Kept in the links only: nothing is saved in the browser.
+      const campaign = [...new URLSearchParams(location.search)].filter(([name]) => name.startsWith("utm_"));
+      for (const link of document.querySelectorAll<HTMLAnchorElement>("a[href]")) {
+        const url = new URL(link.href, location.href);
+        // An anchor on this same page keeps the whole query (fbclid included): it scrolls instead of reloading.
+        if (url.origin === location.origin && url.pathname === location.pathname && url.hash) {
+          url.search = location.search;
+        } else if (campaign.length > 0 && (url.origin === location.origin || /\/(registrati|accedi)$/.test(url.pathname))) {
+          for (const [name, value] of campaign) url.searchParams.set(name, value);
+        } else continue;
+        link.href = url.toString();
+      }
     </script>
   </body>
 </html>

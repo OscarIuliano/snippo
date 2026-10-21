@@ -132,6 +132,8 @@ export const users = sqliteTable("users", {
   image: text("image"),
   /** Language of the dashboard and of the account emails: "it" (default) or "en". */
   locale: text("locale").notNull().default("it"),
+  /** Campaign the user signed up from: "source / medium / campaign" from the UTM parameters of the link. */
+  signupSource: text("signup_source"),
   ...authTimestamps,
 });
 

@@ -3,9 +3,9 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { AccountDeletionBlocked, prepareAccountDeletion } from "./account";
 import { v7 as uuidv7 } from "uuid";
-import { createDb, schema } from "@snippo/db";
+import { count, createDb, schema } from "@snippo/db";
 import { isLocale } from "@snippo/shared";
-import { accountEmail, sendEmail } from "./email";
+import { accountEmail, sendEmail, signupNoticeEmail } from "./email";
 import type { AppEnv } from "./env";
 import { hashPassword, verifyPassword } from "./password";
 
@@ -92,6 +92,22 @@ export function createAuth(env: AppEnv["Bindings"]) {
         if (ctx.path !== "/change-password" || !user || failed) return;
         await sendEmail(env, accountEmail("passwordChanged", user, env.DASHBOARD_ORIGIN));
       }),
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          // The owner hears about every new account. A failure here must never block the sign-up.
+          after: async (user) => {
+            if (!env.SIGNUP_NOTIFY_TO) return;
+            try {
+              const [row] = await db.select({ total: count() }).from(schema.users);
+              await sendEmail(env, signupNoticeEmail(env.SIGNUP_NOTIFY_TO, user, row?.total ?? 0));
+            } catch (error) {
+              console.error("[signup notice]", error);
+            }
+          },
+        },
+      },
     },
     advanced: {
       database: { generateId: () => uuidv7() },

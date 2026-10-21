@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it, vi } from "vitest";
-import { sendEmail, type Email } from "../src/email";
+import { sendEmail, signupNoticeEmail, type Email } from "../src/email";
 
 const email: Email = { to: "customer@example.com", subject: "Oggetto", text: "Testo", html: "<p>Testo</p>" };
 
@@ -31,5 +31,25 @@ describe("sendEmail", () => {
     await expect(sendEmail({ ...env, EMAIL: undefined, EMAIL_FROM: "noreply@snippo.io" }, email)).resolves.toEqual({});
     expect(log).toHaveBeenCalledOnce();
     log.mockRestore();
+  });
+});
+
+describe("signupNoticeEmail", () => {
+  it("tells the owner, in Italian, who signed up and how many accounts there are", () => {
+    const user = { name: "Giulia Bianchi", email: "giulia@example.com", createdAt: new Date("2026-10-21T10:30:00Z") };
+    const notice = signupNoticeEmail("owner@example.com", user, 42);
+    expect(notice.to).toBe("owner@example.com");
+    expect(notice.subject).toBe("Nuova registrazione: Giulia Bianchi");
+    expect(notice.text).toContain("Nome: Giulia Bianchi");
+    expect(notice.text).toContain("Email: giulia@example.com");
+    expect(notice.text).toContain("Quando: ");
+    expect(notice.text).toContain("Account in totale: 42");
+    expect(notice.html).toContain("Account in totale: 42");
+  });
+
+  it("escapes the name in the html", () => {
+    const notice = signupNoticeEmail("owner@example.com", { name: "<b>X</b>", email: "x@example.com", createdAt: new Date() }, 1);
+    expect(notice.html).not.toContain("<b>X</b>");
+    expect(notice.html).toContain("&lt;b&gt;X&lt;/b&gt;");
   });
 });

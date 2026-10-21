@@ -26,6 +26,8 @@ export interface Bindings {
   EMAIL_FROM?: string;
   /** Where replies to our emails land, e.g. supporto@snippo.io */
   EMAIL_REPLY_TO?: string;
+  /** Where the owner of Snippo hears about each new account. Unset = no notice. */
+  SIGNUP_NOTIFY_TO?: string;
   /** Submissions per widget and IP (Workers rate limiting binding). */
   SUBMIT_LIMITER?: RateLimit;
   /** Usage events per widget and IP. */

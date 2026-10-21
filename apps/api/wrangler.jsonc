@@ -97,7 +97,9 @@
         "TURNSTILE_SITE_KEY": "0x4AAAAAAFe3wT6BG6ObZUDZ",
         "CHALLENGE_URL": "https://cdn.snippo.io/v1/challenge.html",
         "EMAIL_FROM": "noreply@snippo.io",
-        "EMAIL_REPLY_TO": "supporto@snippo.io"
+        "EMAIL_REPLY_TO": "supporto@snippo.io",
+        // Email Routing forwards it to the owner's mailbox.
+        "SIGNUP_NOTIFY_TO": "supporto@snippo.io"
       },
       "send_email": [{ "name": "EMAIL" }],
       "ratelimits": [

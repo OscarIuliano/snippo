@@ -3,7 +3,7 @@
 // Steps, run in order:
 //   {"nav": "/path" | "https://..."}   relative paths use --base
 //   {"fill": {"<selector>": "value"}}   sets inputs and textareas, firing React's input event
-//   {"click": "<button or link text>" | "<selector>"}
+//   {"click": "<button or link text>" | "<selector>"}  {"tap": [x, y]} a real touch, as on a phone
 //   {"eval": "<js>"}  {"print": "<js>"} logs the value  {"wait": ms}  {"url": true}  {"shot": "name"}  saves <out-dir>/<name>.png
 // Mobile (default 390px) emulates a phone; pass --width 1280 for desktop.
 import { spawn } from "node:child_process";
@@ -38,6 +38,10 @@ const send = (method, params = {}) => new Promise((r) => { const n = ++id; p.set
 const ev = async (expression) => (await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true })).result.value;
 await send("Runtime.enable"); await send("Log.enable");
 await send("Emulation.setDeviceMetricsOverride", { width, height: Number(values.height), deviceScaleFactor: 2, mobile: width < 768 });
+if (width < 768) {
+  await send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+  await send("Emulation.setUserAgentOverride", { userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1" });
+}
 for (const step of steps) {
   if (step.nav) { await send("Page.navigate", { url: step.nav.startsWith("http") ? step.nav : `${values.base}${step.nav}` }); await sleep(2500); }
   if (step.fill) for (const [sel, val] of Object.entries(step.fill)) {
@@ -45,6 +49,12 @@ for (const step of steps) {
       Object.getOwnPropertyDescriptor(proto, "value").set.call(el, ${JSON.stringify(val)}); el.dispatchEvent(new Event("input", { bubbles: true })); })()`);
   }
   if (step.click) { const ok = await ev(`(() => { const el = [...document.querySelectorAll("button, a")].find((b) => b.textContent.trim() === ${JSON.stringify(step.click)}) ?? document.querySelector(${JSON.stringify(step.click)}); if (!el) return false; el.click(); return true; })()`); if (!ok) console.log("non trovato:", step.click); await sleep(2000); }
+  if (step.tap) {
+    const [x, y] = step.tap;
+    await send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+    await send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await sleep(2000);
+  }
   if (step.wait) await sleep(step.wait);
   if (step.eval) { await ev(step.eval); await sleep(500); }
   if (step.print) console.log("print:", await ev(step.print));

@@ -12,6 +12,12 @@
     "staging": {
       "name": "snippo-dashboard-staging",
       "services": [{ "binding": "API", "service": "snippo-api-staging" }]
+    },
+    "production": {
+      "name": "snippo-dashboard-production",
+      "routes": [{ "pattern": "app.snippo.io", "custom_domain": true }],
+      "workers_dev": false,
+      "services": [{ "binding": "API", "service": "snippo-api-production" }]
     }
   }
 }

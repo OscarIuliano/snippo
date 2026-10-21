@@ -10,13 +10,24 @@ export interface Email {
 }
 
 /**
- * The one place every email leaves from. For now it prints the email to the Worker log, links
- * included, so every flow can be tried by hand. Cloudflare Email Service takes over here once
- * snippo.io is on Cloudflare: only this function changes.
+ * The one place every email leaves from. With the EMAIL binding (Cloudflare Email Service, staging
+ * and production) the email is sent from EMAIL_FROM; without it, as in development and tests, it
+ * goes to the Worker log, links included, so every flow can be tried by hand.
  */
-export async function sendEmail(_env: AppEnv["Bindings"], email: Email): Promise<{ id?: string }> {
-  console.log(`\n──── email → ${email.to} ────\nOggetto: ${email.subject}\n\n${email.text}\n────────────────────────────`);
-  return {};
+export async function sendEmail(env: AppEnv["Bindings"], email: Email): Promise<{ id?: string }> {
+  if (!env.EMAIL || !env.EMAIL_FROM) {
+    console.log(`\n──── email → ${email.to} ────\nOggetto: ${email.subject}\n\n${email.text}\n────────────────────────────`);
+    return {};
+  }
+  const { messageId } = await env.EMAIL.send({
+    from: { email: env.EMAIL_FROM, name: "Snippo" },
+    to: email.to,
+    replyTo: env.EMAIL_REPLY_TO,
+    subject: email.subject,
+    text: email.text,
+    html: email.html,
+  });
+  return { id: messageId };
 }
 
 export function escapeHtml(value: string): string {

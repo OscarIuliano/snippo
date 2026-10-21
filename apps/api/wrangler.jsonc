@@ -52,8 +52,12 @@
         "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
         "CHALLENGE_URL": "https://snippo-cdn-staging.oiuliano90.workers.dev/v1/challenge.html",
         // Meta's test number for now. WhatsApp turns on with the secret WHATSAPP_TOKEN.
-        "WHATSAPP_PHONE_NUMBER_ID": "1375767865620856"
+        "WHATSAPP_PHONE_NUMBER_ID": "1375767865620856",
+        "EMAIL_FROM": "noreply@snippo.io",
+        "EMAIL_REPLY_TO": "supporto@snippo.io"
       },
+      // Email Service: real emails once snippo.io is onboarded for sending.
+      "send_email": [{ "name": "EMAIL" }],
       "ratelimits": [
         { "name": "SUBMIT_LIMITER", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
         { "name": "EVENTS_LIMITER", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } }
@@ -75,6 +79,49 @@
             "max_batch_timeout": 5,
             "max_retries": 5,
             "dead_letter_queue": "snippo-notifications-dlq-staging"
+          }
+        ]
+      }
+    },
+    // Production on snippo.io. Secrets: BETTER_AUTH_SECRET, TURNSTILE_SECRET (and WHATSAPP_TOKEN later).
+    "production": {
+      "name": "snippo-api-production",
+      "routes": [{ "pattern": "api.snippo.io", "custom_domain": true }],
+      "workers_dev": false,
+      "triggers": { "crons": ["17 3 * * *"] },
+      "vars": {
+        "AUTH_BASE_URL": "https://app.snippo.io",
+        "DASHBOARD_ORIGIN": "https://app.snippo.io",
+        "PUBLIC_API_URL": "https://api.snippo.io",
+        // Site key of the Turnstile widget for cdn.snippo.io, created in the Cloudflare dashboard before launch.
+        "TURNSTILE_SITE_KEY": "TODO_TURNSTILE_SITE_KEY",
+        "CHALLENGE_URL": "https://cdn.snippo.io/v1/challenge.html",
+        "EMAIL_FROM": "noreply@snippo.io",
+        "EMAIL_REPLY_TO": "supporto@snippo.io"
+      },
+      "send_email": [{ "name": "EMAIL" }],
+      "ratelimits": [
+        { "name": "SUBMIT_LIMITER", "namespace_id": "1005", "simple": { "limit": 10, "period": 60 } },
+        { "name": "EVENTS_LIMITER", "namespace_id": "1006", "simple": { "limit": 60, "period": 60 } }
+      ],
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "snippo-prod",
+          // wrangler d1 create snippo-prod --jurisdiction=eu, then paste the id here.
+          "database_id": "TODO_SNIPPO_PROD_DATABASE_ID",
+          "migrations_dir": "../../packages/db/migrations"
+        }
+      ],
+      "queues": {
+        "producers": [{ "binding": "NOTIFICATIONS", "queue": "snippo-notifications-prod" }],
+        "consumers": [
+          {
+            "queue": "snippo-notifications-prod",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 5,
+            "dead_letter_queue": "snippo-notifications-dlq-prod"
           }
         ]
       }

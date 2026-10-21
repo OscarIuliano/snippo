@@ -5,6 +5,14 @@
   "compatibility_date": "2025-09-01",
   "assets": { "directory": "./dist" },
   "env": {
-    "staging": { "name": "snippo-web-staging" }
+    "staging": { "name": "snippo-web-staging" },
+    "production": {
+      "name": "snippo-web-production",
+      "routes": [
+        { "pattern": "snippo.io", "custom_domain": true },
+        { "pattern": "www.snippo.io", "custom_domain": true }
+      ],
+      "workers_dev": false
+    }
   }
 }

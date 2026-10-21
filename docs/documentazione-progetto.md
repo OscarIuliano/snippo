@@ -508,7 +508,7 @@ L'MVP ha 30 attività fatte, 3 in attesa di un tuo passaggio e 7 da fare. Le "Da
 | 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Codice pronto: invio con template e script per crearli. L'account Meta è bloccato (errore 131031): va sbloccato, poi servono il token su staging e l'approvazione dei template |
 | 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | Fatto | snippo.io comprato su Cloudflare Registrar il 21-10-2026 (scade 21-10-2027, rinnovo automatico). Email Routing attivo: supporto@ e privacy@ inoltrano alla casella del titolare. Ricerca TMview: nessun 'Snippo' attivo; da tenere d'occhio SNIPPORT (Benelux, classi 9 e 42, depositato 30-09-2026) e snippod (registrazione internazionale, classe 38). Valutare presto il deposito del marchio all'UIBM, classi 9 e 42. |
 | 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
-| 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Bozze pubblicate sulla landing (`/privacy`, `/termini`, `/dpa`) e accettate all'iscrizione. Ora che il sito è pubblico vanno compilati subito titolare, indirizzo, partita IVA e foro (`apps/web/src/legal.ts`); revisione legale con i primi clienti paganti |
+| 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Pagine pubblicate (privacy, termini, DPA, supporto) con titolare 'Snippo (snippo.io)' e contatti supporto@ e privacy@snippo.io, senza partita IVA né indirizzo: va bene finché non ci sono pagamenti. Nome, partita IVA e revisione con un legale si fanno insieme ai pagamenti (n. 24). |
 | 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
 | 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Fatto | Il deploy automatico parte quando aggiungi i secret Cloudflare su GitHub |
 | 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; in produzione c'è il widget vero "Snippo widget" su cdn.snippo.io |
@@ -517,7 +517,7 @@ L'MVP ha 30 attività fatte, 3 in attesa di un tuo passaggio e 7 da fare. Le "Da
 | 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Fatto | Pagina Statistiche: aperture, conversione, dove ci si ferma |
 | 22 | Area privata | Export CSV delle richieste | Da fare | |
 | 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Fatto | Inviti con link (7 giorni, uso singolo); l'invio via email ora è possibile con le email reali (n. 11) |
-| 24 | Pagamenti | Piani e quote con Paddle | Da fare | |
+| 24 | Pagamenti | Piani e quote con Paddle | Da fare | Prima di attivarlo: nome del titolare e partita IVA nei testi legali (n. 15). |
 | 25 | Privacy | Retention dei dati e cancellazione automatica | Fatto | Cron ogni notte; pagina Privacy per accesso e cancellazione dei dati di una persona |
 | 26 | Infrastruttura | Monitoraggio errori (Sentry) e uptime | Da fare | |
 | 27 | Widget | Editor delle domande: partire da un template, aggiungere, modificare, riordinare e togliere domande | Fatto | Pagina Domande; le domande speciali (nome, telefono, giorno…) tengono il loro tipo |

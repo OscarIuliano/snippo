@@ -108,8 +108,8 @@
         {
           "binding": "DB",
           "database_name": "snippo-prod",
-          // wrangler d1 create snippo-prod --jurisdiction=eu, then paste the id here.
-          "database_id": "TODO_SNIPPO_PROD_DATABASE_ID",
+          // Created with --jurisdiction=eu.
+          "database_id": "a1d2a77e-9961-47f4-9c36-d02c4cbc3dbd",
           "migrations_dir": "../../packages/db/migrations"
         }
       ],

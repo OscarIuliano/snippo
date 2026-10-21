@@ -339,7 +339,7 @@ Ogni richiesta pubblica un messaggio su Cloudflare Queues per ciascun canale att
 
 | Canale | Servizio | Uso | Note | Fase |
 | --- | --- | --- | --- | --- |
-| Email transazionale | **Cloudflare Email Service** (in beta pubblica da aprile 2026; piano B: Resend) | Notifica all'azienda, conferma al visitatore, email di sistema | Binding nel Worker, senza chiavi API; SPF, DKIM e DMARC configurati da Cloudflare sul dominio. Tutto passa da `sendEmail` (`apps/api/src/email.ts`): cambiare servizio tocca solo quella funzione | MVP |
+| Email transazionale | **Cloudflare Email Service** (in beta pubblica da aprile 2026; piano B: Resend) | Notifica all'azienda, conferma al visitatore, email di sistema | Invio dal binding `EMAIL` del Worker, senza chiavi API; mittente noreply@snippo.io (variabile `EMAIL_FROM`), risposte a supporto@snippo.io (variabile `EMAIL_REPLY_TO`). SPF, DKIM e DMARC configurati da Cloudflare sul dominio. In sviluppo e nei test, senza binding, l'email finisce nel log. Tutto passa da `sendEmail` (`apps/api/src/email.ts`): cambiare servizio tocca solo quella funzione | MVP |
 | Webhook | Proprio | Integrazione con gestionali, Zapier, Make | Firma HMAC-SHA256 nell'header, retry, log consultabile | Fase 2 |
 | WhatsApp | WhatsApp Business Cloud API (Meta) | Notifica all'azienda e conferma al visitatore | Verifica azienda su Meta, template approvati, finestra di 24 h, costo per conversazione | MVP |
 | SMS | Twilio o Vonage | Conferma al visitatore senza email | A consumo | Fase 3 |
@@ -474,11 +474,11 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 | Pagamenti | Paddle all'inizio, Stripe più avanti | Paddle è Merchant of Record: incassa e gestisce IVA UE e fatture al posto nostro. Stripe conviene quando i volumi giustificano commissioni più basse | Da verificare |
 | Fatturazione elettronica | Con Paddle si fattura solo a Paddle; con Stripe serve un collegamento SDI (es. Fatture in Cloud) | In Italia le fatture B2B passano dallo SDI | Da verificare |
 | Forma giuridica | Partita IVA in regime forfettario per partire, SRL quando i ricavi crescono | Costi fissi bassi durante la validazione | Da verificare |
-| Dominio e marchio | snippo.io o snippo.app, più ricerca marchio su EUIPO | Nome breve: probabili omonimie da escludere prima del lancio | Da verificare |
+| Dominio e marchio | snippo.io, comprato su Cloudflare Registrar il 21 ottobre 2026; ricerca marchio su TMview fatta | Nessun 'Snippo' attivo su TMview; da valutare presto il deposito all'UIBM, classi 9 e 42 | Deciso |
 
 ## 19. Backlog
 
-L'MVP ha 28 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le altre aspettano le email reali, Paddle o Sentry.
+L'MVP ha 30 attività fatte, 3 in attesa di un tuo passaggio e 7 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le n. 20 e 36 sono ora sbloccate dalle email reali, le altre aspettano Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -492,19 +492,19 @@ L'MVP ha 28 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da
 | 8 | Notifiche | Destinatari email e WhatsApp, coda, link Conferma/Rifiuta | Fatto | In sviluppo finiscono nel log |
 | 9 | Area privata | Calendario con mattina (fino alle 13:00) e sera | Fatto | |
 | 10 | Repository | Merge dei branch su `main` | Fatto | Allineato l'8 ottobre; da qui un branch e una PR per attività |
-| 11 | Notifiche | Email reali con Cloudflare Email Service | In attesa di te | Serve il dominio su Cloudflare (n. 13); poi si attiva l'invio e si collega `sendEmail`. Fino ad allora le email finiscono nel log del Worker |
+| 11 | Notifiche | Email reali con Cloudflare Email Service | Fatto | Invio con Email Service da noreply@snippo.io, risposte a supporto@snippo.io (commit a141c2d). Attivo su staging dal 21-10-2026; serve il piano Workers Paid. Le prime email possono finire in spam finché il dominio non ha reputazione. |
 | 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Codice pronto: invio con template e script per crearli. L'account Meta è bloccato (errore 131031): va sbloccato, poi servono il token su staging e l'approvazione dei template |
-| 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet. Con il dominio su Cloudflare, attivare Email Routing per `supporto@` e `privacy@` verso la tua casella |
+| 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | Fatto | snippo.io comprato su Cloudflare Registrar il 21-10-2026 (scade 21-10-2027, rinnovo automatico). Email Routing attivo: supporto@ e privacy@ inoltrano alla casella del titolare. Ricerca TMview: nessun 'Snippo' attivo; da tenere d'occhio SNIPPORT (Benelux, classi 9 e 42, depositato 30-09-2026) e snippod (registrazione internazionale, classe 38). Valutare presto il deposito del marchio all'UIBM, classi 9 e 42. |
 | 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
 | 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Bozze pubblicate sulla landing (`/privacy`, `/termini`, `/dpa`) e accettate all'iscrizione. Da completare titolare, indirizzo e foro (`apps/web/src/legal.ts`); revisione legale con i primi clienti paganti |
 | 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
 | 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Fatto | Il deploy automatico parte quando aggiungi i secret Cloudflare su GitHub |
 | 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; per la produzione serve un widget Turnstile su `cdn.snippo.io` |
-| 19 | Area privata | Verifica email, password dimenticata e pagina Account (nome, email, password, dispositivi) | Fatto | Finché le email non partono (n. 11) i link finiscono nel log del Worker; gli account creati prima restano attivi |
-| 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo le email reali (n. 11). Intanto l'azienda avvisa il cliente con un tocco (n. 33) |
+| 19 | Area privata | Verifica email, password dimenticata e pagina Account (nome, email, password, dispositivi) | Fatto | I link di verifica e di reset arrivano per email (n. 11); gli account creati prima restano attivi |
+| 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Sbloccato: le email reali sono attive (n. 11). Intanto l'azienda avvisa il cliente con un tocco (n. 33) |
 | 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Fatto | Pagina Statistiche: aperture, conversione, dove ci si ferma |
 | 22 | Area privata | Export CSV delle richieste | Da fare | |
-| 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Fatto | Inviti con link (7 giorni, uso singolo); l'invio via email arriva con le email reali (n. 11) |
+| 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Fatto | Inviti con link (7 giorni, uso singolo); l'invio via email ora è possibile con le email reali (n. 11) |
 | 24 | Pagamenti | Piani e quote con Paddle | Da fare | |
 | 25 | Privacy | Retention dei dati e cancellazione automatica | Fatto | Cron ogni notte; pagina Privacy per accesso e cancellazione dei dati di una persona |
 | 26 | Infrastruttura | Monitoraggio errori (Sentry) e uptime | Da fare | |
@@ -517,10 +517,10 @@ L'MVP ha 28 attività fatte, 5 in attesa di un tuo passaggio e 7 da fare. Le "Da
 | 33 | Area privata | "Avvisa il cliente" dopo Conferma o Rifiuta: WhatsApp, email o chiamata con il messaggio già scritto | Fatto | Il messaggio parte dal telefono o dalla casella dell'azienda (link `wa.me` e `mailto`), quindi niente costi e niente verifica Meta. Testi per ristorante, appuntamenti e richieste info, modificabili prima dell'invio. Anche nella pagina che si apre dalla notifica |
 | 34 | Notifiche | "Invia prova" crea una richiesta di prova, segnata come Prova in Richieste e Calendario, con la notifica vera (Conferma/Rifiuta) | Fatto | Il cliente di prova è l'azienda stessa (il suo numero WhatsApp e la sua email). Non conta in statistiche, uso del piano e posti disponibili; si cancella da sola dopo 7 giorni |
 | 35 | Notifiche | Testi di "Avvisa il cliente" personalizzabili per progetto | Da fare | Piani a pagamento |
-| 36 | Notifiche | Promemoria al cliente il giorno prima | Da fare | Dopo le email reali (n. 11); riduce chi prenota e non si presenta |
+| 36 | Notifiche | Promemoria al cliente il giorno prima | Da fare | Sbloccato: le email reali sono attive (n. 11); riduce chi prenota e non si presenta |
 | 37 | Pagamenti | Quota mensile di notifiche WhatsApp per piano, oltre la quota a consumo | Da fare | Con Paddle (n. 24) e WhatsApp reale (n. 12) |
 | 38 | Privacy | Link all'informativa privacy dell'azienda nel widget, accanto al consenso | Fatto | Si inserisce nella pagina Privacy; senza link la pagina avvisa che manca |
-| 39 | Supporto | Pagina Supporto sulla landing (contatto e risposte rapide) e voce Aiuto nella dashboard | Fatto | "Scrivi al supporto" apre l'email con account e progetti già scritti; l'indirizzo `supporto@snippo.io` funziona con il dominio (n. 13) |
+| 39 | Supporto | Pagina Supporto sulla landing (contatto e risposte rapide) e voce Aiuto nella dashboard | Fatto | "Scrivi al supporto" apre l'email con account e progetti già scritti; supporto@snippo.io e privacy@snippo.io sono attivi con Email Routing (n. 13) |
 | 40 | Calendario | Prenotazioni aggiunte a mano dal calendario (telefono, di persona) | Fatto | Confermate subito, segnate Manuale; occupano i posti della fascia, quindi il widget non li offre più. Niente notifiche, fuori da statistiche e uso del piano. Anche gli operatori le aggiungono ed eliminano |
 
 Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

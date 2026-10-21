@@ -1,16 +1,101 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, useNavigate, useParams } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { canManageProjects, canManageTeam, isLocale } from "@snippo/shared";
+import { msg, useI18n } from "../i18n";
 import { authClient } from "../lib/auth";
-import { meQuery } from "../lib/queries";
+import { setActiveOrganization } from "../lib/organization";
+import { meQuery, sessionQuery } from "../lib/queries";
+import { Icon, Logo, type IconName } from "./Icon";
 import { Button, cx } from "./ui";
+
+type ProjectPath =
+  | "/progetti/$projectId/richieste"
+  | "/progetti/$projectId/calendario"
+  | "/progetti/$projectId/orari"
+  | "/progetti/$projectId/statistiche"
+  | "/progetti/$projectId/domande"
+  | "/progetti/$projectId/widget"
+  | "/progetti/$projectId/notifiche"
+  | "/progetti/$projectId/privacy"
+  | "/progetti/$projectId/installazione"
+  | "/progetti/$projectId/impostazioni";
+
+interface NavItem {
+  to: ProjectPath;
+  label: string;
+  icon: IconName;
+  /** Settings pages: owners and admins only. */
+  manage?: boolean;
+}
+
+const NAV: { title: string; items: NavItem[] }[] = [
+  {
+    title: msg("Ogni giorno"),
+    items: [
+      { to: "/progetti/$projectId/richieste", label: msg("Richieste"), icon: "inbox" },
+      { to: "/progetti/$projectId/calendario", label: msg("Calendario"), icon: "calendar" },
+      { to: "/progetti/$projectId/statistiche", label: msg("Statistiche"), icon: "chart" },
+    ],
+  },
+  {
+    title: msg("Impostazioni"),
+    items: [
+      { to: "/progetti/$projectId/orari", label: msg("Orari"), icon: "clock", manage: true },
+      { to: "/progetti/$projectId/domande", label: msg("Domande"), icon: "list", manage: true },
+      { to: "/progetti/$projectId/widget", label: msg("Widget"), icon: "palette", manage: true },
+      { to: "/progetti/$projectId/notifiche", label: msg("Notifiche"), icon: "bell", manage: true },
+      { to: "/progetti/$projectId/privacy", label: msg("Privacy"), icon: "shield", manage: true },
+      { to: "/progetti/$projectId/installazione", label: msg("Installazione"), icon: "code", manage: true },
+      { to: "/progetti/$projectId/impostazioni", label: msg("Progetto"), icon: "sliders", manage: true },
+    ],
+  },
+];
+
+const LAST_PROJECT = "snippo:last-project";
+const navLink = "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900";
+const navActive = { className: "bg-brand-50 font-medium text-brand-800 hover:bg-brand-50 hover:text-brand-800" };
 
 export function AppShell() {
   const me = useQuery(meQuery);
-  const { projectId } = useParams({ strict: false });
+  const session = useQuery(sessionQuery);
+  const { t, locale, setLocale } = useI18n();
+  const params = useParams({ strict: false });
   const [menuOpen, setMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  // Outside a project (e.g. the Team page) the menu keeps the last project, so its pages stay one click away.
+  const [lastProject, setLastProject] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(LAST_PROJECT);
+    } catch {
+      return null;
+    }
+  });
+  useEffect(() => {
+    if (!params.projectId) return;
+    setLastProject(params.projectId);
+    try {
+      localStorage.setItem(LAST_PROJECT, params.projectId);
+    } catch {
+      // Storage blocked: the menu just forgets it.
+    }
+  }, [params.projectId]);
+
+  // The language saved on the account wins over this browser's: same dashboard on every device.
+  const savedLocale = session.data?.user.locale;
+  useEffect(() => {
+    if (isLocale(savedLocale) && savedLocale !== locale) setLocale(savedLocale);
+    // Only when the saved one changes: switching from the account page updates both.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedLocale]);
+
+  const projects = me.data?.projects ?? [];
+  const projectId = params.projectId ?? (projects.some((p) => p.id === lastProject) ? lastProject : projects[0]?.id);
+  const current = projects.find((p) => p.id === projectId);
+  const manager = me.data ? canManageProjects(me.data.organization.role) : false;
+  const owner = me.data ? canManageTeam(me.data.organization.role) : false;
 
   async function signOut() {
     await authClient.signOut();
@@ -18,78 +103,128 @@ export function AppShell() {
     await navigate({ to: "/accedi" });
   }
 
-  const current = me.data?.projects.find((p) => p.id === projectId);
-  const navItems = projectId
-    ? ([
-        { to: "/progetti/$projectId/richieste", label: "Richieste", badge: current?.newSubmissions },
-        { to: "/progetti/$projectId/calendario", label: "Calendario" },
-        { to: "/progetti/$projectId/orari", label: "Orari" },
-        { to: "/progetti/$projectId/widget", label: "Widget" },
-        { to: "/progetti/$projectId/notifiche", label: "Notifiche" },
-        { to: "/progetti/$projectId/installazione", label: "Installazione" },
-      ] as const)
-    : [];
+  async function switchOrganization(id: string) {
+    setActiveOrganization(id);
+    setMenuOpen(false);
+    queryClient.clear();
+    await navigate({ to: "/" });
+  }
+
+  const close = () => setMenuOpen(false);
+  const select = "mt-1 block w-full rounded-lg border-0 bg-white px-2.5 py-2 text-sm font-medium ring-1 ring-slate-200 focus:ring-2 focus:ring-brand-600";
 
   const sidebar = (
-    <nav className="flex h-full flex-col gap-6 p-4">
-      <Link to="/" className="px-2 text-xl font-bold tracking-tight text-brand-700">snippo</Link>
+    <nav className="flex h-full flex-col gap-5 p-4">
+      <Link to="/" className="hidden px-1 lg:block"><Logo /></Link>
 
-      {me.data && me.data.projects.length > 0 && (
-        <label className="block px-2">
-          <span className="text-xs font-medium tracking-wide text-stone-500 uppercase">Progetto</span>
-          <select
-            className="mt-1 block w-full rounded-lg border-0 bg-white px-2 py-1.5 text-sm ring-1 ring-stone-300 focus:ring-2 focus:ring-brand-600"
-            value={projectId ?? ""}
-            onChange={(e) => {
-              setMenuOpen(false);
-              void navigate({ to: "/progetti/$projectId/richieste", params: { projectId: e.target.value } });
-            }}
-          >
-            {!projectId && <option value="">Scegli…</option>}
-            {me.data.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+      {me.data && me.data.organizations.length > 1 && (
+        <label className="block px-1">
+          <span className="text-xs font-medium text-slate-500">{t("Organizzazione")}</span>
+          <select className={select} value={me.data.organization.id} onChange={(e) => void switchOrganization(e.target.value)}>
+            {me.data.organizations.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
         </label>
       )}
 
-      <ul className="space-y-1">
-        {navItems.map((item) => (
-          <li key={item.to}>
-            <Link
-              to={item.to}
-              params={{ projectId: projectId! }}
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm text-stone-700 hover:bg-stone-100"
-              activeProps={{ className: "bg-brand-50 font-medium text-brand-800 hover:bg-brand-50" }}
-            >
-              {item.label}
-              {"badge" in item && item.badge ? <span className="rounded-full bg-brand-700 px-1.5 text-xs text-white">{item.badge}</span> : null}
+      {projects.length > 0 && projectId && (
+        <label className="block px-1">
+          <span className="text-xs font-medium text-slate-500">{t("Progetto")}</span>
+          <select
+            className={select}
+            value={projectId}
+            onChange={(e) => {
+              close();
+              void navigate({ to: "/progetti/$projectId/richieste", params: { projectId: e.target.value } });
+            }}
+          >
+            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </label>
+      )}
+
+      {projectId &&
+        NAV.map((group) => {
+          const items = group.items.filter((item) => !item.manage || manager);
+          if (items.length === 0) return null;
+          return (
+            <div key={group.title}>
+              <p className="px-2.5 text-xs font-medium text-slate-400">{t(group.title)}</p>
+              <ul className="mt-1 space-y-0.5">
+                {items.map((item) => (
+                  <li key={item.to}>
+                    <Link to={item.to} params={{ projectId }} onClick={close} className={navLink} activeProps={navActive}>
+                      <Icon name={item.icon} className="size-4.5 shrink-0" />
+                      <span className="flex-1">{t(item.label)}</span>
+                      {item.to.endsWith("richieste") && current?.newSubmissions ? (
+                        <span className="rounded-full bg-brand-600 px-1.5 text-xs font-medium text-white">{current.newSubmissions}</span>
+                      ) : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+
+      <div>
+        <p className="px-2.5 text-xs font-medium text-slate-400">{t("Account")}</p>
+        <ul className="mt-1 space-y-0.5">
+          <li>
+            <Link to="/account" onClick={close} className={navLink} activeProps={navActive}>
+              <Icon name="user" className="size-4.5 shrink-0" /> {t("Il tuo account")}
             </Link>
           </li>
-        ))}
-        <li>
-          <Link to="/nuovo-progetto" onClick={() => setMenuOpen(false)} className="block rounded-lg px-2 py-1.5 text-sm text-stone-500 hover:bg-stone-100">
-            + Nuovo progetto
-          </Link>
-        </li>
-      </ul>
+          <li>
+            <Link to="/team" onClick={close} className={navLink} activeProps={navActive}>
+              <Icon name="users" className="size-4.5 shrink-0" /> {t("Team")}
+            </Link>
+          </li>
+          {owner && (
+            <li>
+              <Link to="/piano" onClick={close} className={navLink} activeProps={navActive}>
+                <Icon name="card" className="size-4.5 shrink-0" /> {t("Piano e fatturazione")}
+              </Link>
+            </li>
+          )}
+          {manager && (
+            <li>
+              <Link to="/nuovo-progetto" onClick={close} className={navLink} activeProps={navActive}>
+                <Icon name="plus" className="size-4.5 shrink-0" /> {t("Nuovo progetto")}
+              </Link>
+            </li>
+          )}
+          <li>
+            <Link to="/aiuto" onClick={close} className={navLink} activeProps={navActive}>
+              <Icon name="help" className="size-4.5 shrink-0" /> {t("Aiuto")}
+            </Link>
+          </li>
+        </ul>
+      </div>
 
-      <div className="mt-auto border-t border-stone-200 px-2 pt-4 text-sm">
-        <p className="truncate font-medium">{me.data?.user.name}</p>
-        <p className="truncate text-stone-500">{me.data?.user.email}</p>
-        <Button variant="ghost" className="mt-2 -ml-3" onClick={signOut}>Esci</Button>
+      <div className="mt-auto flex items-center gap-3 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200/70">
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-100 text-sm font-semibold text-brand-800">
+          {me.data?.user.name.trim().charAt(0).toUpperCase()}
+        </span>
+        <Link to="/account" onClick={close} className="min-w-0 flex-1 text-sm hover:text-brand-800" title={t("Il tuo account")}>
+          <p className="truncate font-medium">{me.data?.user.name}</p>
+          <p className="truncate text-xs text-slate-500">{me.data?.user.email}</p>
+        </Link>
+        <Button variant="ghost" className="px-2 py-1.5" title={t("Esci")} aria-label={t("Esci")} onClick={signOut}>
+          <Icon name="logout" className="size-4.5" />
+        </Button>
       </div>
     </nav>
   );
 
   return (
     <div className="min-h-dvh lg:flex">
-      <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3 lg:hidden">
-        <Link to="/" className="text-lg font-bold text-brand-700">snippo</Link>
-        <Button variant="ghost" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>Menu</Button>
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
+        <Link to="/"><Logo /></Link>
+        <Button variant="ghost" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? t("Chiudi") : t("Menu")}</Button>
       </header>
       <aside
         className={cx(
-          "border-r border-stone-200 bg-white lg:sticky lg:top-0 lg:block lg:h-dvh lg:w-60 lg:shrink-0",
+          "border-r border-slate-200 bg-white lg:sticky lg:top-0 lg:block lg:h-dvh lg:w-64 lg:shrink-0 lg:overflow-y-auto",
           menuOpen ? "block" : "hidden",
         )}
       >

@@ -37,9 +37,10 @@ export interface DeliveryRow {
   id: string;
   channelType: ChannelType;
   target: string;
-  /** Null for a test notification. */
   submissionId: string | null;
   contactName: string | null;
+  /** Sent by "Invia prova". */
+  isTest: boolean;
   status: "pending" | "sent" | "failed";
   attempts: number;
   lastError: string | null;

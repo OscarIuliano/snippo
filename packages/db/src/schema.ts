@@ -27,6 +27,10 @@ export const projects = sqliteTable(
     defaultLocale: text("default_locale").notNull().default("it"),
     /** Max people per time slot (bookings, when the flow has no party size). Null = no limit. */
     slotCapacity: integer("slot_capacity"),
+    /** Requests older than this are deleted every night (GDPR storage limitation). */
+    retentionMonths: integer("retention_months").notNull().default(24),
+    /** The business's own privacy notice, linked next to the consent box in the widget. */
+    privacyUrl: text("privacy_url"),
     ...timestamps,
   },
   (t) => [index("projects_org_idx").on(t.organizationId)],
@@ -96,6 +100,14 @@ export const submissions = sqliteTable(
     ipHash: text("ip_hash"),
     consentAt: text("consent_at").notNull(),
     idempotencyKey: text("idempotency_key"),
+    /** Made by "Invia prova" in Notifiche: shown with a label, never counted in stats, usage or capacity. */
+    isTest: integer("is_test", { mode: "boolean" }).notNull().default(false),
+    /**
+     * "manual": a booking the business took by phone or in person and added from the calendar. It takes
+     * its place in the availability like any other, but it is not a widget request: no notification,
+     * not in stats or plan usage. consentAt is then the time it was added.
+     */
+    source: text("source", { enum: ["widget", "manual"] }).notNull().default("widget"),
     ...timestamps,
   },
   (t) => [
@@ -118,6 +130,8 @@ export const users = sqliteTable("users", {
   email: text("email").notNull().unique(),
   emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
   image: text("image"),
+  /** Language of the dashboard and of the account emails: "it" (default) or "en". */
+  locale: text("locale").notNull().default("it"),
   ...authTimestamps,
 });
 
@@ -241,3 +255,72 @@ export const closures = sqliteTable(
   },
   (t) => [index("closures_project_idx").on(t.projectId, t.dateTo)],
 );
+
+// --- Widget statistics ---
+// Daily counters, one row per widget and day (project timezone): a few rows, cheap to read.
+// Each visitor session counts once per counter (the widget dedupes with sessionStorage).
+
+export const widgetDailyStats = sqliteTable(
+  "widget_daily_stats",
+  {
+    widgetId: text("widget_id").notNull().references(() => widgets.id, { onDelete: "cascade" }),
+    /** "YYYY-MM-DD" */
+    date: text("date").notNull(),
+    /** Sessions that opened the chat. */
+    opens: integer("opens").notNull().default(0),
+    /** Sessions that answered at least one question. */
+    starts: integer("starts").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.widgetId, t.date] })],
+);
+
+export const widgetStepStats = sqliteTable(
+  "widget_step_stats",
+  {
+    widgetId: text("widget_id").notNull().references(() => widgets.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    stepKey: text("step_key").notNull(),
+    /** Sessions that reached this question. */
+    reached: integer("reached").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.widgetId, t.date, t.stepKey] })],
+);
+
+// --- Team invitations ---
+// Shareable links: only a hash of the token is stored, the link works once and expires.
+
+export const invitations = sqliteTable(
+  "invitations",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+    role: text("role", { enum: ["admin", "operator"] }).notNull(),
+    /** SHA-256 of the token in the link, hex. */
+    tokenHash: text("token_hash").notNull().unique(),
+    /** Optional: when set, only this email can accept (the email invite, once emails are really sent). */
+    email: text("email"),
+    createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: text("expires_at").notNull(),
+    acceptedAt: text("accepted_at"),
+    acceptedBy: text("accepted_by").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (t) => [index("invitations_org_idx").on(t.organizationId)],
+);
+
+// --- Billing: one subscription per organization, kept in sync by the payment provider's webhooks.
+// No row = Free plan.
+
+export const subscriptions = sqliteTable("subscriptions", {
+  organizationId: text("organization_id").primaryKey().references(() => organizations.id, { onDelete: "cascade" }),
+  plan: text("plan", { enum: ["free", "starter", "pro", "agency"] }).notNull(),
+  interval: text("interval", { enum: ["month", "year"] }),
+  status: text("status", { enum: ["active", "trialing", "past_due", "paused", "canceled"] }).notNull(),
+  /** "paddle" for now; the column keeps a later move to Stripe possible. */
+  provider: text("provider").notNull(),
+  providerCustomerId: text("provider_customer_id"),
+  providerSubscriptionId: text("provider_subscription_id").unique(),
+  currentPeriodEnd: text("current_period_end"),
+  cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: "boolean" }).notNull().default(false),
+  ...timestamps,
+});

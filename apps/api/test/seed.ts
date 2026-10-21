@@ -19,7 +19,7 @@ export async function seed() {
       type: "chat",
       name: "Prenotazioni",
       publicKey: PUBLIC_KEY,
-      theme: { primaryColor: "#c2410c", position: "right", title: "Trattoria" },
+      theme: { primaryColor: "#4f46e5", position: "right", title: "Trattoria" },
       activeFlowVersionId: FLOW_VERSION_ID,
     })
     .onConflictDoNothing();

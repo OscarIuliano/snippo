@@ -140,14 +140,16 @@ Sono tre i flussi da far funzionare per l'MVP: l'onboarding dell'azienda, la ric
 
 Il modello è freemium con abbonamento mensile. I prezzi sono un'ipotesi iniziale da validare con i primi clienti.
 
-| Piano | Prezzo/mese | Progetti | Richieste/mese | Canali notifica | Extra |
+| Piano | Prezzo/mese | Progetti | Richieste/mese | Notifiche WhatsApp/mese | Extra |
 | --- | --- | --- | --- | --- | --- |
-| Free | 0 € | 1 | 50 | Email | Logo "Powered by" visibile |
-| Starter | 9 € | 1 | 500 | Email a più destinatari | Niente logo, statistiche, export CSV |
-| Pro | 29 € | 5 | 3.000 | + WhatsApp, webhook | Team fino a 5, AI FAQ (fase 3) |
-| Agency | 79 € | 25 | 15.000 | Tutti | White label, multi-cliente, API |
+| Free | 0 € | 1 | 50 | — | Notifiche email, "Avvisa il cliente" su WhatsApp con un tocco (dal telefono dell'azienda), logo "Powered by" visibile |
+| Starter | 13 € | 1 | 500 | 100 | Email di esito e promemoria al cliente, testi personalizzabili, niente logo, statistiche, export CSV, team di 2 |
+| Pro | 23 € | 5 | 3.000 | 300 | Tutto lo Starter, team fino a 5 |
+| Agency | 53 € | 25 | 15.000 | 1.000 | White label, multi-cliente, team fino a 25 |
 
-I messaggi WhatsApp hanno un costo per conversazione applicato da Meta. Vanno inclusi in una quota o rifatturati a consumo. Lo sconto annuale proposto è di 2 mesi gratis. I limiti valgono per l'account, non per singolo widget: aggiungere un secondo widget non cambia piano finché si resta nelle quote.
+Il Free è il giro manuale: l'azienda riceve la richiesta per email e avvisa il cliente con un tocco dal proprio WhatsApp, quindi a Snippo costa quasi nulla. I piani a pagamento aggiungono l'automatico: notifiche WhatsApp, email di esito e promemoria al cliente. Starter e Pro hanno le stesse funzioni e cambiano per numero di progetti, team e volumi.
+
+Meta fa pagare ogni messaggio WhatsApp, pochi centesimi per i messaggi di servizio in Italia (da verificare sul listino). Per questo ogni piano include una quota, e oltre la quota si paga a consumo con Paddle. Lo sconto annuale è di 2 mesi gratis (130, 230 e 530 € l'anno). I limiti valgono per l'account, non per singolo widget. I prezzi restano da validare con le interviste (n. 14).
 
 ## 8. Roadmap
 
@@ -180,7 +182,7 @@ flowchart TB
     Q[("Cloudflare Queues<br/>notifiche, webhook")]
     WK["Consumer della coda<br/>stesso Worker dell'API"]
     P["Paddle<br/>abbonamenti e fatture"]
-    RS["Resend<br/>email"]
+    RS["Cloudflare Email Service<br/>email"]
     WA["WhatsApp Cloud API<br/>notifiche"]
     WH["Webhook clienti<br/>fase 2"]
 
@@ -289,7 +291,7 @@ La dashboard è una single page app che parla con l'API. La landing è un sito s
 
 Un'alternativa valida è **Next.js** per la dashboard. Ha senso se si preferisce un solo framework per tutto, ma aggiunge un server da gestire.
 
-L'editor del flusso, all'MVP, è una lista ordinabile di passi con un form per ciascun passo, non un canvas a nodi. Un editor visuale stile diagramma arriva solo se servono flussi con ramificazioni.
+L'editor delle domande (pagina Domande) è una lista ordinabile con un form per ciascuna domanda, non un canvas a nodi: si parte da un template e si aggiungono, modificano, spostano e tolgono domande. Le domande speciali (nome, telefono, email, giorno, orario, persone, note) tengono il loro tipo perché alimentano inbox, calendario, disponibilità e notifiche. Un editor visuale stile diagramma arriva solo se servono flussi con ramificazioni.
 
 ## 13. Modello dati (Cloudflare D1)
 
@@ -313,11 +315,11 @@ Il database è **Cloudflare D1** (SQLite), creato con giurisdizione UE. È multi
 | Disponibilità | `closures` | id, project_id, date_from, date_to, reason | Ferie, chiusure |
 | Dati | `submissions` | id, project_id, widget_id, flow_version_id, status, answers jsonb, contact_name, contact_phone, contact_email, booking_at, party_size, locale, source_url, ip_hash, consent_at | Il cuore: la richiesta. Campi chiave estratti per filtri e calendario |
 | Dati | `submission_events` | id, submission_id, type (created, status_changed, note, notified), actor_user_id, data jsonb | Storico e audit della richiesta |
-| Analytics | `widget_events` | id, project_id, widget_id, session_id, type (loaded, opened, step, submitted, abandoned), step_key, created_at | Su Workers Analytics Engine invece che su D1, per non consumare spazio del database |
+| Analytics | `widget_daily_stats`, `widget_step_stats` | widget_id, date, opens, starts; widget_id, date, step_key, reached | Contatori giornalieri, una sessione conta una volta: poche righe, query normali (Analytics Engine richiederebbe un'API HTTP a parte e non funziona in locale) |
 | Notifiche | `notification_channels` | id, project_id, type (email, whatsapp), target (email o numero E.164), is_active | |
 | Notifiche | `notification_deliveries` | id, channel_id, submission_id, status, attempts, last_error, sent_at | Retry e log |
 | Billing | `plans` | id, code, name, price_cents, limits jsonb (progetti, richieste, canali) | |
-| Billing | `subscriptions` | id, organization_id, plan_id, stripe_customer_id, stripe_subscription_id, status, current_period_end | Sincronizzata dai webhook Stripe |
+| Billing | `subscriptions` | organization_id, plan, interval, status, provider, provider_customer_id, provider_subscription_id, current_period_end, cancel_at_period_end | Una per organizzazione, senza riga = Free; sincronizzata dai webhook del provider (Paddle) |
 | Billing | `usage_counters` | organization_id, period (YYYY-MM), submissions_count, whatsapp_count | Controllo delle quote |
 | Sistema | `audit_logs` | id, organization_id, actor_user_id, action, entity, entity_id, diff jsonb, ip | Azioni amministrative |
 
@@ -337,7 +339,7 @@ Ogni richiesta pubblica un messaggio su Cloudflare Queues per ciascun canale att
 
 | Canale | Servizio | Uso | Note | Fase |
 | --- | --- | --- | --- | --- |
-| Email transazionale | **Resend** (alternative: Postmark, Amazon SES) | Notifica all'azienda, conferma al visitatore, email di sistema | Template con React Email; dominio di invio con SPF, DKIM, DMARC | MVP |
+| Email transazionale | **Cloudflare Email Service** (in beta pubblica da aprile 2026; piano B: Resend) | Notifica all'azienda, conferma al visitatore, email di sistema | Invio dal binding `EMAIL` del Worker, senza chiavi API; mittente noreply@snippo.io (variabile `EMAIL_FROM`), risposte a supporto@snippo.io (variabile `EMAIL_REPLY_TO`). SPF, DKIM e DMARC configurati da Cloudflare sul dominio. In sviluppo e nei test, senza binding, l'email finisce nel log. Tutto passa da `sendEmail` (`apps/api/src/email.ts`): cambiare servizio tocca solo quella funzione | MVP |
 | Webhook | Proprio | Integrazione con gestionali, Zapier, Make | Firma HMAC-SHA256 nell'header, retry, log consultabile | Fase 2 |
 | WhatsApp | WhatsApp Business Cloud API (Meta) | Notifica all'azienda e conferma al visitatore | Verifica azienda su Meta, template approvati, finestra di 24 h, costo per conversazione | MVP |
 | SMS | Twilio o Vonage | Conferma al visitatore senza email | A consumo | Fase 3 |
@@ -356,7 +358,7 @@ Trattiamo dati personali dei visitatori (nome, telefono, email) per conto delle 
 - DPA standard accettato all'attivazione del piano; registro dei trattamenti.
 - Consenso esplicito nel widget, con link alla privacy dell'azienda; data e ora del consenso salvate (`consent_at`).
 - Minimizzazione: IP salvato solo come hash; nessun cookie di tracciamento nel widget.
-- Retention configurabile per progetto (default 24 mesi), poi cancellazione automatica con un Cron Trigger; export e cancellazione dei dati di un visitatore su richiesta.
+- Retention configurabile per progetto (default 24 mesi, pagina Privacy), poi cancellazione automatica ogni notte con un Cron Trigger, insieme a sessioni e inviti scaduti. Nella stessa pagina si cercano per telefono, email o nome le richieste di una persona, per scaricarle in JSON (diritto di accesso) o cancellarle (diritto all'oblio).
 
 **Sicurezza applicativa**
 
@@ -382,11 +384,11 @@ Tutto gira sull'account Cloudflare già attivo per l'altro progetto. Per lo svil
 | Database | D1, giurisdizione UE | Database separati per dev, staging e prod | Incluso entro le soglie |
 | Code e job | Queues, Cron Triggers | Notifiche, webhook, pulizie | Incluso entro le soglie |
 | Rate limit e cache | Binding Rate Limiting, KV | Limiti per IP e widget, cache della configurazione | Incluso |
-| Eventi del widget | Workers Analytics Engine | Aperture, passi, abbandoni | Incluso entro le soglie |
+| Eventi del widget | D1, contatori giornalieri | Aperture, passi, abbandoni | Incluso entro le soglie |
 | File (loghi, allegati) | R2 | | 0–2 € |
 | Anti-bot | Turnstile | | 0 € |
 | Analytics landing | Cloudflare Web Analytics | Senza cookie | 0 € |
-| Email transazionale | Resend | Fuori da Cloudflare | 0–20 € |
+| Email transazionale | Cloudflare Email Service | Serve Workers Paid; 3.000 email al mese incluse, poi 0,35 $ ogni 1.000 | 0–5 € |
 | Errori | Sentry | SDK per Workers | 0 € (piano Developer) |
 | Uptime | Better Stack | Pagina di stato | 0–10 € |
 | Pagamenti | Paddle | | Commissione per transazione |
@@ -467,15 +469,16 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 | Widget | Preact + `widget-core` condiviso | 3 KB, componenti riusabili tra widget; con Web Components puri l'interfaccia richiede più codice | Consigliato |
 | Dashboard | React + Vite (SPA) | Statica e gratuita su Cloudflare Pages; l'API è già separata, Next.js aggiungerebbe un server | Consigliato |
 | WhatsApp | Nell'MVP accanto all'email, da un numero condiviso di Snippo | Evita la verifica Meta per ogni cliente durante l'MVP | Consigliato |
+| Email | Cloudflare Email Service, non Resend (scelto il 12 ottobre 2026) | Stesso account, nessuna chiave da custodire, DNS automatici; è in beta, ma il cambio di servizio tocca una sola funzione | Deciso |
 | Prezzi | Ipotesi della sezione 7, poi 10 interviste prima del lancio (4 ristoranti, 4 saloni o studi, 2 agenzie) | Si validano insieme prezzo e settore di partenza | Consigliato |
 | Pagamenti | Paddle all'inizio, Stripe più avanti | Paddle è Merchant of Record: incassa e gestisce IVA UE e fatture al posto nostro. Stripe conviene quando i volumi giustificano commissioni più basse | Da verificare |
 | Fatturazione elettronica | Con Paddle si fattura solo a Paddle; con Stripe serve un collegamento SDI (es. Fatture in Cloud) | In Italia le fatture B2B passano dallo SDI | Da verificare |
 | Forma giuridica | Partita IVA in regime forfettario per partire, SRL quando i ricavi crescono | Costi fissi bassi durante la validazione | Da verificare |
-| Dominio e marchio | snippo.io o snippo.app, più ricerca marchio su EUIPO | Nome breve: probabili omonimie da escludere prima del lancio | Da verificare |
+| Dominio e marchio | snippo.io, comprato su Cloudflare Registrar il 21 ottobre 2026; ricerca marchio su TMview fatta | Nessun 'Snippo' attivo su TMview; da valutare presto il deposito all'UIBM, classi 9 e 42 | Deciso |
 
 ## 19. Backlog
 
-L'MVP ha 13 attività fatte, 5 in attesa di un tuo passaggio e 8 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 21, le statistiche.
+L'MVP ha 30 attività fatte, 3 in attesa di un tuo passaggio e 7 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le n. 20 e 36 sono ora sbloccate dalle email reali, le altre aspettano Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -489,21 +492,35 @@ L'MVP ha 13 attività fatte, 5 in attesa di un tuo passaggio e 8 da fare. Le "Da
 | 8 | Notifiche | Destinatari email e WhatsApp, coda, link Conferma/Rifiuta | Fatto | In sviluppo finiscono nel log |
 | 9 | Area privata | Calendario con mattina (fino alle 13:00) e sera | Fatto | |
 | 10 | Repository | Merge dei branch su `main` | Fatto | Allineato l'8 ottobre; da qui un branch e una PR per attività |
-| 11 | Notifiche | Email reali con Resend | In attesa di te | Serve la chiave API; per inviare a tutti, anche il dominio |
-| 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Servono portfolio e app Meta con numero di test, poi il template approvato |
-| 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | In attesa di te | Prima che un cliente installi lo snippet |
+| 11 | Notifiche | Email reali con Cloudflare Email Service | Fatto | Invio con Email Service da noreply@snippo.io, risposte a supporto@snippo.io (commit a141c2d). Attivo su staging dal 21-10-2026; serve il piano Workers Paid. Le prime email possono finire in spam finché il dominio non ha reputazione. |
+| 12 | Notifiche | WhatsApp reale (Cloud API) | In attesa di te | Codice pronto: invio con template e script per crearli. L'account Meta è bloccato (errore 131031): va sbloccato, poi servono il token su staging e l'approvazione dei template |
+| 13 | Dominio | Verifica e acquisto di `snippo.io`, ricerca marchio EUIPO | Fatto | snippo.io comprato su Cloudflare Registrar il 21-10-2026 (scade 21-10-2027, rinnovo automatico). Email Routing attivo: supporto@ e privacy@ inoltrano alla casella del titolare. Ricerca TMview: nessun 'Snippo' attivo; da tenere d'occhio SNIPPORT (Benelux, classi 9 e 42, depositato 30-09-2026) e snippod (registrazione internazionale, classe 38). Valutare presto il deposito del marchio all'UIBM, classi 9 e 42. |
 | 14 | Mercato | 10 interviste: 4 ristoranti, 4 saloni o studi, 2 agenzie | In attesa di te | Decidono prezzi e settore di partenza |
-| 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Prima dei clienti paganti |
+| 15 | Legale | Privacy, termini e DPA con un professionista; partita IVA | In attesa di te | Bozze pubblicate sulla landing (`/privacy`, `/termini`, `/dpa`) e accettate all'iscrizione. Da completare titolare, indirizzo e foro (`apps/web/src/legal.ts`); revisione legale con i primi clienti paganti |
 | 16 | Disponibilità | Orari di apertura, chiusure e capienza per fascia; il widget propone solo orari liberi | Fatto | Branch feat/availability |
 | 17 | Infrastruttura | Staging su `workers.dev` e deploy automatico dalla CI | Fatto | Il deploy automatico parte quando aggiungi i secret Cloudflare su GitHub |
 | 18 | Sicurezza | Anti-spam nel widget (Turnstile) e limite di invii per IP | Fatto | In staging chiavi di test; per la produzione serve un widget Turnstile su `cdn.snippo.io` |
-| 19 | Area privata | Verifica email e reset password | Da fare | Dopo Resend |
-| 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Dopo Resend |
-| 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Da fare | |
+| 19 | Area privata | Verifica email, password dimenticata e pagina Account (nome, email, password, dispositivi) | Fatto | I link di verifica e di reset arrivano per email (n. 11); gli account creati prima restano attivi |
+| 20 | Notifiche | Email di esito al cliente che ha prenotato | Da fare | Sbloccato: le email reali sono attive (n. 11). Intanto l'azienda avvisa il cliente con un tocco (n. 33) |
+| 21 | Area privata | Statistiche: aperture del widget, conversazioni, conversione | Fatto | Pagina Statistiche: aperture, conversione, dove ci si ferma |
 | 22 | Area privata | Export CSV delle richieste | Da fare | |
-| 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Da fare | |
+| 23 | Area privata | Team: inviti e ruoli (owner, admin, operatore) | Fatto | Inviti con link (7 giorni, uso singolo); l'invio via email ora è possibile con le email reali (n. 11) |
 | 24 | Pagamenti | Piani e quote con Paddle | Da fare | |
-| 25 | Privacy | Retention dei dati e cancellazione automatica | Da fare | |
+| 25 | Privacy | Retention dei dati e cancellazione automatica | Fatto | Cron ogni notte; pagina Privacy per accesso e cancellazione dei dati di una persona |
 | 26 | Infrastruttura | Monitoraggio errori (Sentry) e uptime | Da fare | |
+| 27 | Widget | Editor delle domande: partire da un template, aggiungere, modificare, riordinare e togliere domande | Fatto | Pagina Domande; le domande speciali (nome, telefono, giorno…) tengono il loro tipo |
+| 28 | Dashboard | Rifinitura grafica della dashboard: palette, menu con icone e gruppi, versione mobile | Fatto | Sidebar con progetto e organizzazione, pagine verificate su desktop e su telefono (390px). Il 14 ottobre la palette è passata dall'indaco all'arancione con sfumature di giallo (landing, dashboard, email, widget) |
+| 29 | Area privata | Elimina account e passaggio di titolarità | Fatto | Con la password; le organizzazioni senza altre persone vengono cancellate con tutti i dati, quelle con un team richiedono prima "Rendi titolare" |
+| 30 | Pagamenti | Pagina Piano e fatturazione: piano attuale, uso del mese, confronto piani, metodo di pagamento e fatture | Fatto | Tabella `subscriptions` pronta per Paddle; i limiti si vedono ma non bloccano finché i pagamenti non sono attivi (n. 24) |
+| 31 | Dashboard | Lingue italiano e inglese (italiano di default) | Fatto | Preferenza sull'utente; errori dell'API ed email dell'account nella sua lingua; `pnpm test` controlla che ogni testo abbia l'inglese. Il widget per ora resta in italiano |
+| 32 | Dashboard | Impostazioni del progetto: rinomina ed eliminazione | Fatto | Titolare e amministratori; per eliminare si riscrive il nome del progetto. Si cancellano tutti i dati e il widget smette di comparire sui siti |
+| 33 | Area privata | "Avvisa il cliente" dopo Conferma o Rifiuta: WhatsApp, email o chiamata con il messaggio già scritto | Fatto | Il messaggio parte dal telefono o dalla casella dell'azienda (link `wa.me` e `mailto`), quindi niente costi e niente verifica Meta. Testi per ristorante, appuntamenti e richieste info, modificabili prima dell'invio. Anche nella pagina che si apre dalla notifica |
+| 34 | Notifiche | "Invia prova" crea una richiesta di prova, segnata come Prova in Richieste e Calendario, con la notifica vera (Conferma/Rifiuta) | Fatto | Il cliente di prova è l'azienda stessa (il suo numero WhatsApp e la sua email). Non conta in statistiche, uso del piano e posti disponibili; si cancella da sola dopo 7 giorni |
+| 35 | Notifiche | Testi di "Avvisa il cliente" personalizzabili per progetto | Da fare | Piani a pagamento |
+| 36 | Notifiche | Promemoria al cliente il giorno prima | Da fare | Sbloccato: le email reali sono attive (n. 11); riduce chi prenota e non si presenta |
+| 37 | Pagamenti | Quota mensile di notifiche WhatsApp per piano, oltre la quota a consumo | Da fare | Con Paddle (n. 24) e WhatsApp reale (n. 12) |
+| 38 | Privacy | Link all'informativa privacy dell'azienda nel widget, accanto al consenso | Fatto | Si inserisce nella pagina Privacy; senza link la pagina avvisa che manca |
+| 39 | Supporto | Pagina Supporto sulla landing (contatto e risposte rapide) e voce Aiuto nella dashboard | Fatto | "Scrivi al supporto" apre l'email con account e progetti già scritti; supporto@snippo.io e privacy@snippo.io sono attivi con Email Routing (n. 13) |
+| 40 | Calendario | Prenotazioni aggiunte a mano dal calendario (telefono, di persona) | Fatto | Confermate subito, segnate Manuale; occupano i posti della fascia, quindi il widget non li offre più. Niente notifiche, fuori da statistiche e uso del piano. Anche gli operatori le aggiungono ed eliminano |
 
 Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

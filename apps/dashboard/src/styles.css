@@ -1,10 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #fff7ed;
-  --color-brand-100: #ffedd5;
-  --color-brand-600: #ea580c;
-  --color-brand-700: #c2410c;
-  --color-brand-800: #9a3412;
+  /* The full Snippo orange scale, the same as the landing page. 600 is the darkest that still reads as
+     orange with white text on it (4.7:1). */
+  --color-brand-50: #fff8ed;
+  --color-brand-100: #ffefd3;
+  --color-brand-200: #fedba6;
+  --color-brand-300: #fdc06d;
+  --color-brand-400: #fb9a3c;
+  --color-brand-500: #f7761a;
+  --color-brand-600: #c94a0a;
+  --color-brand-700: #ad3c0c;
+  --color-brand-800: #8a3110;
+  --color-brand-900: #6f2a11;
+  /* Warm off-white, as on the landing page. */
+  --color-cream: #fffaf2;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }

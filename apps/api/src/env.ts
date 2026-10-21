@@ -16,8 +16,20 @@ export interface Bindings {
   CHALLENGE_URL?: string;
   /** Secret: Turnstile secret key. When set, every submission needs a valid token. */
   TURNSTILE_SECRET?: string;
+  /** Secret: WhatsApp Cloud API access token (system user of the Meta app). Unset = WhatsApp goes to the log. */
+  WHATSAPP_TOKEN?: string;
+  /** Phone number ID of Snippo's WhatsApp sender, from the Meta app (not the number itself). */
+  WHATSAPP_PHONE_NUMBER_ID?: string;
+  /** Cloudflare Email Service. Unset (development, tests) = emails go to the log. */
+  EMAIL?: SendEmail;
+  /** Sender address on a domain onboarded to Email Service, e.g. noreply@snippo.io */
+  EMAIL_FROM?: string;
+  /** Where replies to our emails land, e.g. supporto@snippo.io */
+  EMAIL_REPLY_TO?: string;
   /** Submissions per widget and IP (Workers rate limiting binding). */
   SUBMIT_LIMITER?: RateLimit;
+  /** Usage events per widget and IP. */
+  EVENTS_LIMITER?: RateLimit;
 }
 
 export interface AppEnv {

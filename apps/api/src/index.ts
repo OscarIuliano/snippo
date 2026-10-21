@@ -4,9 +4,11 @@ import type { NotificationMessage } from "@snippo/shared";
 import { actionRoutes } from "./actions";
 import { createAuth } from "./auth";
 import { dashboardRoutes } from "./dashboard";
+import { invitationRoutes } from "./invitations";
 import type { AppEnv } from "./env";
 import { handleNotificationBatch } from "./notifications/consumer";
 import { problem } from "./problem";
+import { runRetention } from "./retention";
 import { widgetRoutes } from "./widget";
 
 const app = new Hono<AppEnv>();
@@ -25,6 +27,7 @@ app.route("/v1/actions", actionRoutes);
 // Dashboard: served under /api on the dashboard's own origin (Vite proxy in dev,
 // a Workers route on app.snippo.io in production), so no CORS and first-party cookies.
 app.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env).handler(c.req.raw));
+app.route("/api/invitations", invitationRoutes);
 app.route("/api/v1", dashboardRoutes);
 
 app.notFound((c) => problem(c, 404, "Risorsa non trovata"));
@@ -37,4 +40,8 @@ export default {
   fetch: app.fetch,
   // Consumer of the notifications queue: same Worker, same code and bindings as the API.
   queue: (batch: MessageBatch<NotificationMessage>, env: AppEnv["Bindings"]) => handleNotificationBatch(batch, env),
+  // Cron Trigger, every night: deletes requests past their project's retention period.
+  scheduled: async (_controller: ScheduledController, env: AppEnv["Bindings"]) => {
+    await runRetention(env.DB);
+  },
 } satisfies ExportedHandler<AppEnv["Bindings"], NotificationMessage>;

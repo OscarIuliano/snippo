@@ -3,6 +3,7 @@ import { useEffect, useState } from "preact/hooks";
 import type { WidgetConfig } from "@snippo/shared/widget-api";
 import { createApi, type Api } from "./api";
 import { Chat } from "./Chat";
+import { createTracker, type Track } from "./track";
 import styles from "./styles.css?inline";
 
 const DEFAULT_API = "https://api.snippo.io";
@@ -28,11 +29,22 @@ const script = (document.currentScript ?? document.querySelector("script[data-ke
 function App({ api, controls }: { api: Api; controls: { setOpen?: (open: boolean) => void; listeners: Listener[] } }) {
   const [config, setConfig] = useState<WidgetConfig | null>(null);
   const [open, setOpen] = useState(false);
+  const [track, setTrack] = useState<Track | null>(null);
 
   useEffect(() => {
     controls.setOpen = setOpen;
-    api.getConfig().then(setConfig, (e) => console.warn("[snippo]", e));
+    api.getConfig().then(
+      (c) => {
+        setConfig(c);
+        setTrack(() => createTracker(api, c.widgetId));
+      },
+      (e) => console.warn("[snippo]", e),
+    );
   }, []);
+
+  useEffect(() => {
+    if (open) track?.({ type: "opened" });
+  }, [open, track]);
 
   // Nothing is shown until the configuration has loaded: a broken widget must not break the host page.
   if (!config) return null;
@@ -44,6 +56,7 @@ function App({ api, controls }: { api: Api; controls: { setOpen?: (open: boolean
           api={api}
           config={config}
           onClose={() => setOpen(false)}
+          track={track ?? (() => {})}
           onSubmitted={(id) => controls.listeners.forEach((fn) => fn({ id }))}
         />
       )}

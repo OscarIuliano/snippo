@@ -1,13 +1,28 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { addDays, formatBooking, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
-import { Alert, Button, PageHeader, cx } from "../components/ui";
+import { useMemo, useState, type FormEvent } from "react";
+import { addDays, formatBooking, type FlowDefinition, type ManualBookingInput, type SubmissionRow, type SubmissionStatus } from "@snippo/shared";
+import { Alert, Button, Field, Input, PageHeader, cx } from "../components/ui";
 import { api } from "../lib/api";
+import { msg, useFormat, useI18n, useT } from "../i18n";
 import { calendarQuery, projectQuery } from "../lib/queries";
+import { ManualBadge, TestBadge } from "../components/TestBadge";
 import { statusInfo } from "../lib/templates";
 
-const WEEKDAYS = ["lun", "mar", "mer", "gio", "ven", "sab", "dom"];
-const monthFormat = new Intl.DateTimeFormat("it-IT", { month: "long", year: "numeric", timeZone: "UTC" });
+/** Formatters of this page in the user's language. */
+function calendarFormats(intl: string) {
+  const weekdayFormat = new Intl.DateTimeFormat(intl, { weekday: "short", timeZone: "UTC" });
+  const longDayFormat = new Intl.DateTimeFormat(intl, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+  return {
+    // 1 January 2024 was a Monday: the seven days from it give the column headers, Monday first.
+    weekdays: Array.from({ length: 7 }, (_, i) => weekdayFormat.format(new Date(Date.UTC(2024, 0, 1 + i)))),
+    month: new Intl.DateTimeFormat(intl, { month: "long", year: "numeric", timeZone: "UTC" }),
+    /** "2026-10-08" -> "Giovedì 8 ottobre" / "Thursday 8 October" */
+    longDay: (date: string) => {
+      const text = longDayFormat.format(new Date(`${date}T00:00:00Z`));
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    },
+  };
+}
 
 /** Today in the browser's local time, as "YYYY-MM-DD". */
 function today(): string {
@@ -42,11 +57,13 @@ const MORNING_UNTIL = "13:00";
 type Period = "morning" | "evening";
 const periodOf = (s: SubmissionRow): Period => ((s.bookingAt?.slice(11, 16) ?? "") <= MORNING_UNTIL ? "morning" : "evening");
 const periods: Record<Period, { label: string; icon: string; pill: string; bar: string; heading: string }> = {
-  morning: { label: "Mattina", icon: "☀︎", pill: "bg-sky-50 text-sky-800 ring-sky-200", bar: "border-sky-400", heading: "text-sky-800" },
-  evening: { label: "Sera", icon: "☾", pill: "bg-violet-50 text-violet-800 ring-violet-200", bar: "border-violet-400", heading: "text-violet-800" },
+  morning: { label: msg("Mattina"), icon: "☀︎", pill: "bg-sky-50 text-sky-800 ring-sky-200", bar: "border-sky-400", heading: "text-sky-800" },
+  evening: { label: msg("Sera"), icon: "☾", pill: "bg-violet-50 text-violet-800 ring-violet-200", bar: "border-violet-400", heading: "text-violet-800" },
 };
 
 export function CalendarPage({ projectId }: { projectId: string }) {
+  const { t, intl } = useI18n();
+  const formats = useFormat(calendarFormats);
   const [month, setMonth] = useState(() => monthStart(today()));
   const [selected, setSelected] = useState(today);
   const days = useMemo(() => monthGrid(month), [month]);
@@ -70,9 +87,9 @@ export function CalendarPage({ projectId }: { projectId: string }) {
   if (project.data?.industry === "info") {
     return (
       <div>
-        <PageHeader title="Calendario" />
-        <p className="rounded-xl border border-dashed border-stone-300 px-6 py-12 text-center text-sm text-stone-500">
-          Il calendario mostra le richieste con un giorno e un orario: usa il template Ristorante o Appuntamenti per averlo.
+        <PageHeader title={t("Calendario")} />
+        <p className="rounded-xl border border-dashed border-slate-300 px-6 py-12 text-center text-sm text-slate-500">
+          {t("Il calendario mostra le richieste con un giorno e un orario: usa il template Ristorante o Appuntamenti per averlo.")}
         </p>
       </div>
     );
@@ -81,23 +98,23 @@ export function CalendarPage({ projectId }: { projectId: string }) {
   return (
     <div>
       <PageHeader
-        title="Calendario"
-        description="Prenotazioni nuove e confermate per giorno. Le rifiutate non compaiono."
+        title={t("Calendario")}
+        description={t("Prenotazioni nuove e confermate per giorno. Le rifiutate non compaiono.")}
         actions={
           <div className="flex items-center gap-1">
-            <Button variant="secondary" aria-label="Mese precedente" onClick={() => goTo(shiftMonth(month, -1))}>‹</Button>
-            <Button variant="secondary" onClick={() => goTo(monthStart(today()), today())}>Oggi</Button>
-            <Button variant="secondary" aria-label="Mese successivo" onClick={() => goTo(shiftMonth(month, 1))}>›</Button>
+            <Button variant="secondary" aria-label={t("Mese precedente")} onClick={() => goTo(shiftMonth(month, -1))}>‹</Button>
+            <Button variant="secondary" onClick={() => goTo(monthStart(today()), today())}>{t("Oggi")}</Button>
+            <Button variant="secondary" aria-label={t("Mese successivo")} onClick={() => goTo(shiftMonth(month, 1))}>›</Button>
           </div>
         }
       />
       {calendar.error && <div className="mb-4"><Alert>{calendar.error.message}</Alert></div>}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <section aria-label={monthFormat.format(new Date(`${month}T00:00:00Z`))} className="rounded-xl bg-white ring-1 ring-stone-200">
-          <h2 className="border-b border-stone-200 px-4 py-3 font-semibold capitalize">{monthFormat.format(new Date(`${month}T00:00:00Z`))}</h2>
-          <div className="grid grid-cols-7 border-b border-stone-200 text-center text-xs font-medium text-stone-500">
-            {WEEKDAYS.map((d) => <div key={d} className="py-2">{d}</div>)}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <section aria-label={formats.month.format(new Date(`${month}T00:00:00Z`))} className="rounded-xl bg-white ring-1 ring-slate-200">
+          <h2 className="border-b border-slate-200 px-4 py-3 font-semibold capitalize">{formats.month.format(new Date(`${month}T00:00:00Z`))}</h2>
+          <div className="grid grid-cols-7 border-b border-slate-200 text-center text-xs font-medium text-slate-500">
+            {formats.weekdays.map((d) => <div key={d} className="py-2">{d}</div>)}
           </div>
           <div className={cx("grid grid-cols-7", calendar.isPending && "opacity-50")}>
             {days.map((day) => {
@@ -110,17 +127,19 @@ export function CalendarPage({ projectId }: { projectId: string }) {
                   type="button"
                   onClick={() => (inMonth ? setSelected(day) : goTo(monthStart(day), day))}
                   aria-pressed={selected === day}
-                  aria-label={`${formatBooking(day)}: ${items.length} richieste`}
+                  aria-label={`${formatBooking(day, intl)}: ${t("{count} richieste", { count: items.length })}`}
                   className={cx(
-                    "flex min-h-16 flex-col items-start gap-1 border-b border-r border-stone-100 p-1.5 text-left text-sm transition sm:min-h-24 sm:p-2 [&:nth-child(7n)]:border-r-0",
-                    inMonth ? "bg-white hover:bg-stone-50" : "bg-stone-50/60 text-stone-400",
+                    "flex min-h-16 flex-col items-start gap-1 border-b border-r border-slate-100 p-1.5 text-left text-sm transition sm:min-h-24 sm:p-2 [&:nth-child(7n)]:border-r-0",
+                    inMonth ? "bg-white hover:bg-slate-50" : "bg-slate-50/60 text-slate-400",
                     selected === day && "bg-brand-50 ring-2 ring-brand-600 ring-inset hover:bg-brand-50",
                   )}
                 >
-                  <span className={cx("grid size-6 place-items-center rounded-full text-xs", day === today() && "bg-brand-700 font-semibold text-white")}>
-                    {Number(day.slice(8))}
+                  <span className="flex w-full items-center justify-between">
+                    <span className={cx("grid size-6 place-items-center rounded-full text-xs", day === today() && "bg-brand-700 font-semibold text-white")}>
+                      {Number(day.slice(8))}
+                    </span>
+                    {hasNew && <span className="mr-0.5 size-1.5 shrink-0 rounded-full bg-amber-500" title={t("Da confermare")} />}
                   </span>
-                  {hasNew && <span className="size-1.5 shrink-0 self-end rounded-full bg-amber-500 sm:-mt-6" title="Da confermare" />}
                   {(["morning", "evening"] as const).map((period) => {
                     const part = items.filter((s) => periodOf(s) === period);
                     if (part.length === 0) return null;
@@ -128,7 +147,7 @@ export function CalendarPage({ projectId }: { projectId: string }) {
                       <span key={period} className={cx("flex w-full items-center gap-1 rounded px-1 text-[11px] leading-5 ring-1", periods[period].pill)}>
                         <span aria-hidden>{periods[period].icon}</span>
                         <span className="font-medium">{part.length}</span>
-                        <span className="hidden truncate sm:inline">{people(part) ? `· ${people(part)} p.` : ""}</span>
+                        <span className="hidden truncate sm:inline">{people(part) ? `· ${t("{count} p.", { count: people(part) })}` : ""}</span>
                       </span>
                     );
                   })}
@@ -136,20 +155,36 @@ export function CalendarPage({ projectId }: { projectId: string }) {
               );
             })}
           </div>
-          <p className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-3 text-xs text-stone-500">
-            <span><span className="text-sky-700">☀︎</span> Mattina, fino alle {MORNING_UNTIL}</span>
-            <span><span className="text-violet-700">☾</span> Sera, dopo le {MORNING_UNTIL}</span>
-            <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-amber-500" /> Da confermare</span>
+          <p className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-3 text-xs text-slate-500">
+            <span><span className="text-sky-700">☀︎</span> {t("Mattina, fino alle {time}", { time: MORNING_UNTIL })}</span>
+            <span><span className="text-violet-700">☾</span> {t("Sera, dopo le {time}", { time: MORNING_UNTIL })}</span>
+            <span className="flex items-center gap-1"><span className="size-1.5 rounded-full bg-amber-500" /> {t("Da confermare")}</span>
           </p>
         </section>
 
-        <DayAgenda projectId={projectId} day={selected} items={byDay.get(selected) ?? []} loading={calendar.isPending} />
+        <DayAgenda projectId={projectId} day={selected} items={byDay.get(selected) ?? []} loading={calendar.isPending} flow={project.data?.widget.flow ?? null} />
       </div>
     </div>
   );
 }
 
-function DayAgenda({ projectId, day, items, loading }: { projectId: string; day: string; items: SubmissionRow[]; loading: boolean }) {
+function DayAgenda({
+  projectId,
+  day,
+  items,
+  loading,
+  flow,
+}: {
+  projectId: string;
+  day: string;
+  items: SubmissionRow[];
+  loading: boolean;
+  flow: FlowDefinition | null;
+}) {
+  const { t, intl } = useI18n();
+  const [adding, setAdding] = useState(false);
+  const formats = useFormat(calendarFormats);
+  const countLabel = (group: SubmissionRow[]) => (people(group) ? t("{count} persone", { count: people(group) }) : t("{count} richieste", { count: group.length }));
   const byTime = useMemo(() => {
     const map = new Map<string, SubmissionRow[]>();
     for (const s of items) {
@@ -162,15 +197,23 @@ function DayAgenda({ projectId, day, items, loading }: { projectId: string; day:
   const pending = people(items.filter((s) => s.status === "new"));
 
   return (
-    <section aria-label={`Agenda di ${formatBooking(day)}`} className="rounded-xl bg-white p-4 ring-1 ring-stone-200 sm:p-5">
-      <h2 className="font-semibold capitalize">{formatBooking(day)}</h2>
+    <section aria-label={t("Agenda di {day}", { day: formatBooking(day, intl) })} className="rounded-xl bg-white p-4 ring-1 ring-slate-200 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-semibold">{formats.longDay(day)}</h2>
+        {!adding && flow && (
+          <Button variant="secondary" className="shrink-0 px-2.5 py-1 text-xs" onClick={() => setAdding(true)}>
+            + {t("Aggiungi prenotazione")}
+          </Button>
+        )}
+      </div>
+      {adding && flow && <AddBooking key={day} projectId={projectId} day={day} flow={flow} onDone={() => setAdding(false)} />}
       {items.length > 0 && (
-        <p className="mt-1 text-sm text-stone-500">
-          {confirmed} {confirmed === 1 ? "persona confermata" : "persone confermate"}
-          {pending > 0 && <span className="text-amber-700"> · {pending} da confermare</span>}
+        <p className="mt-1 text-sm text-slate-500">
+          {confirmed === 1 ? t("1 persona confermata") : t("{count} persone confermate", { count: confirmed })}
+          {pending > 0 && <span className="text-amber-700"> · {t("{count} da confermare", { count: pending })}</span>}
         </p>
       )}
-      {!loading && items.length === 0 && <p className="mt-4 text-sm text-stone-500">Nessuna prenotazione per questo giorno.</p>}
+      {!loading && items.length === 0 && <p className="mt-4 text-sm text-slate-500">{t("Nessuna prenotazione per questo giorno.")}</p>}
 
       {(["morning", "evening"] as const).map((period) => {
         const groups = byTime.filter(([, group]) => periodOf(group[0]!) === period);
@@ -179,15 +222,15 @@ function DayAgenda({ projectId, day, items, loading }: { projectId: string; day:
         return (
           <div key={period} className="mt-5">
             <h3 className={cx("flex items-baseline justify-between text-xs font-semibold tracking-wide uppercase", periods[period].heading)}>
-              <span><span aria-hidden>{periods[period].icon}</span> {periods[period].label}</span>
-              <span className="font-normal normal-case">{people(all) ? `${people(all)} persone` : `${all.length} richieste`}</span>
+              <span><span aria-hidden>{periods[period].icon}</span> {t(periods[period].label)}</span>
+              <span className="font-normal normal-case">{countLabel(all)}</span>
             </h3>
             <div className="mt-2 space-y-4">
               {groups.map(([time, group]) => (
                 <div key={time} className={cx("border-l-4 pl-3", periods[period].bar)}>
                   <h4 className="flex items-baseline justify-between text-sm">
                     <span className="font-semibold">{time}</span>
-                    <span className="text-xs text-stone-500">{people(group) ? `${people(group)} persone` : `${group.length} richieste`}</span>
+                    <span className="text-xs text-slate-500">{countLabel(group)}</span>
                   </h4>
                   <ul className="mt-2 space-y-2">
                     {group.map((s) => <AgendaItem key={s.id} projectId={projectId} submission={s} />)}
@@ -203,6 +246,7 @@ function DayAgenda({ projectId, day, items, loading }: { projectId: string; day:
 }
 
 function AgendaItem({ projectId, submission: s }: { projectId: string; submission: SubmissionRow }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const update = useMutation({
     mutationFn: (status: SubmissionStatus) => api(`/submissions/${s.id}`, { method: "PATCH", body: { status } }),
@@ -212,28 +256,135 @@ function AgendaItem({ projectId, submission: s }: { projectId: string; submissio
       ),
   });
 
+  const remove = useMutation({
+    mutationFn: () => api(`/submissions/${s.id}`, { method: "DELETE" }),
+    onSuccess: () => Promise.all([["calendar", projectId], ["submissions", projectId]].map((queryKey) => queryClient.invalidateQueries({ queryKey }))),
+  });
+
   return (
-    <li className="rounded-lg p-2 text-sm ring-1 ring-stone-200">
+    <li className="rounded-lg p-2 text-sm ring-1 ring-slate-200">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-medium">
-            {s.contactName ?? "Senza nome"}
-            {s.partySize ? <span className="font-normal text-stone-500"> · {s.partySize} pers.</span> : null}
+            {s.contactName ?? t("Senza nome")}
+            {s.isTest && <TestBadge />}
+            {s.partySize ? <span className="font-normal text-slate-500"> · {t("{count} pers.", { count: s.partySize })}</span> : null}
           </p>
-          {s.contactPhone && (
-            <a href={`tel:${s.contactPhone.replace(/\s/g, "")}`} className="text-xs text-stone-500 hover:underline">{s.contactPhone}</a>
+          {(s.contactPhone || s.source === "manual") && (
+            <p className="flex items-center gap-1.5">
+              {s.source === "manual" && <ManualBadge className="ml-0" />}
+              {s.contactPhone && (
+                <a href={`tel:${s.contactPhone.replace(/\s/g, "")}`} className="text-xs text-slate-500 hover:underline">{s.contactPhone}</a>
+              )}
+            </p>
           )}
         </div>
-        <span className={cx("shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ring-1", statusInfo[s.status].className)}>{statusInfo[s.status].label}</span>
+        <span className={cx("shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ring-1", statusInfo[s.status].className)}>{t(statusInfo[s.status].label)}</span>
       </div>
-      {s.answers.notes && <p className="mt-1 text-xs text-stone-600">{s.answers.notes}</p>}
-      {s.status === "new" && (
-        <div className="mt-2 flex gap-2">
-          <Button className="px-2.5 py-1 text-xs" disabled={update.isPending} onClick={() => update.mutate("confirmed")}>Conferma</Button>
-          <Button variant="danger" className="px-2.5 py-1 text-xs" disabled={update.isPending} onClick={() => update.mutate("rejected")}>Rifiuta</Button>
+      {s.answers.notes && <p className="mt-1 text-xs text-slate-600">{s.answers.notes}</p>}
+      {s.source === "manual" && (
+        <div className="mt-2">
+          <Button
+            variant="ghost"
+            className="px-2 py-1 text-xs text-slate-600"
+            disabled={remove.isPending}
+            onClick={() => {
+              if (confirm(t("Eliminare questa prenotazione? Il posto torna libero nel widget."))) remove.mutate();
+            }}
+          >
+            {t("Elimina")}
+          </Button>
         </div>
       )}
-      {update.error && <p className="mt-2 text-xs text-red-700">{update.error.message}</p>}
+      {s.status === "new" && (
+        <div className="mt-2 flex gap-2">
+          <Button className="px-2.5 py-1 text-xs" disabled={update.isPending} onClick={() => update.mutate("confirmed")}>{t("Conferma")}</Button>
+          <Button variant="danger" className="px-2.5 py-1 text-xs" disabled={update.isPending} onClick={() => update.mutate("rejected")}>{t("Rifiuta")}</Button>
+        </div>
+      )}
+      {(update.error ?? remove.error) && <p className="mt-2 text-xs text-red-700">{(update.error ?? remove.error)!.message}</p>}
     </li>
+  );
+}
+
+const selectClass = "block w-full rounded-lg border-0 bg-white px-3 py-2 text-sm text-slate-900 ring-1 ring-slate-300 focus:ring-2 focus:ring-brand-600 focus:outline-none";
+
+/**
+ * A booking taken by phone or in person. It is saved as confirmed and takes its place, so the widget
+ * stops offering that time once it is full. The fields follow the project's questions.
+ */
+function AddBooking({ projectId, day, flow, onDone }: { projectId: string; day: string; flow: FlowDefinition; onDone: () => void }) {
+  const t = useT();
+  const queryClient = useQueryClient();
+  const timeStep = flow.steps.find((s) => s.type === "time");
+  const timeOptions = timeStep?.type === "time" ? timeStep.options : null;
+  const askParty = flow.steps.some((s) => s.key === "party_size");
+  const serviceStep = flow.steps.find((s) => s.key === "service");
+  const services = serviceStep?.type === "choice" ? serviceStep.options : null;
+
+  const save = useMutation({
+    mutationFn: (input: ManualBookingInput) => api(`/projects/${projectId}/bookings`, { method: "POST", body: input }),
+    onSuccess: async () => {
+      await Promise.all([["calendar", projectId], ["submissions", projectId]].map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+      onDone();
+    },
+  });
+
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const text = (name: string) => String(form.get(name) ?? "").trim() || undefined;
+    save.mutate({
+      date: day,
+      time: String(form.get("time")),
+      name: String(form.get("name")).trim(),
+      phone: text("phone"),
+      partySize: askParty ? Number(form.get("partySize")) : undefined,
+      service: services ? text("service") : undefined,
+      notes: text("notes"),
+    });
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="mt-4 space-y-3 rounded-lg bg-slate-50 p-3 ring-1 ring-slate-200">
+      <p className="text-xs text-slate-600">{t("Per chi prenota al telefono o di persona. È subito confermata e occupa i posti di quell'orario: quando è pieno, il widget non lo offre più. La capienza si imposta in Orari.")}</p>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={t("Ora")}>
+          {timeOptions ? (
+            <select name="time" required className={selectClass} defaultValue={timeOptions[0]}>
+              {timeOptions.map((time) => <option key={time}>{time}</option>)}
+            </select>
+          ) : (
+            <Input name="time" type="time" required defaultValue="20:00" />
+          )}
+        </Field>
+        {askParty && (
+          <Field label={t("Persone")}>
+            <Input name="partySize" type="number" min={1} max={500} required defaultValue={2} inputMode="numeric" />
+          </Field>
+        )}
+        {services && (
+          <Field label={t("Servizio")}>
+            <select name="service" className={selectClass}>
+              {services.map((service) => <option key={service}>{service}</option>)}
+            </select>
+          </Field>
+        )}
+      </div>
+      <Field label={t("Nome")}>
+        <Input name="name" required maxLength={80} autoComplete="off" />
+      </Field>
+      <Field label={t("Telefono (facoltativo)")}>
+        <Input name="phone" type="tel" maxLength={40} autoComplete="off" />
+      </Field>
+      <Field label={t("Note (facoltative)")}>
+        <Input name="notes" maxLength={500} autoComplete="off" />
+      </Field>
+      {save.error && <Alert>{save.error.message}</Alert>}
+      <div className="flex gap-2">
+        <Button type="submit" disabled={save.isPending}>{save.isPending ? t("Salvataggio…") : t("Aggiungi")}</Button>
+        <Button type="button" variant="ghost" onClick={onDone}>{t("Annulla")}</Button>
+      </div>
+    </form>
   );
 }

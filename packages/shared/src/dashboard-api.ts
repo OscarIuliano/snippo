@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { FlowDefinition } from "./flow";
+import { isIsoDate } from "./format";
+import type { Role } from "./team";
 import type { TemplateId } from "./templates";
 
 export const templateIds = ["restaurant", "appointments", "info"] as const satisfies readonly TemplateId[];
@@ -27,6 +29,8 @@ export const createProjectSchema = z.object({
   domain: domainSchema,
 });
 
+export const updateProjectSchema = createProjectSchema.pick({ name: true });
+
 export const updateWidgetSchema = z.object({
   title: z.string().trim().min(1).max(60),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -37,12 +41,26 @@ export const changeTemplateSchema = z.object({ template: z.enum(templateIds) });
 export const addDomainSchema = z.object({ domain: domainSchema });
 export const updateSubmissionSchema = z.object({ status: z.enum(submissionStatuses) });
 
+/** A booking taken by phone or in person, added from the calendar so its place is no longer offered. */
+export const manualBookingSchema = z.object({
+  date: z.string().refine(isIsoDate),
+  time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  name: z.string().trim().min(1).max(80),
+  phone: z.string().trim().max(40).optional(),
+  partySize: z.number().int().min(1).max(500).optional(),
+  service: z.string().trim().max(80).optional(),
+  notes: z.string().trim().max(500).optional(),
+});
+export type ManualBookingInput = z.infer<typeof manualBookingSchema>;
+
 export type CreateProjectInput = z.input<typeof createProjectSchema>;
 export type UpdateWidgetInput = z.infer<typeof updateWidgetSchema>;
 
 export interface MeResponse {
   user: { id: string; name: string; email: string };
-  organization: { id: string; name: string };
+  /** The organization the dashboard is working on, with the user's role in it. */
+  organization: { id: string; name: string; role: Role };
+  organizations: { id: string; name: string; role: Role }[];
   projects: { id: string; name: string; industry: string; newSubmissions: number }[];
 }
 
@@ -54,7 +72,10 @@ export interface ProjectDetail {
     id: string;
     publicKey: string;
     theme: UpdateWidgetInput;
+    /** The template the questions started from. */
     template: TemplateId | null;
+    /** True when the questions differ from the template's. */
+    customized: boolean;
     flow: FlowDefinition | null;
   };
   domains: { id: string; domain: string }[];
@@ -70,6 +91,10 @@ export interface SubmissionRow {
   bookingAt: string | null;
   partySize: number | null;
   createdAt: string;
+  /** Made by "Invia prova" in Notifiche. */
+  isTest: boolean;
+  /** "manual": added by the business from the calendar. */
+  source: "widget" | "manual";
 }
 
 export interface SubmissionsPage {

@@ -1,4 +1,5 @@
 import type { WidgetAvailability } from "@snippo/shared/availability";
+import type { WidgetEvent } from "@snippo/shared/stats";
 import type { SubmissionInput, WidgetConfig } from "@snippo/shared/widget-api";
 
 export class ApiError extends Error {
@@ -25,6 +26,14 @@ export function createApi(baseUrl: string, publicKey: string) {
       const res = await fetch(url("/availability", `&partySize=${partySize}`));
       if (!res.ok) throw new ApiError(`Disponibilità non disponibile (${res.status})`);
       return res.json();
+    },
+
+    /** Fire and forget: statistics must never get in the way of the conversation. */
+    sendEvents(events: WidgetEvent[]): void {
+      // text/plain keeps it a simple CORS request (no preflight); keepalive survives page unload.
+      fetch(url("/events"), { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ events }), keepalive: true }).catch(
+        () => {},
+      );
     },
 
     async submit(input: SubmissionInput, idempotencyKey: string): Promise<{ id: string }> {

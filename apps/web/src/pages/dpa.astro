@@ -1,0 +1,89 @@
+---
+import Provider from "../components/Provider.astro";
+import LegalLayout from "../layouts/LegalLayout.astro";
+---
+
+<LegalLayout title="Accordo sul trattamento dei dati" description="L'accordo (art. 28 GDPR) con cui Snippo tratta, per conto delle aziende clienti, i dati dei visitatori che scrivono dalla chat.">
+  <p>
+    Questo accordo fa parte dei <a href="/termini">Termini di servizio</a> e si applica quando tu, il cliente, ricevi tramite Snippo dati personali dei visitatori
+    del tuo sito. Per questi dati tu sei il <strong>titolare</strong> del trattamento e <Provider field="name" /> ("Snippo") il <strong>responsabile</strong>,
+    ai sensi dell'art. 28 del Regolamento (UE) 2016/679 (GDPR).
+  </p>
+
+  <h2>1. Oggetto del trattamento</h2>
+  <div class="table-wrap">
+    <table>
+      <tbody>
+        <tr><th>Finalità</th><td>Raccogliere dalla chat le prenotazioni e le richieste dei visitatori, conservarle, mostrarle nell'area riservata e notificarle al cliente.</td></tr>
+        <tr><th>Interessati</th><td>Visitatori del sito del cliente che inviano una richiesta.</td></tr>
+        <tr><th>Dati</th><td>Nome, telefono, email, data e ora della prenotazione, numero di persone, servizio richiesto, note e risposte libere, data del consenso, impronta non reversibile dell'indirizzo IP.</td></tr>
+        <tr><th>Durata</th><td>Per tutto il periodo in cui il cliente usa il servizio, entro il periodo di conservazione scelto per ogni progetto (24 mesi se non lo cambia).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>2. Impegni di Snippo</h2>
+  <ul>
+    <li>Tratta i dati solo secondo le istruzioni del cliente, che sono questi termini e le impostazioni scelte nell'area riservata. Se un'istruzione le sembra contraria alla legge, lo segnala.</li>
+    <li>Fa accedere ai dati solo le persone che ne hanno bisogno per il servizio, vincolate alla riservatezza.</li>
+    <li>Applica le misure di sicurezza descritte al punto 4.</li>
+    <li>Aiuta il cliente a rispondere alle richieste degli interessati: la pagina Privacy dell'area riservata trova, scarica e cancella i dati di una persona.</li>
+    <li>Notifica al cliente qualsiasi violazione dei dati senza ingiustificato ritardo e comunque entro 48 ore da quando ne viene a conoscenza, con le informazioni disponibili.</li>
+    <li>Fornisce al cliente le informazioni necessarie a dimostrare il rispetto di questo accordo, incluse le eventuali valutazioni d'impatto.</li>
+  </ul>
+
+  <h2>3. Impegni del cliente</h2>
+  <ul>
+    <li>Informa i visitatori del suo sito con un'informativa privacy adeguata e ha una base giuridica valida per il trattamento.</li>
+    <li>Non raccoglie categorie particolari di dati se non strettamente necessarie e lecite.</li>
+    <li>Sceglie un periodo di conservazione adeguato alle sue finalità.</li>
+  </ul>
+
+  <h2>4. Misure di sicurezza</h2>
+  <ul>
+    <li>Database nell'Unione Europea; connessioni sempre cifrate (TLS).</li>
+    <li>Password salvate solo con hash; indirizzi IP dei visitatori salvati solo come impronta non reversibile.</li>
+    <li>Accesso separato per ogni cliente e ruoli nel team; ogni richiesta all'API controlla a quale cliente appartengono i dati.</li>
+    <li>Protezione anti-spam (Turnstile) e limiti di invio per indirizzo IP.</li>
+    <li>Cancellazione automatica ogni notte dei dati oltre il periodo di conservazione.</li>
+    <li>Backup del database ripristinabili per 30 giorni.</li>
+  </ul>
+
+  <h2>5. Sub-responsabili</h2>
+  <p>Il cliente autorizza Snippo a usare questi sub-responsabili, vincolati da obblighi equivalenti a quelli di questo accordo:</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Fornitore</th><th>Servizio</th><th>Dove</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cloudflare, Inc.</td><td>Hosting, database, code di lavoro, invio email, Turnstile</td><td>Database nell'UE; rete globale</td></tr>
+        <tr><td>Meta Platforms Ireland Ltd.</td><td>Notifiche WhatsApp al cliente, solo se le attiva</td><td>UE e Stati Uniti</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Snippo avvisa il cliente almeno 30 giorni prima di aggiungere o sostituire un sub-responsabile, via email o nell'area riservata. Il cliente può opporsi per
+    motivi legati alla protezione dei dati; se non si trova una soluzione può recedere senza costi.
+  </p>
+
+  <h2>6. Trasferimenti fuori dall'UE</h2>
+  <p>
+    I dati sono salvati nell'Unione Europea, ma il traffico passa dalla rete globale di Cloudflare e le notifiche WhatsApp da Meta, che possono elaborarli fuori dall'UE.
+    Questi trasferimenti sono coperti dall'EU-US Data Privacy Framework e dalle clausole contrattuali standard della Commissione europea.
+  </p>
+
+  <h2>7. Verifiche</h2>
+  <p>
+    Il cliente può chiedere per iscritto le informazioni necessarie a verificare il rispetto di questo accordo. Snippo risponde entro 30 giorni.
+    Ispezioni sul posto si concordano con un preavviso ragionevole, a spese del cliente.
+  </p>
+
+  <h2>8. Fine del trattamento</h2>
+  <p>
+    Quando il cliente elimina un progetto o l'account, Snippo cancella subito i dati dei visitatori; le copie di backup si sovrascrivono entro 30 giorni.
+  </p>
+
+  <h2>9. Contatti</h2>
+  <p>Per questioni sul trattamento dei dati scrivi a <a href="mailto:privacy@snippo.io">privacy@snippo.io</a>.</p>
+</LegalLayout>

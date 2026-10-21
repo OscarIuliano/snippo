@@ -44,34 +44,24 @@ async function processMessage(db: Db, env: Env, senders: Record<Channel["type"],
     const delivery = await db.query.notificationDeliveries.findFirst({ where: eq(notificationDeliveries.id, body.deliveryId) });
     const channel = delivery && (await db.query.notificationChannels.findFirst({ where: eq(notificationChannels.id, delivery.channelId) }));
     if (!delivery || !channel || delivery.status === "sent") return true; // channel removed meanwhile, or already sent
-    const project = await db.query.projects.findFirst({ where: eq(projects.id, channel.projectId) });
-    const content = buildTestNotification(project?.name ?? "il tuo progetto", `${env.DASHBOARD_ORIGIN}/progetti/${channel.projectId}/notifiche`);
-    return deliver(db, senders, channel, delivery, content);
+    // A test request: the same notification as a real one, to this channel only.
+    const submission = delivery.submissionId ? await db.query.submissions.findFirst({ where: eq(submissions.id, delivery.submissionId) }) : undefined;
+    const content = submission
+      ? await submissionContent(db, env, submission)
+      : buildTestNotification(
+          (await db.query.projects.findFirst({ where: eq(projects.id, channel.projectId) }))?.name ?? "il tuo progetto",
+          `${env.DASHBOARD_ORIGIN}/progetti/${channel.projectId}/notifiche`,
+        );
+    return content ? deliver(db, senders, channel, delivery, content) : true;
   }
 
   const submission = await db.query.submissions.findFirst({ where: eq(submissions.id, body.submissionId) });
   if (!submission) return true;
-  const [project, flowVersion, channels] = await Promise.all([
-    db.query.projects.findFirst({ where: eq(projects.id, submission.projectId) }),
-    db.query.flowVersions.findFirst({ where: eq(flowVersions.id, submission.flowVersionId) }),
-    db.query.notificationChannels.findMany({
-      where: and(eq(notificationChannels.projectId, submission.projectId), eq(notificationChannels.isActive, true)),
-    }),
-  ]);
-  if (!project || channels.length === 0) return true;
-
-  const actionUrl = async (action: "confirmed" | "rejected") =>
-    `${env.PUBLIC_API_URL}/v1/actions/${await createActionToken(env.BETTER_AUTH_SECRET, submission.id, action)}`;
-  const content = buildSubmissionNotification(
-    project.name,
-    { ...submission, answers: submission.answers as Record<string, string> },
-    flowVersion ? flowDefinitionSchema.parse(flowVersion.definition) : null,
-    {
-      confirm: await actionUrl("confirmed"),
-      reject: await actionUrl("rejected"),
-      dashboard: `${env.DASHBOARD_ORIGIN}/progetti/${project.id}/richieste`,
-    },
-  );
+  const channels = await db.query.notificationChannels.findMany({
+    where: and(eq(notificationChannels.projectId, submission.projectId), eq(notificationChannels.isActive, true)),
+  });
+  const content = channels.length > 0 ? await submissionContent(db, env, submission) : null;
+  if (!content) return true;
 
   let allSent = true;
   for (const channel of channels) {
@@ -84,6 +74,28 @@ async function processMessage(db: Db, env: Env, senders: Record<Channel["type"],
     if (!(await deliver(db, senders, channel, delivery, content))) allSent = false;
   }
   return allSent;
+}
+
+/** The notification of a request, with its Conferma / Rifiuta links. Null when its project is gone. */
+async function submissionContent(db: Db, env: Env, submission: typeof submissions.$inferSelect): Promise<NotificationContent | null> {
+  const [project, flowVersion] = await Promise.all([
+    db.query.projects.findFirst({ where: eq(projects.id, submission.projectId) }),
+    db.query.flowVersions.findFirst({ where: eq(flowVersions.id, submission.flowVersionId) }),
+  ]);
+  if (!project) return null;
+
+  const actionUrl = async (action: "confirmed" | "rejected") =>
+    `${env.PUBLIC_API_URL}/v1/actions/${await createActionToken(env.BETTER_AUTH_SECRET, submission.id, action)}`;
+  return buildSubmissionNotification(
+    project.name,
+    { ...submission, answers: submission.answers as Record<string, string> },
+    flowVersion ? flowDefinitionSchema.parse(flowVersion.definition) : null,
+    {
+      confirm: await actionUrl("confirmed"),
+      reject: await actionUrl("rejected"),
+      dashboard: `${env.DASHBOARD_ORIGIN}/progetti/${project.id}/richieste`,
+    },
+  );
 }
 
 async function deliver(db: Db, senders: Record<Channel["type"], Sender>, channel: Channel, delivery: Delivery, content: NotificationContent): Promise<boolean> {

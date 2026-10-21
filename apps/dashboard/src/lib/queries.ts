@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import type { AvailabilitySettings, ChannelRow, DeliveryRow, MeResponse, ProjectDetail, SubmissionRow, SubmissionStatus, SubmissionsPage } from "@snippo/shared";
+import type { AvailabilitySettings, ChannelRow, ProjectStats, TeamResponse, DeliveryRow, MeResponse, ProjectDetail, SubmissionRow, SubmissionStatus, SubmissionsPage } from "@snippo/shared";
 import { api } from "./api";
 import { authClient } from "./auth";
 
@@ -42,3 +42,13 @@ export const calendarQuery = (projectId: string, from: string, to: string) =>
 
 export const availabilityQuery = (projectId: string) =>
   queryOptions({ queryKey: ["availability", projectId], queryFn: () => api<AvailabilitySettings>(`/projects/${projectId}/availability`) });
+
+export const statsQuery = (projectId: string, days: number) =>
+  queryOptions({
+    queryKey: ["stats", projectId, days],
+    queryFn: () => api<ProjectStats>(`/projects/${projectId}/stats?days=${days}`),
+    placeholderData: (previous) => previous,
+    refetchInterval: 60_000,
+  });
+
+export const teamQuery = queryOptions({ queryKey: ["team"], queryFn: () => api<TeamResponse>("/team") });

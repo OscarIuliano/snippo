@@ -12,7 +12,9 @@
     "deploy": "wrangler deploy",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "deploy:staging": "wrangler d1 migrations apply snippo-staging --remote --env staging && wrangler deploy --env staging"
+    "whatsapp:templates": "node scripts/whatsapp-templates.ts",
+    "deploy:staging": "wrangler d1 migrations apply snippo-staging --remote --env staging && wrangler deploy --env staging",
+    "deploy:production": "wrangler d1 migrations apply snippo-prod --remote --env production && wrangler deploy --env production"
   },
   "dependencies": {
     "@snippo/db": "workspace:*",

@@ -93,6 +93,8 @@ export async function loadUsage(db: Db, projectId: string, from: string, to: str
         gte(submissions.bookingAt, from),
         lt(submissions.bookingAt, addDays(to, 1)),
         inArray(submissions.status, ["new", "confirmed"]),
+        // A test request must not take a real customer's place.
+        eq(submissions.isTest, false),
       ),
     );
   const usage = new Map<string, Map<string, number>>();

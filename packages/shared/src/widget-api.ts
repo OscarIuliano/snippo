@@ -8,6 +8,8 @@ export interface WidgetConfig {
   theme: { primaryColor: string; position: "right" | "left"; title: string };
   flowVersionId: string;
   flow: FlowDefinition;
+  /** The business's privacy notice, linked next to the consent box. Absent = no link. */
+  privacyUrl?: string;
   /** Anti-spam check (Turnstile) on our own domain, loaded in an iframe. Absent = not required. */
   challenge?: { url: string; siteKey: string };
 }

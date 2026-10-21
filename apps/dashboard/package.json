@@ -7,7 +7,8 @@
     "dev:remote": "vite",
     "build": "vite build",
     "typecheck": "tsc -p tsconfig.json",
-    "deploy:staging": "vite build --mode staging && wrangler deploy --env staging"
+    "deploy:staging": "vite build --mode staging && wrangler deploy --env staging",
+    "deploy:production": "vite build --mode production && wrangler deploy --env production"
   },
   "dependencies": {
     "@snippo/shared": "workspace:*",

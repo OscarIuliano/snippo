@@ -6,6 +6,11 @@
   // Exact paths: /v1/challenge.html must not be redirected to /v1/challenge.
   "assets": { "directory": "./dist", "html_handling": "none" },
   "env": {
-    "staging": { "name": "snippo-cdn-staging" }
+    "staging": { "name": "snippo-cdn-staging" },
+    "production": {
+      "name": "snippo-cdn-production",
+      "routes": [{ "pattern": "cdn.snippo.io", "custom_domain": true }],
+      "workers_dev": false
+    }
   }
 }

@@ -101,6 +101,7 @@ La landing ha un obiettivo misurabile: portare il visitatore alla registrazione 
 4. **Documentazione sviluppatori:** quick start, opzioni di configurazione, API JavaScript del widget (`open`, `close`, eventi), webhook.
 5. **Blog e guide** (fase 2) per la SEO, es. "Come ricevere prenotazioni dal sito del ristorante".
 6. **Legali:** Privacy Policy, Cookie Policy, Termini di servizio, DPA (accordo sul trattamento dei dati).
+7. **Ristoranti (`/ristoranti`):** pagina pensata per gli annunci Instagram e Facebook. I link della landing portano con sé i parametri utm (senza salvarli nel browser), così la fonte della registrazione si legge nell'email di avviso al titolare ("Provenienza").
 
 **Requisiti**
 
@@ -299,7 +300,7 @@ Il database è **Cloudflare D1** (SQLite), creato con giurisdizione UE. È multi
 
 | Area | Tabella | Campi principali | Note |
 | --- | --- | --- | --- |
-| Identità | `users` | id, email (unique), name, avatar_url, locale, email_verified_at | Utenti della dashboard |
+| Identità | `users` | id, email (unique), name, avatar_url, locale, email_verified_at, signup_source | Utenti della dashboard. signup_source ("fonte / mezzo / campagna" dai parametri utm) si salva solo alla registrazione e poi non cambia |
 | Identità | `accounts` | id, user_id, provider (password, google), provider_account_id, password_hash | Gestita dalla libreria di auth |
 | Identità | `sessions` | id, user_id, token_hash, expires_at, ip, user_agent | |
 | Organizzazione | `organizations` | id, name, slug, country, vat_number, billing_email, plan_id | Il tenant |
@@ -357,7 +358,7 @@ Trattiamo dati personali dei visitatori (nome, telefono, email) per conto delle 
 - Database D1 creato con giurisdizione `eu`: i dati sono salvati ed elaborati solo in UE ([data location D1](https://developers.cloudflare.com/d1/configuration/data-location/)). La giurisdizione si sceglie solo alla creazione. Fornitori con DPA firmato ed elenco dei sub-responsabili pubblico.
 - DPA standard accettato all'attivazione del piano; registro dei trattamenti.
 - Consenso esplicito nel widget, con link alla privacy dell'azienda; data e ora del consenso salvate (`consent_at`).
-- Minimizzazione: IP salvato solo come hash; nessun cookie di tracciamento nel widget.
+- Minimizzazione: IP salvato solo come hash; nessun cookie di tracciamento nel widget. La provenienza della registrazione (codice campagna) si salva una volta sola, per interesse legittimo, ed è indicata nella privacy policy.
 - Retention configurabile per progetto (default 24 mesi, pagina Privacy), poi cancellazione automatica ogni notte con un Cron Trigger, insieme a sessioni e inviti scaduti. Nella stessa pagina si cercano per telefono, email o nome le richieste di una persona, per scaricarle in JSON (diritto di accesso) o cancellarle (diritto all'oblio).
 
 **Sicurezza applicativa**
@@ -490,7 +491,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 30 attività fatte, 3 in attesa di un tuo passaggio e 7 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le n. 20 e 36 sono ora sbloccate dalle email reali, le altre aspettano Paddle o Sentry.
+L'MVP ha 31 attività fatte, 4 in attesa di un tuo passaggio e 9 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le n. 20 e 36 sono ora sbloccate dalle email reali, le altre aspettano Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -534,5 +535,9 @@ L'MVP ha 30 attività fatte, 3 in attesa di un tuo passaggio e 7 da fare. Le "Da
 | 38 | Privacy | Link all'informativa privacy dell'azienda nel widget, accanto al consenso | Fatto | Si inserisce nella pagina Privacy; senza link la pagina avvisa che manca |
 | 39 | Supporto | Pagina Supporto sulla landing (contatto e risposte rapide) e voce Aiuto nella dashboard | Fatto | "Scrivi al supporto" apre l'email con account e progetti già scritti; supporto@snippo.io e privacy@snippo.io sono attivi con Email Routing (n. 13) |
 | 40 | Calendario | Prenotazioni aggiunte a mano dal calendario (telefono, di persona) | Fatto | Confermate subito, segnate Manuale; occupano i posti della fascia, quindi il widget non li offre più. Niente notifiche, fuori da statistiche e uso del piano. Anche gli operatori le aggiungono ed eliminano |
+| 41 | Marketing | Attribuzione delle campagne: provenienza della registrazione (utm) salvata e mostrata nell'email di avviso, pagina /ristoranti per gli annunci | Fatto | In produzione dal 21-10-2026. La provenienza si scrive solo alla registrazione ("diretta" senza campagna); la landing passa i parametri utm nei link senza usare il browser. Link annuncio: snippo.io/ristoranti?utm_source=instagram&utm_medium=paid&utm_campaign=ristoranti-test |
+| 42 | Marketing | Campagna Instagram ristoranti: pagina Facebook/Instagram Snippo, Business Suite, test 7 €/giorno per 10 giorni | In attesa di te | Serve la pagina Snippo su Facebook e Instagram e il collegamento a Business Suite; il link dell'annuncio è nel n. 41 |
+| 43 | Marketing | Immagini per gli annunci (1080×1350 e 1080×1920) | Da fare | Per il feed e per le storie; servono prima del test (n. 42) |
+| 44 | Landing | Cloudflare Web Analytics sulla landing | Da fare | Per vedere le visite dagli annunci |
 
 Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

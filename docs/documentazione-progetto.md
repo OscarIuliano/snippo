@@ -491,7 +491,7 @@ Nome, repository, strategia sui template e piattaforma (tutto su Cloudflare: Wor
 
 ## 19. Backlog
 
-L'MVP ha 31 attività fatte, 4 in attesa di un tuo passaggio e 9 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le n. 20 e 36 sono ora sbloccate dalle email reali, le altre aspettano Paddle o Sentry.
+L'MVP ha 32 attività fatte, 4 in attesa di un tuo passaggio e 9 da fare. Le "Da fare" sono nell'ordine consigliato: la prossima senza dipendenze esterne è la n. 22, l'export CSV (priorità bassa); le n. 20 e 36 sono ora sbloccate dalle email reali, le altre aspettano Paddle o Sentry.
 
 | # | Area | Attività | Stato | Note |
 | --- | --- | --- | --- | --- |
@@ -536,8 +536,9 @@ L'MVP ha 31 attività fatte, 4 in attesa di un tuo passaggio e 9 da fare. Le "Da
 | 39 | Supporto | Pagina Supporto sulla landing (contatto e risposte rapide) e voce Aiuto nella dashboard | Fatto | "Scrivi al supporto" apre l'email con account e progetti già scritti; supporto@snippo.io e privacy@snippo.io sono attivi con Email Routing (n. 13) |
 | 40 | Calendario | Prenotazioni aggiunte a mano dal calendario (telefono, di persona) | Fatto | Confermate subito, segnate Manuale; occupano i posti della fascia, quindi il widget non li offre più. Niente notifiche, fuori da statistiche e uso del piano. Anche gli operatori le aggiungono ed eliminano |
 | 41 | Marketing | Attribuzione delle campagne: provenienza della registrazione (utm) salvata e mostrata nell'email di avviso, pagina /ristoranti per gli annunci | Fatto | In produzione dal 21-10-2026. La provenienza si scrive solo alla registrazione ("diretta" senza campagna); la landing passa i parametri utm nei link senza usare il browser. Link annuncio: snippo.io/ristoranti?utm_source=instagram&utm_medium=paid&utm_campaign=ristoranti-test |
-| 42 | Marketing | Campagna Instagram ristoranti: pagina Facebook/Instagram Snippo, Business Suite, test 7 €/giorno per 10 giorni | In attesa di te | Serve la pagina Snippo su Facebook e Instagram e il collegamento a Business Suite; il link dell'annuncio è nel n. 41 |
-| 43 | Marketing | Immagini per gli annunci (1080×1350 e 1080×1920) | Da fare | Per il feed e per le storie; servono prima del test (n. 42) |
+| 42 | Marketing | Campagna Instagram ristoranti: pagina Facebook/Instagram Snippo, Business Suite, test 7 €/giorno per 10 giorni | In attesa di te | Pagina Facebook e account Instagram snippo.io creati e collegati, primo post pubblicato. Il link dell'annuncio è nel n. 41. Restano: post 2 e 3, account pubblicitario con carta in Business Suite, poi il test a 7 €/giorno per 10 giorni. |
+| 43 | Marketing | Immagini per gli annunci (1080×1350 e 1080×1920) | Fatto | Generate il 21-10-2026: immagini 1080×1350 (feed) e 1080×1920 (storie), 3 post Instagram, profilo e copertina Facebook, un reel di 15 secondi |
 | 44 | Landing | Cloudflare Web Analytics sulla landing | Da fare | Per vedere le visite dagli annunci |
+| 45 | Marketing | Agenzie web come canale di vendita: analisi e sviluppo | Da fare | Da analizzare con un agente dedicato prima di sviluppare. Idea: le agenzie che fanno i siti per ristoranti e locali portano più clienti alla volta. Ostacoli oggi: il piano Free ha 1 solo progetto e i pagamenti (n. 24) non ci sono; il white label è nel listino del piano Agency ma non è sviluppato. Ipotesi da valutare: programma agenzie partner in beta con piano Agency assegnato a mano, pagina /agenzie, white label, messaggio di contatto, dove trovarle (footer 'sito realizzato da', ricerca locale). |
 
 Dopo l'MVP: webhook, template B2B, chat live, numero WhatsApp proprio dell'azienda e blog SEO (fase 2); assistente AI per le FAQ, SMS, Google Calendar, white label ed editor visuale dei flussi (fase 3).

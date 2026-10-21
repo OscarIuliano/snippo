@@ -1,12 +1,12 @@
 ---
 import Provider from "../components/Provider.astro";
 import LegalLayout from "../layouts/LegalLayout.astro";
+import { supportEmail } from "../legal";
 ---
 
 <LegalLayout title="Termini di servizio" description="Le condizioni per usare Snippo: cosa offriamo, cosa ti chiediamo, piani, responsabilità e recesso.">
   <p>
-    Questi termini regolano l'uso di Snippo, il servizio fornito da <Provider field="name" />, <Provider field="address" />, partita IVA <Provider field="vatNumber" />
-    ("noi"). Creando un account li accetti, insieme all'<a href="/dpa">accordo sul trattamento dei dati</a>, che ne fa parte.
+    Questi termini regolano l'uso di Snippo, il servizio fornito da <Provider field="name" /> ("noi"). Creando un account li accetti, insieme all'<a href="/dpa">accordo sul trattamento dei dati</a>, che ne fa parte.
   </p>
 
   <h2>1. Il servizio</h2>
@@ -93,9 +93,9 @@ import LegalLayout from "../layouts/LegalLayout.astro";
 
   <h2>11. Legge e foro</h2>
   <p>
-    Questi termini sono regolati dalla legge italiana. Per qualsiasi controversia è competente in via esclusiva il foro di <Provider field="court" />.
+    Questi termini sono regolati dalla legge italiana. Per qualsiasi controversia è competente il foro previsto dalla legge italiana.
   </p>
 
   <h2>12. Contatti</h2>
-  <p>Per domande su questi termini scrivi a <a href="mailto:privacy@snippo.io">privacy@snippo.io</a>.</p>
+  <p>Per domande su questi termini scrivi a <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.</p>
 </LegalLayout>

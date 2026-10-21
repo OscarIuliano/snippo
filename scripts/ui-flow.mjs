@@ -4,7 +4,7 @@
 //   {"nav": "/path" | "https://..."}   relative paths use --base
 //   {"fill": {"<selector>": "value"}}   sets inputs and textareas, firing React's input event
 //   {"click": "<button or link text>" | "<selector>"}
-//   {"eval": "<js>"}  {"wait": ms}  {"url": true}  {"shot": "name"}  saves <out-dir>/<name>.png
+//   {"eval": "<js>"}  {"print": "<js>"} logs the value  {"wait": ms}  {"url": true}  {"shot": "name"}  saves <out-dir>/<name>.png
 // Mobile (default 390px) emulates a phone; pass --width 1280 for desktop.
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -26,9 +26,17 @@ const chrome = spawn("/Applications/Google Chrome.app/Contents/MacOS/Google Chro
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let t; for (let i = 0; i < 50 && !t; i++) { await sleep(200); try { t = (await (await fetch("http://127.0.0.1:9336/json")).json()).find((x) => x.type === "page"); } catch {} }
 const ws = new WebSocket(t.webSocketDebuggerUrl); await new Promise((r) => ws.addEventListener("open", r));
-let id = 0; const p = new Map(); ws.addEventListener("message", (e) => { const m = JSON.parse(e.data); if (p.has(m.id)) { p.get(m.id)(m.result); p.delete(m.id); } });
+let id = 0; const p = new Map(); ws.addEventListener("message", (e) => {
+  const m = JSON.parse(e.data);
+  if (p.has(m.id)) { p.get(m.id)(m.result); p.delete(m.id); }
+  // Page errors and console warnings, so a broken page says why.
+  if (m.method === "Runtime.exceptionThrown") console.log("page error:", m.params.exceptionDetails.exception?.description ?? m.params.exceptionDetails.text);
+  if (m.method === "Runtime.consoleAPICalled" && ["error", "warning"].includes(m.params.type)) console.log(`console.${m.params.type}:`, m.params.args.map((a) => a.value ?? a.description).join(" "));
+  if (m.method === "Log.entryAdded" && m.params.entry.level === "error") console.log("browser error:", m.params.entry.text, m.params.entry.url ?? "");
+});
 const send = (method, params = {}) => new Promise((r) => { const n = ++id; p.set(n, r); ws.send(JSON.stringify({ id: n, method, params })); });
 const ev = async (expression) => (await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true })).result.value;
+await send("Runtime.enable"); await send("Log.enable");
 await send("Emulation.setDeviceMetricsOverride", { width, height: Number(values.height), deviceScaleFactor: 2, mobile: width < 768 });
 for (const step of steps) {
   if (step.nav) { await send("Page.navigate", { url: step.nav.startsWith("http") ? step.nav : `${values.base}${step.nav}` }); await sleep(2500); }
@@ -39,6 +47,7 @@ for (const step of steps) {
   if (step.click) { const ok = await ev(`(() => { const el = [...document.querySelectorAll("button, a")].find((b) => b.textContent.trim() === ${JSON.stringify(step.click)}) ?? document.querySelector(${JSON.stringify(step.click)}); if (!el) return false; el.click(); return true; })()`); if (!ok) console.log("non trovato:", step.click); await sleep(2000); }
   if (step.wait) await sleep(step.wait);
   if (step.eval) { await ev(step.eval); await sleep(500); }
+  if (step.print) console.log("print:", await ev(step.print));
   if (step.url) console.log("url:", await ev("location.href"));
   if (step.shot) {
     const overflow = await ev("document.documentElement.scrollWidth - window.innerWidth");

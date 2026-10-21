@@ -321,7 +321,8 @@ const snippet = `<script src="https://cdn.snippo.io/v1/snippo.js"\n        data-
     </div>
   </footer>
 
-  <script is:inline type="module" src={demo.src} data-key={demo.key} data-api={demo.api}></script>
+  {/* Like a customer's site, a classic script; only the dev server's source needs a module. */}
+  <script is:inline type={import.meta.env.DEV ? "module" : undefined} src={demo.src} data-key={demo.key} data-api={demo.api} async></script>
   <script>
     document.querySelectorAll("[data-open-demo]").forEach((button) =>
       button.addEventListener("click", () => window.Snippo?.open()),
